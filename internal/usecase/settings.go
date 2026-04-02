@@ -1,0 +1,86 @@
+package usecase
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/frozenfish/fish-website/internal/domain"
+)
+
+// SettingsUsecase handles settings business logic
+type SettingsUsecase struct {
+	settingsRepo domain.SettingsRepository
+}
+
+// NewSettingsUsecase creates a new SettingsUsecase
+func NewSettingsUsecase(settingsRepo domain.SettingsRepository) *SettingsUsecase {
+	return &SettingsUsecase{settingsRepo: settingsRepo}
+}
+
+// GetSettings gets the current settings
+func (u *SettingsUsecase) GetSettings(ctx context.Context) (*domain.Settings, error) {
+	settings, err := u.settingsRepo.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get settings: %w", err)
+	}
+	return settings, nil
+}
+
+// UpdateSettings updates settings with field mask support
+func (u *SettingsUsecase) UpdateSettings(ctx context.Context, settings *domain.Settings, updateMask []string) (*domain.Settings, error) {
+	// Get current settings first
+	current, err := u.settingsRepo.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get current settings: %w", err)
+	}
+
+	// Apply updates based on field mask
+	fieldSet := make(map[string]bool)
+	for _, field := range updateMask {
+		fieldSet[field] = true
+	}
+
+	// If no mask provided, update all fields
+	updateAll := len(updateMask) == 0
+
+	if updateAll || fieldSet["display_name"] {
+		current.DisplayName = settings.DisplayName
+	}
+	if updateAll || fieldSet["bio"] {
+		current.Bio = settings.Bio
+	}
+	if updateAll || fieldSet["avatar_url"] {
+		current.AvatarURL = settings.AvatarURL
+	}
+	if updateAll || fieldSet["twitter_url"] {
+		current.TwitterURL = settings.TwitterURL
+	}
+	if updateAll || fieldSet["github_url"] {
+		current.GitHubURL = settings.GitHubURL
+	}
+	if updateAll || fieldSet["bilibili_url"] {
+		current.BilibiliURL = settings.BilibiliURL
+	}
+	if updateAll || fieldSet["custom_links"] {
+		current.CustomLinks = settings.CustomLinks
+	}
+	if updateAll || fieldSet["background_image_url"] {
+		current.BackgroundImageURL = settings.BackgroundImageURL
+	}
+	if updateAll || fieldSet["sakura_particles_enabled"] {
+		current.SakuraParticlesEnabled = settings.SakuraParticlesEnabled
+	}
+	if updateAll || fieldSet["theme_color"] {
+		current.ThemeColor = settings.ThemeColor
+	}
+
+	current.UpdatedAt = time.Now()
+
+	updated, err := u.settingsRepo.Update(ctx, current)
+	if err != nil {
+		return nil, fmt.Errorf("update settings: %w", err)
+	}
+
+	return updated, nil
+}
