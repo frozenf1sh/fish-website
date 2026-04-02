@@ -1,5 +1,5 @@
 # 第一阶段：构建
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,8 @@ RUN apk add --no-cache git ca-certificates tzdata
 COPY go.mod go.sum ./
 
 # 下载依赖
-RUN go mod download
+RUN go env -w GOPROXY=https://goproxy.cn,direct
+RUN go mod tidy
 
 # 复制源代码
 COPY . .

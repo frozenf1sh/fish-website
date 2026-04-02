@@ -9,12 +9,12 @@ package main
 import (
 	"connectrpc.com/connect"
 	"context"
-	"github.com/frozenfish/fish-website/internal/config"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/frozenfish/fish-website/internal/domain"
 	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/repository"
 	"github.com/frozenfish/fish-website/internal/usecase"
+	"github.com/frozenfish/fish-website/pkg/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -49,7 +49,7 @@ func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) 
 // wire.go:
 
 func providePGXPool(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, cfg.PostgresDSN)
+	pool, err := pgxpool.New(ctx, cfg.Database.DSN)
 	if err != nil {
 		return nil, err
 	}
