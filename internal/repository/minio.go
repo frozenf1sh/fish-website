@@ -6,7 +6,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/frozenfish/fish-website/internal/config"
+	pkgconfig "github.com/frozenfish/fish-website/pkg/config"
+	"github.com/frozenfish/fish-website/pkg/logger"
 	"github.com/frozenfish/fish-website/internal/domain"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -21,29 +22,40 @@ type MinIOStorage struct {
 }
 
 // NewMinIOStorage creates a new MinIOStorage
-func NewMinIOStorage(cfg *config.Config) (*MinIOStorage, error) {
-	client, err := minio.New(cfg.MinIOEndpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.MinIOAccessKey, cfg.MinIOSecretKey, ""),
-		Secure: cfg.MinIOUseSSL,
+func NewMinIOStorage(cfg *pkgconfig.Config) (*MinIOStorage, error) {
+	logger.Info("initializing MinIO storage",
+		logger.String("endpoint", cfg.MinIO.Endpoint),
+		logger.String("bucket", cfg.MinIO.Bucket),
+		logger.Bool("use_ssl", cfg.MinIO.UseSSL))
+
+	client, err := minio.New(cfg.MinIO.Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(cfg.MinIO.AccessKey, cfg.MinIO.SecretKey, ""),
+		Secure: cfg.MinIO.UseSSL,
 	})
 	if err != nil {
+		logger.Error("failed to create MinIO client", logger.Err(err))
 		return nil, fmt.Errorf("create minio client: %w", err)
 	}
 
 	// Ensure bucket exists
 	ctx := context.Background()
-	exists, err := client.BucketExists(ctx, cfg.MinIOBucketName)
+	logger.Debug("checking if bucket exists", logger.String("bucket", cfg.MinIO.Bucket))
+	exists, err := client.BucketExists(ctx, cfg.MinIO.Bucket)
 	if err != nil {
+		logger.Error("failed to check bucket existence", logger.Err(err))
 		return nil, fmt.Errorf("check bucket exists: %w", err)
 	}
 	if !exists {
-		err = client.MakeBucket(ctx, cfg.MinIOBucketName, minio.MakeBucketOptions{})
+		logger.Info("bucket does not exist, creating", logger.String("bucket", cfg.MinIO.Bucket))
+		err = client.MakeBucket(ctx, cfg.MinIO.Bucket, minio.MakeBucketOptions{})
 		if err != nil {
+			logger.Error("failed to create bucket", logger.Err(err))
 			return nil, fmt.Errorf("create bucket: %w", err)
 		}
 	}
 
 	// Set bucket policy to allow public read
+	logger.Debug("setting bucket public read policy", logger.String("bucket", cfg.MinIO.Bucket))
 	publicReadPolicy := fmt.Sprintf(`{
 		"Version": "2012-10-17",
 		"Statement": [
@@ -55,17 +67,19 @@ func NewMinIOStorage(cfg *config.Config) (*MinIOStorage, error) {
 				"Resource": ["arn:aws:s3:::%s/*"]
 			}
 		]
-	}`, cfg.MinIOBucketName)
+	}`, cfg.MinIO.Bucket)
 
-	if err := client.SetBucketPolicy(ctx, cfg.MinIOBucketName, publicReadPolicy); err != nil {
+	if err := client.SetBucketPolicy(ctx, cfg.MinIO.Bucket, publicReadPolicy); err != nil {
+		logger.Error("failed to set bucket policy", logger.Err(err))
 		return nil, fmt.Errorf("set bucket policy: %w", err)
 	}
 
+	logger.Info("MinIO storage initialized successfully", logger.String("bucket", cfg.MinIO.Bucket))
 	return &MinIOStorage{
 		client:      client,
-		bucketName:  cfg.MinIOBucketName,
-		endpoint:    cfg.MinIOEndpoint,
-		useSSL:      cfg.MinIOUseSSL,
+		bucketName:  cfg.MinIO.Bucket,
+		endpoint:    cfg.MinIO.Endpoint,
+		useSSL:      cfg.MinIO.UseSSL,
 	}, nil
 }
 
@@ -78,11 +92,18 @@ func (s *MinIOStorage) NewFileStorage() domain.FileStorage {
 type minioFileStorage MinIOStorage
 
 func (s *minioFileStorage) GetPresignedUploadURL(ctx context.Context, objectName string, contentType string, fileSize int64, expires time.Duration) (uploadURL string, headers map[string]string, err error) {
+	logger.Debug("generating presigned upload URL",
+		logger.String("object_name", objectName),
+		logger.String("content_type", contentType),
+		logger.Int64("file_size", fileSize),
+		logger.String("expires", expires.String()))
+
 	reqParams := make(url.Values)
 	reqParams.Set("Content-Type", contentType)
 
 	presignedURL, err := s.client.PresignedPutObject(ctx, s.bucketName, objectName, expires)
 	if err != nil {
+		logger.Error("failed to generate presigned URL", logger.Err(err))
 		return "", nil, fmt.Errorf("presign put object: %w", err)
 	}
 
@@ -90,6 +111,7 @@ func (s *minioFileStorage) GetPresignedUploadURL(ctx context.Context, objectName
 		"Content-Type": contentType,
 	}
 
+	logger.Debug("presigned upload URL generated successfully", logger.String("object_name", objectName))
 	return presignedURL.String(), headers, nil
 }
 
@@ -99,16 +121,22 @@ func (s *minioFileStorage) GetFileURL(ctx context.Context, objectName string) (s
 	if s.useSSL {
 		scheme = "https"
 	}
-	return fmt.Sprintf("%s://%s/%s/%s", scheme, s.endpoint, s.bucketName, objectName), nil
+	url := fmt.Sprintf("%s://%s/%s/%s", scheme, s.endpoint, s.bucketName, objectName)
+	logger.Debug("generated file URL", logger.String("object_name", objectName), logger.String("url", url))
+	return url, nil
 }
 
 func (s *minioFileStorage) IsObjectExists(ctx context.Context, objectName string) (bool, error) {
+	logger.Debug("checking if object exists", logger.String("object_name", objectName))
 	_, err := s.client.StatObject(ctx, s.bucketName, objectName, minio.StatObjectOptions{})
 	if err != nil {
 		if minio.ToErrorResponse(err).Code == "NoSuchKey" {
+			logger.Debug("object does not exist", logger.String("object_name", objectName))
 			return false, nil
 		}
+		logger.Error("failed to stat object", logger.Err(err))
 		return false, fmt.Errorf("stat object: %w", err)
 	}
+	logger.Debug("object exists", logger.String("object_name", objectName))
 	return true, nil
 }

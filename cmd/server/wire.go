@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"connectrpc.com/connect"
-	"github.com/frozenfish/fish-website/internal/config"
+	pkgconfig "github.com/frozenfish/fish-website/pkg/config"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/frozenfish/fish-website/internal/domain"
 	"github.com/frozenfish/fish-website/internal/middleware"
@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) {
+func InitializeServer(ctx context.Context, cfg *pkgconfig.Config) (*Server, error) {
 	wire.Build(
 		providePGXPool,
 		providePostgresRepository,
@@ -39,8 +39,8 @@ func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) 
 	return &Server{}, nil
 }
 
-func providePGXPool(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, cfg.PostgresDSN)
+func providePGXPool(ctx context.Context, cfg *pkgconfig.Config) (*pgxpool.Pool, error) {
+	pool, err := pgxpool.New(ctx, cfg.Database.DSN)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func provideSettingsRepository(repo *repository.PostgresRepository) domain.Setti
 	return repo.NewSettingsRepository()
 }
 
-func provideMinIOStorage(cfg *config.Config) (*repository.MinIOStorage, error) {
+func provideMinIOStorage(cfg *pkgconfig.Config) (*repository.MinIOStorage, error) {
 	return repository.NewMinIOStorage(cfg)
 }
 
@@ -78,7 +78,7 @@ func provideFileStorage(storage *repository.MinIOStorage) domain.FileStorage {
 	return storage.NewFileStorage()
 }
 
-func provideAuthUsecase(cfg *config.Config) *usecase.AuthUsecase {
+func provideAuthUsecase(cfg *pkgconfig.Config) *usecase.AuthUsecase {
 	return usecase.NewAuthUsecase(cfg)
 }
 

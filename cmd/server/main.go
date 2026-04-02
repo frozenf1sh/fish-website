@@ -14,26 +14,26 @@ import (
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
 	homev1connect "github.com/frozenfish/fish-website/gen/go/home/v1/homev1connect"
-	"github.com/frozenfish/fish-website/internal/config"
+	pkgconfig "github.com/frozenfish/fish-website/pkg/config"
+	"github.com/frozenfish/fish-website/pkg/logger"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
 
 // Server represents the application server
 type Server struct {
-	cfg          *config.Config
-	pool         *pgxpool.Pool
-	handler      *delivery.Handler
-	authInterceptor connect.Interceptor
+	cfg              *pkgconfig.Config
+	pool             *pgxpool.Pool
+	handler          *delivery.Handler
+	authInterceptor  connect.Interceptor
 }
 
 // NewServer creates a new Server
 func NewServer(
-	cfg *config.Config,
+	cfg *pkgconfig.Config,
 	pool *pgxpool.Pool,
 	handler *delivery.Handler,
 	authInterceptor connect.Interceptor,
@@ -48,15 +48,21 @@ func NewServer(
 
 // Start starts the server
 func (s *Server) Start(ctx context.Context) error {
+	logger.Info("starting server", logger.String("address", s.cfg.Server.Address))
+
 	// Run database migrations
+	logger.Info("running database migrations")
 	if err := s.runMigrations(ctx); err != nil {
 		return fmt.Errorf("run migrations: %w", err)
 	}
+	logger.Info("database migrations completed")
 
 	// Setup HTTP handlers
+	logger.Debug("setting up HTTP handlers")
 	mux := http.NewServeMux()
 
 	// Add reflection
+	logger.Debug("adding gRPC reflection service")
 	reflector := grpcreflect.NewStaticReflector(
 		homev1connect.AuthServiceName,
 		homev1connect.PostServiceName,
@@ -73,6 +79,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	// Register handlers
+	logger.Debug("registering Connect-RPC handlers")
 	mux.Handle(homev1connect.NewAuthServiceHandler(s.handler, opts...))
 	mux.Handle(homev1connect.NewPostServiceHandler(s.handler, opts...))
 	mux.Handle(homev1connect.NewBlogServiceHandler(s.handler, opts...))
@@ -80,6 +87,7 @@ func (s *Server) Start(ctx context.Context) error {
 	mux.Handle(homev1connect.NewSettingsServiceHandler(s.handler, opts...))
 
 	// CORS configuration
+	logger.Debug("configuring CORS middleware")
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{
@@ -109,36 +117,40 @@ func (s *Server) Start(ctx context.Context) error {
 
 	// Create server
 	srv := &http.Server{
-		Addr:    s.cfg.ServerAddress,
+		Addr:    s.cfg.Server.Address,
 		Handler: handler,
 	}
 
 	// Start server in goroutine
 	go func() {
-		log.Info().Msgf("server starting on %s", s.cfg.ServerAddress)
+		logger.Info("server starting", logger.String("address", s.cfg.Server.Address))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal().Err(err).Msg("server failed to start")
+			logger.Error("server failed to start", logger.Err(err))
+			os.Exit(1)
 		}
 	}()
 
 	// Wait for shutdown signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Info().Msg("shutting down server...")
+	sig := <-quit
+	logger.Info("received shutdown signal", logger.String("signal", sig.String()))
+	logger.Info("shutting down server...")
 
 	// Shutdown with timeout
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Error("server shutdown error", logger.Err(err))
 		return fmt.Errorf("server shutdown: %w", err)
 	}
 
 	// Close database pool
+	logger.Debug("closing database connection pool")
 	s.pool.Close()
 
-	log.Info().Msg("server shutdown complete")
+	logger.Info("server shutdown complete")
 	return nil
 }
 
@@ -150,12 +162,12 @@ func (s *Server) runMigrations(ctx context.Context) error {
 	}
 
 	// Execute schema
+	logger.Debug("executing schema SQL")
 	_, err = s.pool.Exec(ctx, string(schema))
 	if err != nil {
 		return fmt.Errorf("execute schema: %w", err)
 	}
 
-	log.Info().Msg("database migrations completed")
 	return nil
 }
 
@@ -165,22 +177,47 @@ var embedSchema embed.FS
 func main() {
 	ctx := context.Background()
 
+	// Initialize logger first (default config)
+	logger.Init(logger.DefaultConfig())
+	logger.Debug("logger initialized")
+
 	// Load config
-	cfg := config.Load()
+	logger.Debug("loading configuration")
+	cfg, err := pkgconfig.Load()
+	if err != nil {
+		logger.Error("failed to load config", logger.Err(err))
+		os.Exit(1)
+	}
+
+	// Re-initialize logger with config
+	loggerConfig := logger.Config{
+		Level:     cfg.Logger.Level,
+		JSON:      cfg.Logger.JSON,
+		AddSource: cfg.Logger.AddSource,
+	}
+	logger.Init(loggerConfig)
+	logger.Info("configuration loaded",
+		logger.String("log_level", string(cfg.Logger.Level)),
+		logger.Bool("log_json", cfg.Logger.JSON))
 
 	// Check for required admin password
-	if cfg.AdminPassword == "" {
-		log.Fatal().Msg("ADMIN_PASSWORD environment variable is required")
+	if cfg.Auth.AdminPassword == "" {
+		logger.Error("ADMIN_PASSWORD environment variable is required")
+		os.Exit(1)
 	}
 
 	// Initialize server
+	logger.Debug("initializing server")
 	server, err := InitializeServer(ctx, cfg)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to initialize server")
+		logger.Error("failed to initialize server", logger.Err(err))
+		os.Exit(1)
 	}
 
 	// Start server
+	logger.Debug("starting server")
 	if err := server.Start(ctx); err != nil {
-		log.Fatal().Err(err).Msg("server error")
+		logger.Error("server error", logger.Err(err))
+		os.Exit(1)
 	}
 }
