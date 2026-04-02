@@ -1,0 +1,14 @@
+version: v2
+plugins:
+  - local: protoc-gen-go
+    out: gen/go
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: gen/go
+    opt: paths=source_relative
+  - local: /home/fish/.nvm/versions/node/v24.11.0/bin/protoc-gen-es
+    out: gen/web
+    opt: target=ts
+  - local: /home/fish/.nvm/versions/node/v24.11.0/bin/protoc-gen-connect-es
+    out: gen/web
+    opt: target=ts
