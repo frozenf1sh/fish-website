@@ -34,16 +34,10 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: fish-website-backend
-    environment:
-      POSTGRES_DSN: postgres://fish:fish123456@postgres:5432/fish_website?sslmode=disable
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: fishminio
-      MINIO_SECRET_KEY: fishminio123456
-      MINIO_USE_SSL: "false"
-      MINIO_BUCKET_NAME: fish-website
-      ADMIN_PASSWORD: "your-secure-admin-password-change-me"
-      JWT_SECRET: "your-super-secret-jwt-key-change-in-production"
-      SERVER_ADDRESS: ":8080"
+    env_file:
+      - .env
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
     ports:
       - "8080:8080"
     depends_on:

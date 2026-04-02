@@ -1,0 +1,24 @@
+# 服务器配置
+Server:
+  Address: ":8080"
+
+# 数据库配置
+Database:
+  DSN: "postgres://fish:fish123456@postgres:5432/fish_website?sslmode=disable"
+
+# MinIO 配置
+MinIO:
+  Endpoint: "minio:9000"
+  AccessKey: "fishminio"
+  UseSSL: false
+  Bucket: "fish-website"
+
+# 认证配置（密码在 .env 文件中设置）
+Auth:
+  JWTSecret: "your-super-secret-jwt-key-change-in-production"
+
+# 日志配置
+Logger:
+  Level: "info"
+  JSON: false
+  AddSource: false

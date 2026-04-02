@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/frozenfish/fish-website/pkg/logger"
@@ -49,14 +50,31 @@ type LoggerConfig struct {
 	AddSource bool
 }
 
-// Load loads configuration from environment variables and defaults
+// Load loads configuration from config file, environment variables and defaults
 func Load() (*Config, error) {
 	v := viper.New()
 
 	// Set defaults
 	setDefaults(v)
 
-	// Configure environment variables
+	// Try to load config file
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+	v.AddConfigPath(".")
+	v.AddConfigPath("/app")
+
+	if err := v.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found, continue with env vars
+		} else {
+			return nil, fmt.Errorf("read config file: %w", err)
+		}
+	}
+
+	// Bind old environment variable names for backward compatibility
+	bindLegacyEnvVars(v)
+
+	// Configure environment variables - first try nested names, then legacy
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 
@@ -66,12 +84,100 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
 
+	// Apply legacy env vars for any missing values
+	applyLegacyEnvVars(&cfg)
+
 	// Validate configuration
 	if err := validate(&cfg); err != nil {
 		return nil, fmt.Errorf("validate config: %w", err)
 	}
 
 	return &cfg, nil
+}
+
+func bindLegacyEnvVars(v *viper.Viper) {
+	// Database
+	if val := os.Getenv("POSTGRES_DSN"); val != "" {
+		v.Set("Database.DSN", val)
+	}
+
+	// MinIO
+	if val := os.Getenv("MINIO_ENDPOINT"); val != "" {
+		v.Set("MinIO.Endpoint", val)
+	}
+	if val := os.Getenv("MINIO_ACCESS_KEY"); val != "" {
+		v.Set("MinIO.AccessKey", val)
+	}
+	if val := os.Getenv("MINIO_SECRET_KEY"); val != "" {
+		v.Set("MinIO.SecretKey", val)
+	}
+	if val := os.Getenv("MINIO_USE_SSL"); val != "" {
+		v.Set("MinIO.UseSSL", val == "true" || val == "1")
+	}
+	if val := os.Getenv("MINIO_BUCKET_NAME"); val != "" {
+		v.Set("MinIO.Bucket", val)
+	}
+	if val := os.Getenv("MINIO_BUCKET"); val != "" {
+		v.Set("MinIO.Bucket", val)
+	}
+
+	// Auth
+	if val := os.Getenv("ADMIN_PASSWORD"); val != "" {
+		v.Set("Auth.AdminPassword", val)
+	}
+	if val := os.Getenv("JWT_SECRET"); val != "" {
+		v.Set("Auth.JWTSecret", val)
+	}
+
+	// Server
+	if val := os.Getenv("SERVER_ADDRESS"); val != "" {
+		v.Set("Server.Address", val)
+	}
+
+	// Logger
+	if val := os.Getenv("LOGGER_LEVEL"); val != "" {
+		v.Set("Logger.Level", val)
+	}
+	if val := os.Getenv("LOGGER_JSON"); val != "" {
+		v.Set("Logger.JSON", val == "true" || val == "1")
+	}
+	if val := os.Getenv("LOGGER_ADD_SOURCE"); val != "" {
+		v.Set("Logger.AddSource", val == "true" || val == "1")
+	}
+}
+
+func applyLegacyEnvVars(cfg *Config) {
+	// This function ensures backward compatibility
+	if val := os.Getenv("POSTGRES_DSN"); val != "" && cfg.Database.DSN == "" {
+		cfg.Database.DSN = val
+	}
+	if val := os.Getenv("MINIO_ENDPOINT"); val != "" && cfg.MinIO.Endpoint == "" {
+		cfg.MinIO.Endpoint = val
+	}
+	if val := os.Getenv("MINIO_ACCESS_KEY"); val != "" && cfg.MinIO.AccessKey == "" {
+		cfg.MinIO.AccessKey = val
+	}
+	if val := os.Getenv("MINIO_SECRET_KEY"); val != "" && cfg.MinIO.SecretKey == "" {
+		cfg.MinIO.SecretKey = val
+	}
+	if val := os.Getenv("MINIO_USE_SSL"); val != "" {
+		cfg.MinIO.UseSSL = val == "true" || val == "1"
+	}
+	if val := os.Getenv("MINIO_BUCKET_NAME"); val != "" && cfg.MinIO.Bucket == "" {
+		cfg.MinIO.Bucket = val
+	}
+	if val := os.Getenv("MINIO_BUCKET"); val != "" && cfg.MinIO.Bucket == "" {
+		cfg.MinIO.Bucket = val
+	}
+	if val := os.Getenv("ADMIN_PASSWORD"); val != "" && cfg.Auth.AdminPassword == "" {
+		cfg.Auth.AdminPassword = val
+	}
+	if val := os.Getenv("JWT_SECRET"); val != "" && cfg.Auth.JWTSecret == "" {
+		cfg.Auth.JWTSecret = val
+	}
+	if val := os.Getenv("SERVER_ADDRESS"); val != "" && cfg.Server.Address == "" {
+		cfg.Server.Address = val
+	}
 }
 
 func setDefaults(v *viper.Viper) {
