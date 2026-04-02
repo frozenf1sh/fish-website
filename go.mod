@@ -1,6 +1,6 @@
 module github.com/frozenfish/fish-website
 
-go 1.25.3
+go 1.22
 
 require (
 	connectrpc.com/connect v1.19.1

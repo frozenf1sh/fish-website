@@ -14,8 +14,10 @@ import (
 
 // MinIOStorage implements FileStorage interface
 type MinIOStorage struct {
-	client     *minio.Client
-	bucketName string
+	client      *minio.Client
+	bucketName  string
+	endpoint    string
+	useSSL      bool
 }
 
 // NewMinIOStorage creates a new MinIOStorage
@@ -41,9 +43,29 @@ func NewMinIOStorage(cfg *config.Config) (*MinIOStorage, error) {
 		}
 	}
 
+	// Set bucket policy to allow public read
+	publicReadPolicy := fmt.Sprintf(`{
+		"Version": "2012-10-17",
+		"Statement": [
+			{
+				"Sid": "PublicRead",
+				"Effect": "Allow",
+				"Principal": "*",
+				"Action": ["s3:GetObject"],
+				"Resource": ["arn:aws:s3:::%s/*"]
+			}
+		]
+	}`, cfg.MinIOBucketName)
+
+	if err := client.SetBucketPolicy(ctx, cfg.MinIOBucketName, publicReadPolicy); err != nil {
+		return nil, fmt.Errorf("set bucket policy: %w", err)
+	}
+
 	return &MinIOStorage{
-		client:     client,
-		bucketName: cfg.MinIOBucketName,
+		client:      client,
+		bucketName:  cfg.MinIOBucketName,
+		endpoint:    cfg.MinIOEndpoint,
+		useSSL:      cfg.MinIOUseSSL,
 	}, nil
 }
 
@@ -72,13 +94,12 @@ func (s *minioFileStorage) GetPresignedUploadURL(ctx context.Context, objectName
 }
 
 func (s *minioFileStorage) GetFileURL(ctx context.Context, objectName string) (string, error) {
-	// For simplicity, we'll use presigned GET URL that expires in 7 days
-	// In production, you might want to use a CDN or permanent public URLs
-	presignedURL, err := s.client.PresignedGetObject(ctx, s.bucketName, objectName, 7*24*time.Hour, nil)
-	if err != nil {
-		return "", fmt.Errorf("presign get object: %w", err)
+	// Return public URL since bucket is publicly readable
+	scheme := "http"
+	if s.useSSL {
+		scheme = "https"
 	}
-	return presignedURL.String(), nil
+	return fmt.Sprintf("%s://%s/%s/%s", scheme, s.endpoint, s.bucketName, objectName), nil
 }
 
 func (s *minioFileStorage) IsObjectExists(ctx context.Context, objectName string) (bool, error) {
