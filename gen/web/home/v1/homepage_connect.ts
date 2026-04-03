@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreatePostRequest, CreatePostResponse, DeletePostRequest, GetArticleRequest, GetArticleResponse, GetSettingsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreatePostRequest, CreatePostResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -136,6 +136,28 @@ export const AlbumService = {
       kind: MethodKind.Unary,
     },
     /**
+     * ListAlbums lists albums with pagination support
+     *
+     * @generated from rpc home.v1.AlbumService.ListAlbums
+     */
+    listAlbums: {
+      name: "ListAlbums",
+      I: ListAlbumsRequest,
+      O: ListAlbumsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * GetAlbum returns one album and its images
+     *
+     * @generated from rpc home.v1.AlbumService.GetAlbum
+     */
+    getAlbum: {
+      name: "GetAlbum",
+      I: GetAlbumRequest,
+      O: GetAlbumResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
      * UploadImageRequest gets a presigned URL for uploading an image
      *
      * @generated from rpc home.v1.AlbumService.UploadImageRequest
@@ -155,6 +177,17 @@ export const AlbumService = {
       name: "ConfirmImageUpload",
       I: ConfirmImageUploadRequest,
       O: ConfirmImageUploadResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * DeleteImages deletes images from album and schedules delayed object deletion
+     *
+     * @generated from rpc home.v1.AlbumService.DeleteImages
+     */
+    deleteImages: {
+      name: "DeleteImages",
+      I: DeleteImagesRequest,
+      O: DeleteImagesResponse,
       kind: MethodKind.Unary,
     },
   }

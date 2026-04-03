@@ -255,6 +255,53 @@ func (r *postgresAlbumRepository) CreateAlbum(ctx context.Context, album *domain
 	return album, nil
 }
 
+func (r *postgresAlbumRepository) ListAlbums(ctx context.Context, pageSize int, pageToken string, onlyPublic bool) ([]*domain.Album, string, bool, error) {
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	query := `
+		SELECT id, name, description, is_public, created_at
+		FROM albums
+		WHERE ($1 = '' OR id < $1)
+		AND (NOT $2 OR is_public = true)
+		ORDER BY created_at DESC
+		LIMIT $3
+	`
+
+	rows, err := r.pool.Query(ctx, query, pageToken, onlyPublic, pageSize+1)
+	if err != nil {
+		return nil, "", false, fmt.Errorf("query albums: %w", err)
+	}
+	defer rows.Close()
+
+	albums := make([]*domain.Album, 0, pageSize+1)
+	for rows.Next() {
+		var album domain.Album
+		var description sql.NullString
+		if err := rows.Scan(&album.ID, &album.Name, &description, &album.IsPublic, &album.CreatedAt); err != nil {
+			return nil, "", false, fmt.Errorf("scan album: %w", err)
+		}
+		if description.Valid {
+			album.Description = description.String
+		}
+		albums = append(albums, &album)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, "", false, fmt.Errorf("rows error: %w", err)
+	}
+
+	hasMore := len(albums) > pageSize
+	nextPageToken := ""
+	if hasMore {
+		nextPageToken = albums[pageSize].ID
+		albums = albums[:pageSize]
+	}
+
+	return albums, nextPageToken, hasMore, nil
+}
+
 func (r *postgresAlbumRepository) GetAlbum(ctx context.Context, albumID string) (*domain.Album, error) {
 	var album domain.Album
 	var description sql.NullString
@@ -287,6 +334,56 @@ func (r *postgresAlbumRepository) CreateImage(ctx context.Context, image *domain
 	return image, nil
 }
 
+func (r *postgresAlbumRepository) ListImagesByAlbum(ctx context.Context, albumID string, pageSize int, pageToken string) ([]*domain.Image, string, bool, error) {
+	if pageSize <= 0 {
+		pageSize = 50
+	}
+
+	query := `
+		SELECT id, album_id, url, thumbnail_url, file_name, file_size, mime_type, created_at
+		FROM images
+		WHERE album_id = $1
+		AND ($2 = '' OR id < $2)
+		ORDER BY created_at DESC
+		LIMIT $3
+	`
+
+	rows, err := r.pool.Query(ctx, query, albumID, pageToken, pageSize+1)
+	if err != nil {
+		return nil, "", false, fmt.Errorf("query images by album: %w", err)
+	}
+	defer rows.Close()
+
+	images := make([]*domain.Image, 0, pageSize+1)
+	for rows.Next() {
+		var image domain.Image
+		var url, thumbnailURL sql.NullString
+		if err := rows.Scan(&image.ID, &image.AlbumID, &url, &thumbnailURL, &image.FileName, &image.FileSize, &image.MimeType, &image.CreatedAt); err != nil {
+			return nil, "", false, fmt.Errorf("scan image: %w", err)
+		}
+		if url.Valid {
+			image.URL = url.String
+		}
+		if thumbnailURL.Valid {
+			image.ThumbnailURL = thumbnailURL.String
+		}
+		images = append(images, &image)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, "", false, fmt.Errorf("rows error: %w", err)
+	}
+
+	hasMore := len(images) > pageSize
+	nextPageToken := ""
+	if hasMore {
+		nextPageToken = images[pageSize].ID
+		images = images[:pageSize]
+	}
+
+	return images, nextPageToken, hasMore, nil
+}
+
 func (r *postgresAlbumRepository) GetImage(ctx context.Context, imageID string) (*domain.Image, error) {
 	var image domain.Image
 	var url, thumbnailURL sql.NullString
@@ -316,6 +413,46 @@ func (r *postgresAlbumRepository) UpdateImage(ctx context.Context, image *domain
 		return nil, fmt.Errorf("update image: %w", err)
 	}
 	return image, nil
+}
+
+func (r *postgresAlbumRepository) DeleteImages(ctx context.Context, albumID string, imageIDs []string) ([]*domain.Image, error) {
+	if len(imageIDs) == 0 {
+		return []*domain.Image{}, nil
+	}
+
+	rows, err := r.pool.Query(ctx,
+		`DELETE FROM images
+		 WHERE album_id = $1 AND id = ANY($2)
+		 RETURNING id, album_id, url, thumbnail_url, file_name, file_size, mime_type, created_at`,
+		albumID,
+		imageIDs,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("delete images: %w", err)
+	}
+	defer rows.Close()
+
+	deleted := make([]*domain.Image, 0, len(imageIDs))
+	for rows.Next() {
+		var image domain.Image
+		var url, thumbnailURL sql.NullString
+		if err := rows.Scan(&image.ID, &image.AlbumID, &url, &thumbnailURL, &image.FileName, &image.FileSize, &image.MimeType, &image.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan deleted image: %w", err)
+		}
+		if url.Valid {
+			image.URL = url.String
+		}
+		if thumbnailURL.Valid {
+			image.ThumbnailURL = thumbnailURL.String
+		}
+		deleted = append(deleted, &image)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return deleted, nil
 }
 
 // postgresSettingsRepository implements SettingsRepository

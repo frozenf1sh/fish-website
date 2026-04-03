@@ -224,6 +224,52 @@ func (h *Handler) CreateAlbum(ctx context.Context, req *connect.Request[homev1.C
 	}), nil
 }
 
+// ListAlbums lists albums
+func (h *Handler) ListAlbums(ctx context.Context, req *connect.Request[homev1.ListAlbumsRequest]) (*connect.Response[homev1.ListAlbumsResponse], error) {
+	logger.Debug("received ListAlbums request",
+		logger.Int("page_size", int(req.Msg.PageSize)),
+		logger.String("page_token", req.Msg.PageToken),
+		logger.Bool("only_public", req.Msg.OnlyPublic))
+
+	albums, nextPageToken, hasMore, err := h.albumUsecase.ListAlbums(ctx, int(req.Msg.PageSize), req.Msg.PageToken, req.Msg.OnlyPublic)
+	if err != nil {
+		logger.Error("ListAlbums failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	protoAlbums := make([]*homev1.Album, len(albums))
+	for i, album := range albums {
+		protoAlbums[i] = toProtoAlbum(album)
+	}
+
+	return connect.NewResponse(&homev1.ListAlbumsResponse{
+		Albums:        protoAlbums,
+		NextPageToken: nextPageToken,
+		HasMore:       hasMore,
+	}), nil
+}
+
+// GetAlbum gets one album with images
+func (h *Handler) GetAlbum(ctx context.Context, req *connect.Request[homev1.GetAlbumRequest]) (*connect.Response[homev1.GetAlbumResponse], error) {
+	logger.Debug("received GetAlbum request", logger.String("album_id", req.Msg.AlbumId))
+
+	album, images, err := h.albumUsecase.GetAlbumWithImages(ctx, req.Msg.AlbumId)
+	if err != nil {
+		logger.Error("GetAlbum failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	protoImages := make([]*homev1.Image, len(images))
+	for i, image := range images {
+		protoImages[i] = toProtoImage(image)
+	}
+
+	return connect.NewResponse(&homev1.GetAlbumResponse{
+		Album:  toProtoAlbum(album),
+		Images: protoImages,
+	}), nil
+}
+
 // UploadImageRequest gets a presigned upload URL
 func (h *Handler) UploadImageRequest(ctx context.Context, req *connect.Request[homev1.UploadImageRequestRequest]) (*connect.Response[homev1.UploadImageRequestResponse], error) {
 	logger.Info("received UploadImageRequest request",
@@ -270,6 +316,24 @@ func (h *Handler) ConfirmImageUpload(ctx context.Context, req *connect.Request[h
 	logger.Info("ConfirmImageUpload successful", logger.String("image_id", image.ID), logger.String("url", image.URL))
 	return connect.NewResponse(&homev1.ConfirmImageUploadResponse{
 		Image: toProtoImage(image),
+	}), nil
+}
+
+// DeleteImages deletes image records and schedules delayed object cleanup.
+func (h *Handler) DeleteImages(ctx context.Context, req *connect.Request[homev1.DeleteImagesRequest]) (*connect.Response[homev1.DeleteImagesResponse], error) {
+	logger.Info("received DeleteImages request",
+		logger.String("album_id", req.Msg.AlbumId),
+		logger.Int("image_count", len(req.Msg.ImageIds)))
+
+	deletedCount, scheduledAt, err := h.albumUsecase.DeleteImages(ctx, req.Msg.AlbumId, req.Msg.ImageIds)
+	if err != nil {
+		logger.Error("DeleteImages failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&homev1.DeleteImagesResponse{
+		DeletedCount:      int32(deletedCount),
+		ScheduledDeleteAt: timestamppb.New(scheduledAt),
 	}), nil
 }
 

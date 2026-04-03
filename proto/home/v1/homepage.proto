@@ -37,10 +37,16 @@ service BlogService {
 service AlbumService {
   // CreateAlbum creates a new photo album
   rpc CreateAlbum(CreateAlbumRequest) returns (CreateAlbumResponse);
+  // ListAlbums lists albums with pagination support
+  rpc ListAlbums(ListAlbumsRequest) returns (ListAlbumsResponse);
+  // GetAlbum returns one album and its images
+  rpc GetAlbum(GetAlbumRequest) returns (GetAlbumResponse);
   // UploadImageRequest gets a presigned URL for uploading an image
   rpc UploadImageRequest(UploadImageRequestRequest) returns (UploadImageRequestResponse);
   // ConfirmImageUpload notifies backend that image has been uploaded
   rpc ConfirmImageUpload(ConfirmImageUploadRequest) returns (ConfirmImageUploadResponse);
+  // DeleteImages deletes images from album and schedules delayed object deletion
+  rpc DeleteImages(DeleteImagesRequest) returns (DeleteImagesResponse);
 }
 
 // SettingsService handles user settings and preferences
@@ -175,6 +181,27 @@ message CreateAlbumResponse {
   Album album = 1;
 }
 
+message ListAlbumsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  bool only_public = 3;
+}
+
+message ListAlbumsResponse {
+  repeated Album albums = 1;
+  string next_page_token = 2;
+  bool has_more = 3;
+}
+
+message GetAlbumRequest {
+  string album_id = 1;
+}
+
+message GetAlbumResponse {
+  Album album = 1;
+  repeated Image images = 2;
+}
+
 message UploadImageRequestRequest {
   string album_id = 1;
   string file_name = 2;
@@ -196,6 +223,16 @@ message ConfirmImageUploadRequest {
 
 message ConfirmImageUploadResponse {
   Image image = 1;
+}
+
+message DeleteImagesRequest {
+  string album_id = 1;
+  repeated string image_ids = 2;
+}
+
+message DeleteImagesResponse {
+  int32 deleted_count = 1;
+  google.protobuf.Timestamp scheduled_delete_at = 2;
 }
 
 // Settings messages

@@ -6,19 +6,19 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/frozenfish/fish-website/internal/domain"
 	pkgconfig "github.com/frozenfish/fish-website/pkg/config"
 	"github.com/frozenfish/fish-website/pkg/logger"
-	"github.com/frozenfish/fish-website/internal/domain"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 // MinIOStorage implements FileStorage interface
 type MinIOStorage struct {
-	client      *minio.Client
-	bucketName  string
-	endpoint    string
-	useSSL      bool
+	client     *minio.Client
+	bucketName string
+	endpoint   string
+	useSSL     bool
 }
 
 // NewMinIOStorage creates a new MinIOStorage
@@ -76,10 +76,10 @@ func NewMinIOStorage(cfg *pkgconfig.Config) (*MinIOStorage, error) {
 
 	logger.Info("MinIO storage initialized successfully", logger.String("bucket", cfg.MinIO.Bucket))
 	return &MinIOStorage{
-		client:      client,
-		bucketName:  cfg.MinIO.Bucket,
-		endpoint:    cfg.MinIO.Endpoint,
-		useSSL:      cfg.MinIO.UseSSL,
+		client:     client,
+		bucketName: cfg.MinIO.Bucket,
+		endpoint:   cfg.MinIO.Endpoint,
+		useSSL:     cfg.MinIO.UseSSL,
 	}, nil
 }
 
@@ -139,4 +139,19 @@ func (s *minioFileStorage) IsObjectExists(ctx context.Context, objectName string
 	}
 	logger.Debug("object exists", logger.String("object_name", objectName))
 	return true, nil
+}
+
+func (s *minioFileStorage) DeleteObject(ctx context.Context, objectName string) error {
+	logger.Info("deleting object from storage", logger.String("object_name", objectName))
+	err := s.client.RemoveObject(ctx, s.bucketName, objectName, minio.RemoveObjectOptions{})
+	if err != nil {
+		if minio.ToErrorResponse(err).Code == "NoSuchKey" {
+			logger.Debug("delete skipped, object not found", logger.String("object_name", objectName))
+			return nil
+		}
+		logger.Error("failed to delete object", logger.String("object_name", objectName), logger.Err(err))
+		return fmt.Errorf("remove object: %w", err)
+	}
+
+	return nil
 }

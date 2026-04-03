@@ -61,12 +61,19 @@ const (
 	// AlbumServiceCreateAlbumProcedure is the fully-qualified name of the AlbumService's CreateAlbum
 	// RPC.
 	AlbumServiceCreateAlbumProcedure = "/home.v1.AlbumService/CreateAlbum"
+	// AlbumServiceListAlbumsProcedure is the fully-qualified name of the AlbumService's ListAlbums RPC.
+	AlbumServiceListAlbumsProcedure = "/home.v1.AlbumService/ListAlbums"
+	// AlbumServiceGetAlbumProcedure is the fully-qualified name of the AlbumService's GetAlbum RPC.
+	AlbumServiceGetAlbumProcedure = "/home.v1.AlbumService/GetAlbum"
 	// AlbumServiceUploadImageRequestProcedure is the fully-qualified name of the AlbumService's
 	// UploadImageRequest RPC.
 	AlbumServiceUploadImageRequestProcedure = "/home.v1.AlbumService/UploadImageRequest"
 	// AlbumServiceConfirmImageUploadProcedure is the fully-qualified name of the AlbumService's
 	// ConfirmImageUpload RPC.
 	AlbumServiceConfirmImageUploadProcedure = "/home.v1.AlbumService/ConfirmImageUpload"
+	// AlbumServiceDeleteImagesProcedure is the fully-qualified name of the AlbumService's DeleteImages
+	// RPC.
+	AlbumServiceDeleteImagesProcedure = "/home.v1.AlbumService/DeleteImages"
 	// SettingsServiceGetSettingsProcedure is the fully-qualified name of the SettingsService's
 	// GetSettings RPC.
 	SettingsServiceGetSettingsProcedure = "/home.v1.SettingsService/GetSettings"
@@ -407,10 +414,16 @@ func (UnimplementedBlogServiceHandler) GetArticle(context.Context, *connect.Requ
 type AlbumServiceClient interface {
 	// CreateAlbum creates a new photo album
 	CreateAlbum(context.Context, *connect.Request[v1.CreateAlbumRequest]) (*connect.Response[v1.CreateAlbumResponse], error)
+	// ListAlbums lists albums with pagination support
+	ListAlbums(context.Context, *connect.Request[v1.ListAlbumsRequest]) (*connect.Response[v1.ListAlbumsResponse], error)
+	// GetAlbum returns one album and its images
+	GetAlbum(context.Context, *connect.Request[v1.GetAlbumRequest]) (*connect.Response[v1.GetAlbumResponse], error)
 	// UploadImageRequest gets a presigned URL for uploading an image
 	UploadImageRequest(context.Context, *connect.Request[v1.UploadImageRequestRequest]) (*connect.Response[v1.UploadImageRequestResponse], error)
 	// ConfirmImageUpload notifies backend that image has been uploaded
 	ConfirmImageUpload(context.Context, *connect.Request[v1.ConfirmImageUploadRequest]) (*connect.Response[v1.ConfirmImageUploadResponse], error)
+	// DeleteImages deletes images from album and schedules delayed object deletion
+	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
 }
 
 // NewAlbumServiceClient constructs a client for the home.v1.AlbumService service. By default, it
@@ -430,6 +443,18 @@ func NewAlbumServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(albumServiceMethods.ByName("CreateAlbum")),
 			connect.WithClientOptions(opts...),
 		),
+		listAlbums: connect.NewClient[v1.ListAlbumsRequest, v1.ListAlbumsResponse](
+			httpClient,
+			baseURL+AlbumServiceListAlbumsProcedure,
+			connect.WithSchema(albumServiceMethods.ByName("ListAlbums")),
+			connect.WithClientOptions(opts...),
+		),
+		getAlbum: connect.NewClient[v1.GetAlbumRequest, v1.GetAlbumResponse](
+			httpClient,
+			baseURL+AlbumServiceGetAlbumProcedure,
+			connect.WithSchema(albumServiceMethods.ByName("GetAlbum")),
+			connect.WithClientOptions(opts...),
+		),
 		uploadImageRequest: connect.NewClient[v1.UploadImageRequestRequest, v1.UploadImageRequestResponse](
 			httpClient,
 			baseURL+AlbumServiceUploadImageRequestProcedure,
@@ -442,19 +467,38 @@ func NewAlbumServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(albumServiceMethods.ByName("ConfirmImageUpload")),
 			connect.WithClientOptions(opts...),
 		),
+		deleteImages: connect.NewClient[v1.DeleteImagesRequest, v1.DeleteImagesResponse](
+			httpClient,
+			baseURL+AlbumServiceDeleteImagesProcedure,
+			connect.WithSchema(albumServiceMethods.ByName("DeleteImages")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // albumServiceClient implements AlbumServiceClient.
 type albumServiceClient struct {
 	createAlbum        *connect.Client[v1.CreateAlbumRequest, v1.CreateAlbumResponse]
+	listAlbums         *connect.Client[v1.ListAlbumsRequest, v1.ListAlbumsResponse]
+	getAlbum           *connect.Client[v1.GetAlbumRequest, v1.GetAlbumResponse]
 	uploadImageRequest *connect.Client[v1.UploadImageRequestRequest, v1.UploadImageRequestResponse]
 	confirmImageUpload *connect.Client[v1.ConfirmImageUploadRequest, v1.ConfirmImageUploadResponse]
+	deleteImages       *connect.Client[v1.DeleteImagesRequest, v1.DeleteImagesResponse]
 }
 
 // CreateAlbum calls home.v1.AlbumService.CreateAlbum.
 func (c *albumServiceClient) CreateAlbum(ctx context.Context, req *connect.Request[v1.CreateAlbumRequest]) (*connect.Response[v1.CreateAlbumResponse], error) {
 	return c.createAlbum.CallUnary(ctx, req)
+}
+
+// ListAlbums calls home.v1.AlbumService.ListAlbums.
+func (c *albumServiceClient) ListAlbums(ctx context.Context, req *connect.Request[v1.ListAlbumsRequest]) (*connect.Response[v1.ListAlbumsResponse], error) {
+	return c.listAlbums.CallUnary(ctx, req)
+}
+
+// GetAlbum calls home.v1.AlbumService.GetAlbum.
+func (c *albumServiceClient) GetAlbum(ctx context.Context, req *connect.Request[v1.GetAlbumRequest]) (*connect.Response[v1.GetAlbumResponse], error) {
+	return c.getAlbum.CallUnary(ctx, req)
 }
 
 // UploadImageRequest calls home.v1.AlbumService.UploadImageRequest.
@@ -467,14 +511,25 @@ func (c *albumServiceClient) ConfirmImageUpload(ctx context.Context, req *connec
 	return c.confirmImageUpload.CallUnary(ctx, req)
 }
 
+// DeleteImages calls home.v1.AlbumService.DeleteImages.
+func (c *albumServiceClient) DeleteImages(ctx context.Context, req *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error) {
+	return c.deleteImages.CallUnary(ctx, req)
+}
+
 // AlbumServiceHandler is an implementation of the home.v1.AlbumService service.
 type AlbumServiceHandler interface {
 	// CreateAlbum creates a new photo album
 	CreateAlbum(context.Context, *connect.Request[v1.CreateAlbumRequest]) (*connect.Response[v1.CreateAlbumResponse], error)
+	// ListAlbums lists albums with pagination support
+	ListAlbums(context.Context, *connect.Request[v1.ListAlbumsRequest]) (*connect.Response[v1.ListAlbumsResponse], error)
+	// GetAlbum returns one album and its images
+	GetAlbum(context.Context, *connect.Request[v1.GetAlbumRequest]) (*connect.Response[v1.GetAlbumResponse], error)
 	// UploadImageRequest gets a presigned URL for uploading an image
 	UploadImageRequest(context.Context, *connect.Request[v1.UploadImageRequestRequest]) (*connect.Response[v1.UploadImageRequestResponse], error)
 	// ConfirmImageUpload notifies backend that image has been uploaded
 	ConfirmImageUpload(context.Context, *connect.Request[v1.ConfirmImageUploadRequest]) (*connect.Response[v1.ConfirmImageUploadResponse], error)
+	// DeleteImages deletes images from album and schedules delayed object deletion
+	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
 }
 
 // NewAlbumServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -490,6 +545,18 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(albumServiceMethods.ByName("CreateAlbum")),
 		connect.WithHandlerOptions(opts...),
 	)
+	albumServiceListAlbumsHandler := connect.NewUnaryHandler(
+		AlbumServiceListAlbumsProcedure,
+		svc.ListAlbums,
+		connect.WithSchema(albumServiceMethods.ByName("ListAlbums")),
+		connect.WithHandlerOptions(opts...),
+	)
+	albumServiceGetAlbumHandler := connect.NewUnaryHandler(
+		AlbumServiceGetAlbumProcedure,
+		svc.GetAlbum,
+		connect.WithSchema(albumServiceMethods.ByName("GetAlbum")),
+		connect.WithHandlerOptions(opts...),
+	)
 	albumServiceUploadImageRequestHandler := connect.NewUnaryHandler(
 		AlbumServiceUploadImageRequestProcedure,
 		svc.UploadImageRequest,
@@ -502,14 +569,26 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(albumServiceMethods.ByName("ConfirmImageUpload")),
 		connect.WithHandlerOptions(opts...),
 	)
+	albumServiceDeleteImagesHandler := connect.NewUnaryHandler(
+		AlbumServiceDeleteImagesProcedure,
+		svc.DeleteImages,
+		connect.WithSchema(albumServiceMethods.ByName("DeleteImages")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/home.v1.AlbumService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AlbumServiceCreateAlbumProcedure:
 			albumServiceCreateAlbumHandler.ServeHTTP(w, r)
+		case AlbumServiceListAlbumsProcedure:
+			albumServiceListAlbumsHandler.ServeHTTP(w, r)
+		case AlbumServiceGetAlbumProcedure:
+			albumServiceGetAlbumHandler.ServeHTTP(w, r)
 		case AlbumServiceUploadImageRequestProcedure:
 			albumServiceUploadImageRequestHandler.ServeHTTP(w, r)
 		case AlbumServiceConfirmImageUploadProcedure:
 			albumServiceConfirmImageUploadHandler.ServeHTTP(w, r)
+		case AlbumServiceDeleteImagesProcedure:
+			albumServiceDeleteImagesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -523,12 +602,24 @@ func (UnimplementedAlbumServiceHandler) CreateAlbum(context.Context, *connect.Re
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.CreateAlbum is not implemented"))
 }
 
+func (UnimplementedAlbumServiceHandler) ListAlbums(context.Context, *connect.Request[v1.ListAlbumsRequest]) (*connect.Response[v1.ListAlbumsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.ListAlbums is not implemented"))
+}
+
+func (UnimplementedAlbumServiceHandler) GetAlbum(context.Context, *connect.Request[v1.GetAlbumRequest]) (*connect.Response[v1.GetAlbumResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.GetAlbum is not implemented"))
+}
+
 func (UnimplementedAlbumServiceHandler) UploadImageRequest(context.Context, *connect.Request[v1.UploadImageRequestRequest]) (*connect.Response[v1.UploadImageRequestResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.UploadImageRequest is not implemented"))
 }
 
 func (UnimplementedAlbumServiceHandler) ConfirmImageUpload(context.Context, *connect.Request[v1.ConfirmImageUploadRequest]) (*connect.Response[v1.ConfirmImageUploadResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.ConfirmImageUpload is not implemented"))
+}
+
+func (UnimplementedAlbumServiceHandler) DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.DeleteImages is not implemented"))
 }
 
 // SettingsServiceClient is a client for the home.v1.SettingsService service.
