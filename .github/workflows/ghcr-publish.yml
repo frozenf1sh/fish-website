@@ -31,7 +31,7 @@ jobs:
           - name: frontend
             image: fish-website-frontend
             context: ./frontend
-            dockerfile: ./Dockerfile
+            dockerfile: ./frontend/Dockerfile
 
     steps:
       - name: Checkout
