@@ -10,9 +10,9 @@ services:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fish -d fish_website"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 2s
+      timeout: 3s
+      retries: 10
     networks:
       - fish-network
 
@@ -24,6 +24,7 @@ services:
       MINIO_ROOT_USER: fishminio
       MINIO_ROOT_PASSWORD: fishminio123456
     ports:
+      - "9000:9000"
       - "9001:9001"
     volumes:
       - minio-data:/data

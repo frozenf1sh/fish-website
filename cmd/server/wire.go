@@ -7,12 +7,12 @@ import (
 	"context"
 
 	"connectrpc.com/connect"
-	pkgconfig "github.com/frozenfish/fish-website/pkg/config"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/frozenfish/fish-website/internal/domain"
 	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/repository"
 	"github.com/frozenfish/fish-website/internal/usecase"
+	pkgconfig "github.com/frozenfish/fish-website/pkg/config"
 	"github.com/google/wire"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -82,8 +82,8 @@ func provideAuthUsecase(cfg *pkgconfig.Config) *usecase.AuthUsecase {
 	return usecase.NewAuthUsecase(cfg)
 }
 
-func providePostUsecase(repo domain.PostRepository) *usecase.PostUsecase {
-	return usecase.NewPostUsecase(repo)
+func providePostUsecase(repo domain.PostRepository, albumRepo domain.AlbumRepository) *usecase.PostUsecase {
+	return usecase.NewPostUsecase(repo, albumRepo)
 }
 
 func provideBlogUsecase(repo domain.BlogRepository) *usecase.BlogUsecase {

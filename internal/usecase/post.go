@@ -10,24 +10,37 @@ import (
 
 // PostUsecase handles post business logic
 type PostUsecase struct {
-	postRepo domain.PostRepository
+	postRepo  domain.PostRepository
+	albumRepo domain.AlbumRepository
 }
 
 // NewPostUsecase creates a new PostUsecase
-func NewPostUsecase(postRepo domain.PostRepository) *PostUsecase {
-	return &PostUsecase{postRepo: postRepo}
+func NewPostUsecase(postRepo domain.PostRepository, albumRepo domain.AlbumRepository) *PostUsecase {
+	return &PostUsecase{
+		postRepo:  postRepo,
+		albumRepo: albumRepo,
+	}
 }
 
 // CreatePost creates a new post
 func (u *PostUsecase) CreatePost(ctx context.Context, content string, imageIDs []string) (*domain.Post, error) {
-	post := &domain.Post{
-		Content:   content,
-		ImageURLs: make([]string, 0, len(imageIDs)),
-		CreatedAt: time.Now(),
+	imageURLs := make([]string, 0, len(imageIDs))
+	for _, id := range imageIDs {
+		img, err := u.albumRepo.GetImage(ctx, id)
+		if err != nil {
+			// Alternatively, log the error and continue, but we'll return an error here
+			return nil, fmt.Errorf("failed to get image %s: %w", id, err)
+		}
+		if img.URL != "" {
+			imageURLs = append(imageURLs, img.URL)
+		}
 	}
 
-	// TODO: In a real implementation, we would look up the image URLs from the image IDs
-	// For now, we'll just leave ImageURLs empty
+	post := &domain.Post{
+		Content:   content,
+		ImageURLs: imageURLs,
+		CreatedAt: time.Now(),
+	}
 
 	createdPost, err := u.postRepo.Create(ctx, post)
 	if err != nil {

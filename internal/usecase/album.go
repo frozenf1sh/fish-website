@@ -45,7 +45,21 @@ func (u *AlbumUsecase) GetPresignedUploadURL(ctx context.Context, albumID, fileN
 	// Verify album exists
 	_, err = u.albumRepo.GetAlbum(ctx, albumID)
 	if err != nil {
-		return "", "", nil, time.Time{}, fmt.Errorf("get album: %w", err)
+		if albumID == "default" {
+			// Auto create the default album
+			_, err = u.albumRepo.CreateAlbum(ctx, &domain.Album{
+				ID:          "default",
+				Name:        "默认相册",
+				Description: "系统默认创建的相册",
+				IsPublic:    true,
+				CreatedAt:   time.Now(),
+			})
+			if err != nil {
+				return "", "", nil, time.Time{}, fmt.Errorf("create default album: %w", err)
+			}
+		} else {
+			return "", "", nil, time.Time{}, fmt.Errorf("get album: %w", err)
+		}
 	}
 
 	imageID = xid.New().String()

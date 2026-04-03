@@ -28,10 +28,10 @@ func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) 
 	authUsecase := provideAuthUsecase(cfg)
 	postgresRepository := providePostgresRepository(pool)
 	postRepository := providePostRepository(postgresRepository)
-	postUsecase := providePostUsecase(postRepository)
+	albumRepository := provideAlbumRepository(postgresRepository)
+	postUsecase := providePostUsecase(postRepository, albumRepository)
 	blogRepository := provideBlogRepository(postgresRepository)
 	blogUsecase := provideBlogUsecase(blogRepository)
-	albumRepository := provideAlbumRepository(postgresRepository)
 	minIOStorage, err := provideMinIOStorage(cfg)
 	if err != nil {
 		return nil, err
@@ -91,8 +91,8 @@ func provideAuthUsecase(cfg *config.Config) *usecase.AuthUsecase {
 	return usecase.NewAuthUsecase(cfg)
 }
 
-func providePostUsecase(repo domain.PostRepository) *usecase.PostUsecase {
-	return usecase.NewPostUsecase(repo)
+func providePostUsecase(repo domain.PostRepository, albumRepo domain.AlbumRepository) *usecase.PostUsecase {
+	return usecase.NewPostUsecase(repo, albumRepo)
 }
 
 func provideBlogUsecase(repo domain.BlogRepository) *usecase.BlogUsecase {
