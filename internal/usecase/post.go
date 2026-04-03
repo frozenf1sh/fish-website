@@ -66,3 +66,11 @@ func (u *PostUsecase) ListPosts(ctx context.Context, pageSize int, pageToken str
 
 	return posts, nextPageToken, hasMore, nil
 }
+
+// DeletePost deletes a post by ID
+func (u *PostUsecase) DeletePost(ctx context.Context, id string) error {
+	if err := u.postRepo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("delete post: %w", err)
+	}
+	return nil
+}

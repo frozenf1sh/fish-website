@@ -8,9 +8,9 @@ import (
 	"connectrpc.com/connect"
 	homev1 "github.com/frozenfish/fish-website/gen/go/home/v1"
 	"github.com/frozenfish/fish-website/gen/go/home/v1/homev1connect"
-	"github.com/frozenfish/fish-website/pkg/logger"
 	"github.com/frozenfish/fish-website/internal/domain"
 	"github.com/frozenfish/fish-website/internal/usecase"
+	"github.com/frozenfish/fish-website/pkg/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -128,6 +128,20 @@ func (h *Handler) ListPosts(ctx context.Context, req *connect.Request[homev1.Lis
 	}), nil
 }
 
+// DeletePost deletes a post
+func (h *Handler) DeletePost(ctx context.Context, req *connect.Request[homev1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error) {
+	logger.Info("received DeletePost request", logger.String("post_id", req.Msg.Id))
+
+	err := h.postUsecase.DeletePost(ctx, req.Msg.Id)
+	if err != nil {
+		logger.Error("DeletePost failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	logger.Info("DeletePost successful", logger.String("post_id", req.Msg.Id))
+	return connect.NewResponse(&emptypb.Empty{}), nil
+}
+
 // CreateArticle creates a new article
 func (h *Handler) CreateArticle(ctx context.Context, req *connect.Request[homev1.CreateArticleRequest]) (*connect.Response[homev1.CreateArticleResponse], error) {
 	logger.Info("received CreateArticle request", logger.String("title", req.Msg.Title), logger.Int("tag_count", len(req.Msg.Tags)))
@@ -232,10 +246,10 @@ func (h *Handler) UploadImageRequest(ctx context.Context, req *connect.Request[h
 
 	logger.Info("UploadImageRequest successful", logger.String("image_id", imageID))
 	return connect.NewResponse(&homev1.UploadImageRequestResponse{
-		UploadUrl:  uploadURL,
-		ImageId:    imageID,
-		Headers:    headers,
-		ExpiresAt:  timestamppb.New(expiresAt),
+		UploadUrl: uploadURL,
+		ImageId:   imageID,
+		Headers:   headers,
+		ExpiresAt: timestamppb.New(expiresAt),
 	}), nil
 }
 
@@ -352,31 +366,31 @@ func toProtoImage(i *domain.Image) *homev1.Image {
 
 func toProtoSettings(s *domain.Settings) *homev1.Settings {
 	return &homev1.Settings{
-		DisplayName:           s.DisplayName,
-		Bio:                 s.Bio,
-		AvatarUrl:           s.AvatarURL,
-		TwitterUrl:          s.TwitterURL,
-		GithubUrl:           s.GitHubURL,
-		BilibiliUrl:         s.BilibiliURL,
-		CustomLinks:         s.CustomLinks,
-		BackgroundImageUrl:  s.BackgroundImageURL,
+		DisplayName:            s.DisplayName,
+		Bio:                    s.Bio,
+		AvatarUrl:              s.AvatarURL,
+		TwitterUrl:             s.TwitterURL,
+		GithubUrl:              s.GitHubURL,
+		BilibiliUrl:            s.BilibiliURL,
+		CustomLinks:            s.CustomLinks,
+		BackgroundImageUrl:     s.BackgroundImageURL,
 		SakuraParticlesEnabled: s.SakuraParticlesEnabled,
-		ThemeColor:          s.ThemeColor,
-		UpdatedAt:           timestamppb.New(s.UpdatedAt),
+		ThemeColor:             s.ThemeColor,
+		UpdatedAt:              timestamppb.New(s.UpdatedAt),
 	}
 }
 
 func fromProtoSettings(s *homev1.Settings) *domain.Settings {
 	return &domain.Settings{
-		DisplayName:         s.DisplayName,
-		Bio:                 s.Bio,
-		AvatarURL:           s.AvatarUrl,
-		TwitterURL:          s.TwitterUrl,
-		GitHubURL:           s.GithubUrl,
-		BilibiliURL:         s.BilibiliUrl,
-		CustomLinks:         s.CustomLinks,
-		BackgroundImageURL:  s.BackgroundImageUrl,
+		DisplayName:            s.DisplayName,
+		Bio:                    s.Bio,
+		AvatarURL:              s.AvatarUrl,
+		TwitterURL:             s.TwitterUrl,
+		GitHubURL:              s.GithubUrl,
+		BilibiliURL:            s.BilibiliUrl,
+		CustomLinks:            s.CustomLinks,
+		BackgroundImageURL:     s.BackgroundImageUrl,
 		SakuraParticlesEnabled: s.SakuraParticlesEnabled,
-		ThemeColor:          s.ThemeColor,
+		ThemeColor:             s.ThemeColor,
 	}
 }

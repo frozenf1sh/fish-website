@@ -405,6 +405,50 @@ func (x *ListPostsResponse) GetHasMore() bool {
 	return false
 }
 
+type DeletePostRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeletePostRequest) Reset() {
+	*x = DeletePostRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeletePostRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeletePostRequest) ProtoMessage() {}
+
+func (x *DeletePostRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeletePostRequest.ProtoReflect.Descriptor instead.
+func (*DeletePostRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DeletePostRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
 // Blog messages
 type Folder struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
@@ -418,7 +462,7 @@ type Folder struct {
 
 func (x *Folder) Reset() {
 	*x = Folder{}
-	mi := &file_home_v1_homepage_proto_msgTypes[7]
+	mi := &file_home_v1_homepage_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -430,7 +474,7 @@ func (x *Folder) String() string {
 func (*Folder) ProtoMessage() {}
 
 func (x *Folder) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[7]
+	mi := &file_home_v1_homepage_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -443,7 +487,7 @@ func (x *Folder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Folder.ProtoReflect.Descriptor instead.
 func (*Folder) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{7}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Folder) GetId() string {
@@ -489,7 +533,7 @@ type Article struct {
 
 func (x *Article) Reset() {
 	*x = Article{}
-	mi := &file_home_v1_homepage_proto_msgTypes[8]
+	mi := &file_home_v1_homepage_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -501,7 +545,7 @@ func (x *Article) String() string {
 func (*Article) ProtoMessage() {}
 
 func (x *Article) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[8]
+	mi := &file_home_v1_homepage_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -514,7 +558,7 @@ func (x *Article) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Article.ProtoReflect.Descriptor instead.
 func (*Article) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{8}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Article) GetId() string {
@@ -578,7 +622,7 @@ type CreateArticleRequest struct {
 
 func (x *CreateArticleRequest) Reset() {
 	*x = CreateArticleRequest{}
-	mi := &file_home_v1_homepage_proto_msgTypes[9]
+	mi := &file_home_v1_homepage_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -590,7 +634,7 @@ func (x *CreateArticleRequest) String() string {
 func (*CreateArticleRequest) ProtoMessage() {}
 
 func (x *CreateArticleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[9]
+	mi := &file_home_v1_homepage_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -603,7 +647,7 @@ func (x *CreateArticleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateArticleRequest.ProtoReflect.Descriptor instead.
 func (*CreateArticleRequest) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{9}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CreateArticleRequest) GetTitle() string {
@@ -643,7 +687,7 @@ type CreateArticleResponse struct {
 
 func (x *CreateArticleResponse) Reset() {
 	*x = CreateArticleResponse{}
-	mi := &file_home_v1_homepage_proto_msgTypes[10]
+	mi := &file_home_v1_homepage_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -655,7 +699,7 @@ func (x *CreateArticleResponse) String() string {
 func (*CreateArticleResponse) ProtoMessage() {}
 
 func (x *CreateArticleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[10]
+	mi := &file_home_v1_homepage_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -668,7 +712,7 @@ func (x *CreateArticleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateArticleResponse.ProtoReflect.Descriptor instead.
 func (*CreateArticleResponse) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{10}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CreateArticleResponse) GetArticle() *Article {
@@ -690,7 +734,7 @@ type ListArticlesRequest struct {
 
 func (x *ListArticlesRequest) Reset() {
 	*x = ListArticlesRequest{}
-	mi := &file_home_v1_homepage_proto_msgTypes[11]
+	mi := &file_home_v1_homepage_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -702,7 +746,7 @@ func (x *ListArticlesRequest) String() string {
 func (*ListArticlesRequest) ProtoMessage() {}
 
 func (x *ListArticlesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[11]
+	mi := &file_home_v1_homepage_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -715,7 +759,7 @@ func (x *ListArticlesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListArticlesRequest.ProtoReflect.Descriptor instead.
 func (*ListArticlesRequest) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{11}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ListArticlesRequest) GetPageSize() int32 {
@@ -758,7 +802,7 @@ type ListArticlesResponse struct {
 
 func (x *ListArticlesResponse) Reset() {
 	*x = ListArticlesResponse{}
-	mi := &file_home_v1_homepage_proto_msgTypes[12]
+	mi := &file_home_v1_homepage_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -770,7 +814,7 @@ func (x *ListArticlesResponse) String() string {
 func (*ListArticlesResponse) ProtoMessage() {}
 
 func (x *ListArticlesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[12]
+	mi := &file_home_v1_homepage_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -783,7 +827,7 @@ func (x *ListArticlesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListArticlesResponse.ProtoReflect.Descriptor instead.
 func (*ListArticlesResponse) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{12}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListArticlesResponse) GetArticles() []*Article {
@@ -823,7 +867,7 @@ type GetArticleRequest struct {
 
 func (x *GetArticleRequest) Reset() {
 	*x = GetArticleRequest{}
-	mi := &file_home_v1_homepage_proto_msgTypes[13]
+	mi := &file_home_v1_homepage_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -835,7 +879,7 @@ func (x *GetArticleRequest) String() string {
 func (*GetArticleRequest) ProtoMessage() {}
 
 func (x *GetArticleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[13]
+	mi := &file_home_v1_homepage_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -848,7 +892,7 @@ func (x *GetArticleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetArticleRequest.ProtoReflect.Descriptor instead.
 func (*GetArticleRequest) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{13}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetArticleRequest) GetArticleId() string {
@@ -867,7 +911,7 @@ type GetArticleResponse struct {
 
 func (x *GetArticleResponse) Reset() {
 	*x = GetArticleResponse{}
-	mi := &file_home_v1_homepage_proto_msgTypes[14]
+	mi := &file_home_v1_homepage_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -879,7 +923,7 @@ func (x *GetArticleResponse) String() string {
 func (*GetArticleResponse) ProtoMessage() {}
 
 func (x *GetArticleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[14]
+	mi := &file_home_v1_homepage_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +936,7 @@ func (x *GetArticleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetArticleResponse.ProtoReflect.Descriptor instead.
 func (*GetArticleResponse) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{14}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetArticleResponse) GetArticle() *Article {
@@ -916,7 +960,7 @@ type Album struct {
 
 func (x *Album) Reset() {
 	*x = Album{}
-	mi := &file_home_v1_homepage_proto_msgTypes[15]
+	mi := &file_home_v1_homepage_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -928,7 +972,7 @@ func (x *Album) String() string {
 func (*Album) ProtoMessage() {}
 
 func (x *Album) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[15]
+	mi := &file_home_v1_homepage_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -941,7 +985,7 @@ func (x *Album) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Album.ProtoReflect.Descriptor instead.
 func (*Album) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{15}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Album) GetId() string {
@@ -995,7 +1039,7 @@ type Image struct {
 
 func (x *Image) Reset() {
 	*x = Image{}
-	mi := &file_home_v1_homepage_proto_msgTypes[16]
+	mi := &file_home_v1_homepage_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1007,7 +1051,7 @@ func (x *Image) String() string {
 func (*Image) ProtoMessage() {}
 
 func (x *Image) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[16]
+	mi := &file_home_v1_homepage_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1020,7 +1064,7 @@ func (x *Image) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Image.ProtoReflect.Descriptor instead.
 func (*Image) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{16}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *Image) GetId() string {
@@ -1090,7 +1134,7 @@ type CreateAlbumRequest struct {
 
 func (x *CreateAlbumRequest) Reset() {
 	*x = CreateAlbumRequest{}
-	mi := &file_home_v1_homepage_proto_msgTypes[17]
+	mi := &file_home_v1_homepage_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1102,7 +1146,7 @@ func (x *CreateAlbumRequest) String() string {
 func (*CreateAlbumRequest) ProtoMessage() {}
 
 func (x *CreateAlbumRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[17]
+	mi := &file_home_v1_homepage_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1115,7 +1159,7 @@ func (x *CreateAlbumRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAlbumRequest.ProtoReflect.Descriptor instead.
 func (*CreateAlbumRequest) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{17}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CreateAlbumRequest) GetName() string {
@@ -1148,7 +1192,7 @@ type CreateAlbumResponse struct {
 
 func (x *CreateAlbumResponse) Reset() {
 	*x = CreateAlbumResponse{}
-	mi := &file_home_v1_homepage_proto_msgTypes[18]
+	mi := &file_home_v1_homepage_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1160,7 +1204,7 @@ func (x *CreateAlbumResponse) String() string {
 func (*CreateAlbumResponse) ProtoMessage() {}
 
 func (x *CreateAlbumResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[18]
+	mi := &file_home_v1_homepage_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1173,7 +1217,7 @@ func (x *CreateAlbumResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAlbumResponse.ProtoReflect.Descriptor instead.
 func (*CreateAlbumResponse) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{18}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *CreateAlbumResponse) GetAlbum() *Album {
@@ -1195,7 +1239,7 @@ type UploadImageRequestRequest struct {
 
 func (x *UploadImageRequestRequest) Reset() {
 	*x = UploadImageRequestRequest{}
-	mi := &file_home_v1_homepage_proto_msgTypes[19]
+	mi := &file_home_v1_homepage_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1207,7 +1251,7 @@ func (x *UploadImageRequestRequest) String() string {
 func (*UploadImageRequestRequest) ProtoMessage() {}
 
 func (x *UploadImageRequestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[19]
+	mi := &file_home_v1_homepage_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1220,7 +1264,7 @@ func (x *UploadImageRequestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadImageRequestRequest.ProtoReflect.Descriptor instead.
 func (*UploadImageRequestRequest) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{19}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *UploadImageRequestRequest) GetAlbumId() string {
@@ -1263,7 +1307,7 @@ type UploadImageRequestResponse struct {
 
 func (x *UploadImageRequestResponse) Reset() {
 	*x = UploadImageRequestResponse{}
-	mi := &file_home_v1_homepage_proto_msgTypes[20]
+	mi := &file_home_v1_homepage_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1275,7 +1319,7 @@ func (x *UploadImageRequestResponse) String() string {
 func (*UploadImageRequestResponse) ProtoMessage() {}
 
 func (x *UploadImageRequestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[20]
+	mi := &file_home_v1_homepage_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1288,7 +1332,7 @@ func (x *UploadImageRequestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadImageRequestResponse.ProtoReflect.Descriptor instead.
 func (*UploadImageRequestResponse) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{20}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *UploadImageRequestResponse) GetUploadUrl() string {
@@ -1329,7 +1373,7 @@ type ConfirmImageUploadRequest struct {
 
 func (x *ConfirmImageUploadRequest) Reset() {
 	*x = ConfirmImageUploadRequest{}
-	mi := &file_home_v1_homepage_proto_msgTypes[21]
+	mi := &file_home_v1_homepage_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1341,7 +1385,7 @@ func (x *ConfirmImageUploadRequest) String() string {
 func (*ConfirmImageUploadRequest) ProtoMessage() {}
 
 func (x *ConfirmImageUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[21]
+	mi := &file_home_v1_homepage_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1354,7 +1398,7 @@ func (x *ConfirmImageUploadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmImageUploadRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmImageUploadRequest) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{21}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ConfirmImageUploadRequest) GetImageId() string {
@@ -1380,7 +1424,7 @@ type ConfirmImageUploadResponse struct {
 
 func (x *ConfirmImageUploadResponse) Reset() {
 	*x = ConfirmImageUploadResponse{}
-	mi := &file_home_v1_homepage_proto_msgTypes[22]
+	mi := &file_home_v1_homepage_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1392,7 +1436,7 @@ func (x *ConfirmImageUploadResponse) String() string {
 func (*ConfirmImageUploadResponse) ProtoMessage() {}
 
 func (x *ConfirmImageUploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[22]
+	mi := &file_home_v1_homepage_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1405,7 +1449,7 @@ func (x *ConfirmImageUploadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmImageUploadResponse.ProtoReflect.Descriptor instead.
 func (*ConfirmImageUploadResponse) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{22}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ConfirmImageUploadResponse) GetImage() *Image {
@@ -1438,7 +1482,7 @@ type Settings struct {
 
 func (x *Settings) Reset() {
 	*x = Settings{}
-	mi := &file_home_v1_homepage_proto_msgTypes[23]
+	mi := &file_home_v1_homepage_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1450,7 +1494,7 @@ func (x *Settings) String() string {
 func (*Settings) ProtoMessage() {}
 
 func (x *Settings) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[23]
+	mi := &file_home_v1_homepage_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1463,7 +1507,7 @@ func (x *Settings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Settings.ProtoReflect.Descriptor instead.
 func (*Settings) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{23}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Settings) GetDisplayName() string {
@@ -1552,7 +1596,7 @@ type GetSettingsResponse struct {
 
 func (x *GetSettingsResponse) Reset() {
 	*x = GetSettingsResponse{}
-	mi := &file_home_v1_homepage_proto_msgTypes[24]
+	mi := &file_home_v1_homepage_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1564,7 +1608,7 @@ func (x *GetSettingsResponse) String() string {
 func (*GetSettingsResponse) ProtoMessage() {}
 
 func (x *GetSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[24]
+	mi := &file_home_v1_homepage_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1577,7 +1621,7 @@ func (x *GetSettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSettingsResponse.ProtoReflect.Descriptor instead.
 func (*GetSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{24}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetSettingsResponse) GetSettings() *Settings {
@@ -1598,7 +1642,7 @@ type UpdateSettingsRequest struct {
 
 func (x *UpdateSettingsRequest) Reset() {
 	*x = UpdateSettingsRequest{}
-	mi := &file_home_v1_homepage_proto_msgTypes[25]
+	mi := &file_home_v1_homepage_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1610,7 +1654,7 @@ func (x *UpdateSettingsRequest) String() string {
 func (*UpdateSettingsRequest) ProtoMessage() {}
 
 func (x *UpdateSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[25]
+	mi := &file_home_v1_homepage_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1623,7 +1667,7 @@ func (x *UpdateSettingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSettingsRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{25}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *UpdateSettingsRequest) GetSettings() *Settings {
@@ -1649,7 +1693,7 @@ type UpdateSettingsResponse struct {
 
 func (x *UpdateSettingsResponse) Reset() {
 	*x = UpdateSettingsResponse{}
-	mi := &file_home_v1_homepage_proto_msgTypes[26]
+	mi := &file_home_v1_homepage_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1661,7 +1705,7 @@ func (x *UpdateSettingsResponse) String() string {
 func (*UpdateSettingsResponse) ProtoMessage() {}
 
 func (x *UpdateSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_home_v1_homepage_proto_msgTypes[26]
+	mi := &file_home_v1_homepage_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1674,7 +1718,7 @@ func (x *UpdateSettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSettingsResponse.ProtoReflect.Descriptor instead.
 func (*UpdateSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_home_v1_homepage_proto_rawDescGZIP(), []int{26}
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *UpdateSettingsResponse) GetSettings() *Settings {
@@ -1715,7 +1759,9 @@ const file_home_v1_homepage_proto_rawDesc = "" +
 	"\x11ListPostsResponse\x12#\n" +
 	"\x05posts\x18\x01 \x03(\v2\r.home.v1.PostR\x05posts\x12&\n" +
 	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12\x19\n" +
-	"\bhas_more\x18\x03 \x01(\bR\ahasMore\"\x83\x01\n" +
+	"\bhas_more\x18\x03 \x01(\bR\ahasMore\"#\n" +
+	"\x11DeletePostRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x83\x01\n" +
 	"\x06Folder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12(\n" +
@@ -1825,11 +1871,13 @@ const file_home_v1_homepage_proto_rawDesc = "" +
 	"\x16UpdateSettingsResponse\x12-\n" +
 	"\bsettings\x18\x01 \x01(\v2\x11.home.v1.SettingsR\bsettings2E\n" +
 	"\vAuthService\x126\n" +
-	"\x05Login\x12\x15.home.v1.LoginRequest\x1a\x16.home.v1.LoginResponse2\x98\x01\n" +
+	"\x05Login\x12\x15.home.v1.LoginRequest\x1a\x16.home.v1.LoginResponse2\xda\x01\n" +
 	"\vPostService\x12E\n" +
 	"\n" +
 	"CreatePost\x12\x1a.home.v1.CreatePostRequest\x1a\x1b.home.v1.CreatePostResponse\x12B\n" +
-	"\tListPosts\x12\x19.home.v1.ListPostsRequest\x1a\x1a.home.v1.ListPostsResponse2\xf1\x01\n" +
+	"\tListPosts\x12\x19.home.v1.ListPostsRequest\x1a\x1a.home.v1.ListPostsResponse\x12@\n" +
+	"\n" +
+	"DeletePost\x12\x1a.home.v1.DeletePostRequest\x1a\x16.google.protobuf.Empty2\xf1\x01\n" +
 	"\vBlogService\x12N\n" +
 	"\rCreateArticle\x12\x1d.home.v1.CreateArticleRequest\x1a\x1e.home.v1.CreateArticleResponse\x12K\n" +
 	"\fListArticles\x12\x1c.home.v1.ListArticlesRequest\x1a\x1d.home.v1.ListArticlesResponse\x12E\n" +
@@ -1855,7 +1903,7 @@ func file_home_v1_homepage_proto_rawDescGZIP() []byte {
 	return file_home_v1_homepage_proto_rawDescData
 }
 
-var file_home_v1_homepage_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_home_v1_homepage_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_home_v1_homepage_proto_goTypes = []any{
 	(*LoginRequest)(nil),               // 0: home.v1.LoginRequest
 	(*LoginResponse)(nil),              // 1: home.v1.LoginResponse
@@ -1864,76 +1912,79 @@ var file_home_v1_homepage_proto_goTypes = []any{
 	(*CreatePostResponse)(nil),         // 4: home.v1.CreatePostResponse
 	(*ListPostsRequest)(nil),           // 5: home.v1.ListPostsRequest
 	(*ListPostsResponse)(nil),          // 6: home.v1.ListPostsResponse
-	(*Folder)(nil),                     // 7: home.v1.Folder
-	(*Article)(nil),                    // 8: home.v1.Article
-	(*CreateArticleRequest)(nil),       // 9: home.v1.CreateArticleRequest
-	(*CreateArticleResponse)(nil),      // 10: home.v1.CreateArticleResponse
-	(*ListArticlesRequest)(nil),        // 11: home.v1.ListArticlesRequest
-	(*ListArticlesResponse)(nil),       // 12: home.v1.ListArticlesResponse
-	(*GetArticleRequest)(nil),          // 13: home.v1.GetArticleRequest
-	(*GetArticleResponse)(nil),         // 14: home.v1.GetArticleResponse
-	(*Album)(nil),                      // 15: home.v1.Album
-	(*Image)(nil),                      // 16: home.v1.Image
-	(*CreateAlbumRequest)(nil),         // 17: home.v1.CreateAlbumRequest
-	(*CreateAlbumResponse)(nil),        // 18: home.v1.CreateAlbumResponse
-	(*UploadImageRequestRequest)(nil),  // 19: home.v1.UploadImageRequestRequest
-	(*UploadImageRequestResponse)(nil), // 20: home.v1.UploadImageRequestResponse
-	(*ConfirmImageUploadRequest)(nil),  // 21: home.v1.ConfirmImageUploadRequest
-	(*ConfirmImageUploadResponse)(nil), // 22: home.v1.ConfirmImageUploadResponse
-	(*Settings)(nil),                   // 23: home.v1.Settings
-	(*GetSettingsResponse)(nil),        // 24: home.v1.GetSettingsResponse
-	(*UpdateSettingsRequest)(nil),      // 25: home.v1.UpdateSettingsRequest
-	(*UpdateSettingsResponse)(nil),     // 26: home.v1.UpdateSettingsResponse
-	nil,                                // 27: home.v1.UploadImageRequestResponse.HeadersEntry
-	(*timestamppb.Timestamp)(nil),      // 28: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),              // 29: google.protobuf.Empty
+	(*DeletePostRequest)(nil),          // 7: home.v1.DeletePostRequest
+	(*Folder)(nil),                     // 8: home.v1.Folder
+	(*Article)(nil),                    // 9: home.v1.Article
+	(*CreateArticleRequest)(nil),       // 10: home.v1.CreateArticleRequest
+	(*CreateArticleResponse)(nil),      // 11: home.v1.CreateArticleResponse
+	(*ListArticlesRequest)(nil),        // 12: home.v1.ListArticlesRequest
+	(*ListArticlesResponse)(nil),       // 13: home.v1.ListArticlesResponse
+	(*GetArticleRequest)(nil),          // 14: home.v1.GetArticleRequest
+	(*GetArticleResponse)(nil),         // 15: home.v1.GetArticleResponse
+	(*Album)(nil),                      // 16: home.v1.Album
+	(*Image)(nil),                      // 17: home.v1.Image
+	(*CreateAlbumRequest)(nil),         // 18: home.v1.CreateAlbumRequest
+	(*CreateAlbumResponse)(nil),        // 19: home.v1.CreateAlbumResponse
+	(*UploadImageRequestRequest)(nil),  // 20: home.v1.UploadImageRequestRequest
+	(*UploadImageRequestResponse)(nil), // 21: home.v1.UploadImageRequestResponse
+	(*ConfirmImageUploadRequest)(nil),  // 22: home.v1.ConfirmImageUploadRequest
+	(*ConfirmImageUploadResponse)(nil), // 23: home.v1.ConfirmImageUploadResponse
+	(*Settings)(nil),                   // 24: home.v1.Settings
+	(*GetSettingsResponse)(nil),        // 25: home.v1.GetSettingsResponse
+	(*UpdateSettingsRequest)(nil),      // 26: home.v1.UpdateSettingsRequest
+	(*UpdateSettingsResponse)(nil),     // 27: home.v1.UpdateSettingsResponse
+	nil,                                // 28: home.v1.UploadImageRequestResponse.HeadersEntry
+	(*timestamppb.Timestamp)(nil),      // 29: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),              // 30: google.protobuf.Empty
 }
 var file_home_v1_homepage_proto_depIdxs = []int32{
-	28, // 0: home.v1.LoginResponse.expires_at:type_name -> google.protobuf.Timestamp
-	28, // 1: home.v1.Post.created_at:type_name -> google.protobuf.Timestamp
+	29, // 0: home.v1.LoginResponse.expires_at:type_name -> google.protobuf.Timestamp
+	29, // 1: home.v1.Post.created_at:type_name -> google.protobuf.Timestamp
 	2,  // 2: home.v1.CreatePostResponse.post:type_name -> home.v1.Post
 	2,  // 3: home.v1.ListPostsResponse.posts:type_name -> home.v1.Post
-	7,  // 4: home.v1.Folder.children:type_name -> home.v1.Folder
-	28, // 5: home.v1.Article.created_at:type_name -> google.protobuf.Timestamp
-	28, // 6: home.v1.Article.updated_at:type_name -> google.protobuf.Timestamp
-	8,  // 7: home.v1.CreateArticleResponse.article:type_name -> home.v1.Article
-	8,  // 8: home.v1.ListArticlesResponse.articles:type_name -> home.v1.Article
-	7,  // 9: home.v1.ListArticlesResponse.folders:type_name -> home.v1.Folder
-	8,  // 10: home.v1.GetArticleResponse.article:type_name -> home.v1.Article
-	28, // 11: home.v1.Album.created_at:type_name -> google.protobuf.Timestamp
-	28, // 12: home.v1.Image.created_at:type_name -> google.protobuf.Timestamp
-	15, // 13: home.v1.CreateAlbumResponse.album:type_name -> home.v1.Album
-	27, // 14: home.v1.UploadImageRequestResponse.headers:type_name -> home.v1.UploadImageRequestResponse.HeadersEntry
-	28, // 15: home.v1.UploadImageRequestResponse.expires_at:type_name -> google.protobuf.Timestamp
-	16, // 16: home.v1.ConfirmImageUploadResponse.image:type_name -> home.v1.Image
-	28, // 17: home.v1.Settings.updated_at:type_name -> google.protobuf.Timestamp
-	23, // 18: home.v1.GetSettingsResponse.settings:type_name -> home.v1.Settings
-	23, // 19: home.v1.UpdateSettingsRequest.settings:type_name -> home.v1.Settings
-	23, // 20: home.v1.UpdateSettingsResponse.settings:type_name -> home.v1.Settings
+	8,  // 4: home.v1.Folder.children:type_name -> home.v1.Folder
+	29, // 5: home.v1.Article.created_at:type_name -> google.protobuf.Timestamp
+	29, // 6: home.v1.Article.updated_at:type_name -> google.protobuf.Timestamp
+	9,  // 7: home.v1.CreateArticleResponse.article:type_name -> home.v1.Article
+	9,  // 8: home.v1.ListArticlesResponse.articles:type_name -> home.v1.Article
+	8,  // 9: home.v1.ListArticlesResponse.folders:type_name -> home.v1.Folder
+	9,  // 10: home.v1.GetArticleResponse.article:type_name -> home.v1.Article
+	29, // 11: home.v1.Album.created_at:type_name -> google.protobuf.Timestamp
+	29, // 12: home.v1.Image.created_at:type_name -> google.protobuf.Timestamp
+	16, // 13: home.v1.CreateAlbumResponse.album:type_name -> home.v1.Album
+	28, // 14: home.v1.UploadImageRequestResponse.headers:type_name -> home.v1.UploadImageRequestResponse.HeadersEntry
+	29, // 15: home.v1.UploadImageRequestResponse.expires_at:type_name -> google.protobuf.Timestamp
+	17, // 16: home.v1.ConfirmImageUploadResponse.image:type_name -> home.v1.Image
+	29, // 17: home.v1.Settings.updated_at:type_name -> google.protobuf.Timestamp
+	24, // 18: home.v1.GetSettingsResponse.settings:type_name -> home.v1.Settings
+	24, // 19: home.v1.UpdateSettingsRequest.settings:type_name -> home.v1.Settings
+	24, // 20: home.v1.UpdateSettingsResponse.settings:type_name -> home.v1.Settings
 	0,  // 21: home.v1.AuthService.Login:input_type -> home.v1.LoginRequest
 	3,  // 22: home.v1.PostService.CreatePost:input_type -> home.v1.CreatePostRequest
 	5,  // 23: home.v1.PostService.ListPosts:input_type -> home.v1.ListPostsRequest
-	9,  // 24: home.v1.BlogService.CreateArticle:input_type -> home.v1.CreateArticleRequest
-	11, // 25: home.v1.BlogService.ListArticles:input_type -> home.v1.ListArticlesRequest
-	13, // 26: home.v1.BlogService.GetArticle:input_type -> home.v1.GetArticleRequest
-	17, // 27: home.v1.AlbumService.CreateAlbum:input_type -> home.v1.CreateAlbumRequest
-	19, // 28: home.v1.AlbumService.UploadImageRequest:input_type -> home.v1.UploadImageRequestRequest
-	21, // 29: home.v1.AlbumService.ConfirmImageUpload:input_type -> home.v1.ConfirmImageUploadRequest
-	29, // 30: home.v1.SettingsService.GetSettings:input_type -> google.protobuf.Empty
-	25, // 31: home.v1.SettingsService.UpdateSettings:input_type -> home.v1.UpdateSettingsRequest
-	1,  // 32: home.v1.AuthService.Login:output_type -> home.v1.LoginResponse
-	4,  // 33: home.v1.PostService.CreatePost:output_type -> home.v1.CreatePostResponse
-	6,  // 34: home.v1.PostService.ListPosts:output_type -> home.v1.ListPostsResponse
-	10, // 35: home.v1.BlogService.CreateArticle:output_type -> home.v1.CreateArticleResponse
-	12, // 36: home.v1.BlogService.ListArticles:output_type -> home.v1.ListArticlesResponse
-	14, // 37: home.v1.BlogService.GetArticle:output_type -> home.v1.GetArticleResponse
-	18, // 38: home.v1.AlbumService.CreateAlbum:output_type -> home.v1.CreateAlbumResponse
-	20, // 39: home.v1.AlbumService.UploadImageRequest:output_type -> home.v1.UploadImageRequestResponse
-	22, // 40: home.v1.AlbumService.ConfirmImageUpload:output_type -> home.v1.ConfirmImageUploadResponse
-	24, // 41: home.v1.SettingsService.GetSettings:output_type -> home.v1.GetSettingsResponse
-	26, // 42: home.v1.SettingsService.UpdateSettings:output_type -> home.v1.UpdateSettingsResponse
-	32, // [32:43] is the sub-list for method output_type
-	21, // [21:32] is the sub-list for method input_type
+	7,  // 24: home.v1.PostService.DeletePost:input_type -> home.v1.DeletePostRequest
+	10, // 25: home.v1.BlogService.CreateArticle:input_type -> home.v1.CreateArticleRequest
+	12, // 26: home.v1.BlogService.ListArticles:input_type -> home.v1.ListArticlesRequest
+	14, // 27: home.v1.BlogService.GetArticle:input_type -> home.v1.GetArticleRequest
+	18, // 28: home.v1.AlbumService.CreateAlbum:input_type -> home.v1.CreateAlbumRequest
+	20, // 29: home.v1.AlbumService.UploadImageRequest:input_type -> home.v1.UploadImageRequestRequest
+	22, // 30: home.v1.AlbumService.ConfirmImageUpload:input_type -> home.v1.ConfirmImageUploadRequest
+	30, // 31: home.v1.SettingsService.GetSettings:input_type -> google.protobuf.Empty
+	26, // 32: home.v1.SettingsService.UpdateSettings:input_type -> home.v1.UpdateSettingsRequest
+	1,  // 33: home.v1.AuthService.Login:output_type -> home.v1.LoginResponse
+	4,  // 34: home.v1.PostService.CreatePost:output_type -> home.v1.CreatePostResponse
+	6,  // 35: home.v1.PostService.ListPosts:output_type -> home.v1.ListPostsResponse
+	30, // 36: home.v1.PostService.DeletePost:output_type -> google.protobuf.Empty
+	11, // 37: home.v1.BlogService.CreateArticle:output_type -> home.v1.CreateArticleResponse
+	13, // 38: home.v1.BlogService.ListArticles:output_type -> home.v1.ListArticlesResponse
+	15, // 39: home.v1.BlogService.GetArticle:output_type -> home.v1.GetArticleResponse
+	19, // 40: home.v1.AlbumService.CreateAlbum:output_type -> home.v1.CreateAlbumResponse
+	21, // 41: home.v1.AlbumService.UploadImageRequest:output_type -> home.v1.UploadImageRequestResponse
+	23, // 42: home.v1.AlbumService.ConfirmImageUpload:output_type -> home.v1.ConfirmImageUploadResponse
+	25, // 43: home.v1.SettingsService.GetSettings:output_type -> home.v1.GetSettingsResponse
+	27, // 44: home.v1.SettingsService.UpdateSettings:output_type -> home.v1.UpdateSettingsResponse
+	33, // [33:45] is the sub-list for method output_type
+	21, // [21:33] is the sub-list for method input_type
 	21, // [21:21] is the sub-list for extension type_name
 	21, // [21:21] is the sub-list for extension extendee
 	0,  // [0:21] is the sub-list for field type_name
@@ -1950,7 +2001,7 @@ func file_home_v1_homepage_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_home_v1_homepage_proto_rawDesc), len(file_home_v1_homepage_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   28,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   5,
 		},

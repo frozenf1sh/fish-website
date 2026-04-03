@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreatePostRequest, CreatePostResponse, GetArticleRequest, GetArticleResponse, GetSettingsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreatePostRequest, CreatePostResponse, DeletePostRequest, GetArticleRequest, GetArticleResponse, GetSettingsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -56,6 +56,17 @@ export const PostService = {
       name: "ListPosts",
       I: ListPostsRequest,
       O: ListPostsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * DeletePost deletes a post by ID
+     *
+     * @generated from rpc home.v1.PostService.DeletePost
+     */
+    deletePost: {
+      name: "DeletePost",
+      I: DeletePostRequest,
+      O: Empty,
       kind: MethodKind.Unary,
     },
   }

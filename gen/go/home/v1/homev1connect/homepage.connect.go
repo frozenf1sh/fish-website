@@ -48,6 +48,8 @@ const (
 	PostServiceCreatePostProcedure = "/home.v1.PostService/CreatePost"
 	// PostServiceListPostsProcedure is the fully-qualified name of the PostService's ListPosts RPC.
 	PostServiceListPostsProcedure = "/home.v1.PostService/ListPosts"
+	// PostServiceDeletePostProcedure is the fully-qualified name of the PostService's DeletePost RPC.
+	PostServiceDeletePostProcedure = "/home.v1.PostService/DeletePost"
 	// BlogServiceCreateArticleProcedure is the fully-qualified name of the BlogService's CreateArticle
 	// RPC.
 	BlogServiceCreateArticleProcedure = "/home.v1.BlogService/CreateArticle"
@@ -151,6 +153,8 @@ type PostServiceClient interface {
 	CreatePost(context.Context, *connect.Request[v1.CreatePostRequest]) (*connect.Response[v1.CreatePostResponse], error)
 	// ListPosts returns paginated timeline posts
 	ListPosts(context.Context, *connect.Request[v1.ListPostsRequest]) (*connect.Response[v1.ListPostsResponse], error)
+	// DeletePost deletes a post by ID
+	DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewPostServiceClient constructs a client for the home.v1.PostService service. By default, it uses
@@ -176,6 +180,12 @@ func NewPostServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(postServiceMethods.ByName("ListPosts")),
 			connect.WithClientOptions(opts...),
 		),
+		deletePost: connect.NewClient[v1.DeletePostRequest, emptypb.Empty](
+			httpClient,
+			baseURL+PostServiceDeletePostProcedure,
+			connect.WithSchema(postServiceMethods.ByName("DeletePost")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -183,6 +193,7 @@ func NewPostServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 type postServiceClient struct {
 	createPost *connect.Client[v1.CreatePostRequest, v1.CreatePostResponse]
 	listPosts  *connect.Client[v1.ListPostsRequest, v1.ListPostsResponse]
+	deletePost *connect.Client[v1.DeletePostRequest, emptypb.Empty]
 }
 
 // CreatePost calls home.v1.PostService.CreatePost.
@@ -195,12 +206,19 @@ func (c *postServiceClient) ListPosts(ctx context.Context, req *connect.Request[
 	return c.listPosts.CallUnary(ctx, req)
 }
 
+// DeletePost calls home.v1.PostService.DeletePost.
+func (c *postServiceClient) DeletePost(ctx context.Context, req *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.deletePost.CallUnary(ctx, req)
+}
+
 // PostServiceHandler is an implementation of the home.v1.PostService service.
 type PostServiceHandler interface {
 	// CreatePost creates a new post with optional images
 	CreatePost(context.Context, *connect.Request[v1.CreatePostRequest]) (*connect.Response[v1.CreatePostResponse], error)
 	// ListPosts returns paginated timeline posts
 	ListPosts(context.Context, *connect.Request[v1.ListPostsRequest]) (*connect.Response[v1.ListPostsResponse], error)
+	// DeletePost deletes a post by ID
+	DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewPostServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -222,12 +240,20 @@ func NewPostServiceHandler(svc PostServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(postServiceMethods.ByName("ListPosts")),
 		connect.WithHandlerOptions(opts...),
 	)
+	postServiceDeletePostHandler := connect.NewUnaryHandler(
+		PostServiceDeletePostProcedure,
+		svc.DeletePost,
+		connect.WithSchema(postServiceMethods.ByName("DeletePost")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/home.v1.PostService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PostServiceCreatePostProcedure:
 			postServiceCreatePostHandler.ServeHTTP(w, r)
 		case PostServiceListPostsProcedure:
 			postServiceListPostsHandler.ServeHTTP(w, r)
+		case PostServiceDeletePostProcedure:
+			postServiceDeletePostHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -243,6 +269,10 @@ func (UnimplementedPostServiceHandler) CreatePost(context.Context, *connect.Requ
 
 func (UnimplementedPostServiceHandler) ListPosts(context.Context, *connect.Request[v1.ListPostsRequest]) (*connect.Response[v1.ListPostsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.PostService.ListPosts is not implemented"))
+}
+
+func (UnimplementedPostServiceHandler) DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.PostService.DeletePost is not implemented"))
 }
 
 // BlogServiceClient is a client for the home.v1.BlogService service.

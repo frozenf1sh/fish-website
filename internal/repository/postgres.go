@@ -104,6 +104,14 @@ func (r *postgresPostRepository) List(ctx context.Context, pageSize int, pageTok
 	return posts, nextPageToken, hasMore, nil
 }
 
+func (r *postgresPostRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.pool.Exec(ctx, "DELETE FROM posts WHERE id = $1", id)
+	if err != nil {
+		return fmt.Errorf("delete post: %w", err)
+	}
+	return nil
+}
+
 // postgresBlogRepository implements BlogRepository
 type postgresBlogRepository PostgresRepository
 

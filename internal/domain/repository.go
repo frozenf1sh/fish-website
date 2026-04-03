@@ -9,6 +9,7 @@ import (
 type PostRepository interface {
 	Create(ctx context.Context, post *Post) (*Post, error)
 	List(ctx context.Context, pageSize int, pageToken string) ([]*Post, string, bool, error)
+	Delete(ctx context.Context, id string) error
 }
 
 // BlogRepository defines the interface for blog data access

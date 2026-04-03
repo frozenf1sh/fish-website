@@ -19,6 +19,8 @@ service PostService {
   rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
   // ListPosts returns paginated timeline posts
   rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
+  // DeletePost deletes a post by ID
+  rpc DeletePost(DeletePostRequest) returns (google.protobuf.Empty);
 }
 
 // BlogService handles blog articles with folder organization
@@ -86,6 +88,10 @@ message ListPostsResponse {
   repeated Post posts = 1;
   string next_page_token = 2;
   bool has_more = 3;
+}
+
+message DeletePostRequest {
+  string id = 1;
 }
 
 // Blog messages
