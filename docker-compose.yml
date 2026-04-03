@@ -6,8 +6,6 @@ services:
       POSTGRES_USER: fish
       POSTGRES_PASSWORD: fish123456
       POSTGRES_DB: fish_website
-    ports:
-      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -15,6 +13,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - fish-network
 
   minio:
     image: minio/minio:RELEASE.2025-03-12T18-04-18Z
@@ -24,11 +24,49 @@ services:
       MINIO_ROOT_USER: fishminio
       MINIO_ROOT_PASSWORD: fishminio123456
     ports:
-      - "9000:9000"
       - "9001:9001"
     volumes:
       - minio-data:/data
+    networks:
+      - fish-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fish-website-backend
+    env_file:
+      - .env
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - fish-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fish-website-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - fish-network
 
 volumes:
   postgres-data:
   minio-data:
+
+networks:
+  fish-network:
+    driver: bridge

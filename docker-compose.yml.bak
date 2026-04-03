@@ -29,35 +29,6 @@ services:
     volumes:
       - minio-data:/data
 
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: fish-website-backend
-    env_file:
-      - .env
-    volumes:
-      - ./config.yaml:/app/config.yaml:ro
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_started
-    restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: fish-website-frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
-
 volumes:
   postgres-data:
   minio-data:
