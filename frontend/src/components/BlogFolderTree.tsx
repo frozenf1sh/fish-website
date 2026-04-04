@@ -21,6 +21,13 @@ interface ApiFolder {
   children?: ApiFolder[]
 }
 
+interface ListArticlesResponse {
+  articles?: ApiArticle[]
+  folders?: ApiFolder[]
+  nextPageToken?: string
+  hasMore?: boolean
+}
+
 interface FolderItemProps {
   folder: Folder
   level: number
@@ -108,13 +115,32 @@ export function BlogFolderTree() {
 
   useEffect(() => {
     const loadFolders = async () => {
+      setIsLoading(true)
       try {
-        const response = await clients.blog.listArticles({ pageSize: 200 })
         const articleCounts = new Map<string, number>()
+        let allFolders: ApiFolder[] = []
+        let pageToken = ''
+        let hasMore = true
+        let guard = 0
 
-        for (const article of (response.articles || []) as ApiArticle[]) {
-          if (!article.folderId) continue
-          articleCounts.set(article.folderId, (articleCounts.get(article.folderId) || 0) + 1)
+        while (hasMore && guard < 50) {
+          const response = (await clients.blog.listArticles({
+            pageSize: 100,
+            pageToken,
+          })) as ListArticlesResponse
+
+          if (allFolders.length === 0) {
+            allFolders = response.folders || []
+          }
+
+          for (const article of response.articles || []) {
+            if (!article.folderId) continue
+            articleCounts.set(article.folderId, (articleCounts.get(article.folderId) || 0) + 1)
+          }
+
+          hasMore = !!response.hasMore
+          pageToken = response.nextPageToken || ''
+          guard += 1
         }
 
         const toViewFolder = (folder: ApiFolder): Folder => ({
@@ -125,7 +151,7 @@ export function BlogFolderTree() {
           children: (folder.children || []).map((child) => toViewFolder(child)),
         })
 
-        setFolders(((response.folders || []) as ApiFolder[]).map((folder) => toViewFolder(folder)))
+        setFolders(allFolders.map((folder) => toViewFolder(folder)))
       } catch (error) {
         console.error('Failed to load folders:', error)
         setFolders([])
@@ -135,6 +161,15 @@ export function BlogFolderTree() {
     }
 
     loadFolders()
+
+    const handleBlogUpdated = () => {
+      loadFolders()
+    }
+
+    window.addEventListener('blog:updated', handleBlogUpdated)
+    return () => {
+      window.removeEventListener('blog:updated', handleBlogUpdated)
+    }
   }, [])
 
   const totalArticles = folders.reduce((sum, folder) => {
