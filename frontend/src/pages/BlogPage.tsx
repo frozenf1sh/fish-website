@@ -16,6 +16,13 @@ interface BlogArticle {
   updatedAt?: { toDate?: () => Date }
 }
 
+interface BlogFolder {
+  id: string
+  name: string
+  parentFolderId?: string
+  children?: BlogFolder[]
+}
+
 const formatDate = (d?: { toDate?: () => Date }) => {
   if (!d?.toDate) return '刚刚'
   return d.toDate().toLocaleString('zh-CN', {
@@ -35,7 +42,11 @@ export function BlogPage() {
   const composeOpen = searchParams.get('compose') === '1'
 
   const [articles, setArticles] = useState<BlogArticle[]>([])
+  const [folders, setFolders] = useState<BlogFolder[]>([])
+  const [nextPageToken, setNextPageToken] = useState('')
+  const [hasMore, setHasMore] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedArticle, setSelectedArticle] = useState<BlogArticle | null>(null)
 
@@ -45,27 +56,55 @@ export function BlogPage() {
   const [folderInput, setFolderInput] = useState('')
   const [isPublishing, setIsPublishing] = useState(false)
 
-  const loadArticles = async () => {
-    setIsLoading(true)
-    setError(null)
+  const flattenFolders = (nodes: BlogFolder[]): BlogFolder[] =>
+    nodes.flatMap((node) => [node, ...flattenFolders(node.children || [])])
+
+  const flatFolders = useMemo(() => flattenFolders(folders), [folders])
+
+  const loadArticles = async (options?: { reset?: boolean; pageToken?: string }) => {
+    const reset = options?.reset ?? false
+    const requestPageToken = options?.pageToken ?? ''
+
+    if (reset) {
+      setIsLoading(true)
+      setError(null)
+    } else {
+      setIsLoadingMore(true)
+    }
+
     try {
       const response = await clients.blog.listArticles({
-        pageSize: 50,
+        pageSize: 20,
+        pageToken: requestPageToken,
         folderId,
         tag: selectedTag,
       })
-      setArticles(response.articles || [])
+
+      const newArticles = (response.articles || []) as BlogArticle[]
+      setArticles((prev) => (reset ? newArticles : [...prev, ...newArticles]))
+      setFolders((response.folders || []) as BlogFolder[])
+      setNextPageToken(response.nextPageToken || '')
+      setHasMore(!!response.hasMore)
+      setError(null)
     } catch (err) {
       console.error('Failed to load blog articles:', err)
       setError('加载博客失败，请稍后重试')
-      setArticles([])
+      if (reset) {
+        setArticles([])
+        setNextPageToken('')
+        setHasMore(false)
+      }
     } finally {
-      setIsLoading(false)
+      if (reset) {
+        setIsLoading(false)
+      } else {
+        setIsLoadingMore(false)
+      }
     }
   }
 
   useEffect(() => {
-    loadArticles()
+    loadArticles({ reset: true, pageToken: '' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [folderId, selectedTag])
 
@@ -105,10 +144,11 @@ export function BlogPage() {
       })
 
       resetComposer()
+      window.dispatchEvent(new Event('blog:updated'))
       const next = new URLSearchParams(searchParams)
       next.delete('compose')
       setSearchParams(next)
-      await loadArticles()
+      await loadArticles({ reset: true, pageToken: '' })
     } catch (err) {
       console.error('Failed to create article:', err)
       alert('发布文章失败，请稍后重试')
@@ -127,6 +167,11 @@ export function BlogPage() {
     }
   }
 
+  const selectedFolderName = useMemo(() => {
+    if (!folderId) return '全部文件夹'
+    return flatFolders.find((folder) => folder.id === folderId)?.name || '未知文件夹'
+  }, [flatFolders, folderId])
+
   return (
     <div className="space-y-6 pb-8">
       <motion.div
@@ -138,8 +183,29 @@ export function BlogPage() {
           <div>
             <h2 className="text-2xl text-white font-bold text-gradient">博客空间</h2>
             <p className="text-white/65 mt-1 text-sm">沉淀长文、知识卡片与项目记录</p>
+            <p className="text-white/50 mt-1 text-xs">当前文件夹：{selectedFolderName}</p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            <select
+              value={folderId}
+              onChange={(e) => {
+                const next = new URLSearchParams(searchParams)
+                if (e.target.value) {
+                  next.set('folder', e.target.value)
+                } else {
+                  next.delete('folder')
+                }
+                setSearchParams(next)
+              }}
+              className="px-3 py-2 rounded-2xl bg-white/10 text-white border border-white/20 focus:outline-none focus:border-white/40"
+            >
+              <option value="">全部文件夹</option>
+              {flatFolders.map((folder) => (
+                <option key={folder.id} value={folder.id} className="text-black">
+                  {folder.name}
+                </option>
+              ))}
+            </select>
             {availableTags.map((tag) => (
               <button
                 key={tag}
@@ -195,8 +261,16 @@ export function BlogPage() {
               value={folderInput}
               onChange={(e) => setFolderInput(e.target.value)}
               placeholder="文件夹 ID（可选）"
+              list="blog-folder-list"
               className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white border border-white/20 focus:outline-none focus:border-white/40"
             />
+            <datalist id="blog-folder-list">
+              {flatFolders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.name}
+                </option>
+              ))}
+            </datalist>
           </div>
           <textarea
             value={content}
@@ -272,6 +346,18 @@ export function BlogPage() {
               </div>
             </motion.button>
           ))}
+
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => loadArticles({ reset: false, pageToken: nextPageToken })}
+                disabled={isLoadingMore}
+                className="px-5 py-2.5 rounded-2xl border border-white/25 text-white/85 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingMore ? '加载中...' : '加载更多'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
