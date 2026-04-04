@@ -84,8 +84,11 @@ export const clients = {
       const response = await postClient.createPost(req)
       return { post: response.post ? { id: response.post.id } : { id: 'new-post' } }
     },
-    listPosts: async () => {
-      const response = await postClient.listPosts({ pageSize: 50, pageToken: '' })
+    listPosts: async (req = {}) => {
+      const response = await postClient.listPosts({
+        pageSize: req.pageSize ?? 50,
+        pageToken: req.pageToken ?? '',
+      })
       return {
         posts: response.posts.map((p) => ({
           id: p.id,
@@ -109,6 +112,7 @@ export const clients = {
         content: req.content,
         folderId: req.folderId || '',
         tags: req.tags || [],
+        status: req.status === 'draft' ? 1 : 2,
       })
 
       return {
@@ -119,11 +123,40 @@ export const clients = {
               content: response.article.content,
               folderId: response.article.folderId,
               tags: response.article.tags,
+              status: response.article.status === 1 ? 'draft' : 'published',
               createdAt: { toDate: () => response.article?.createdAt?.toDate() || new Date() },
               updatedAt: { toDate: () => response.article?.updatedAt?.toDate() || new Date() },
             }
           : null,
       }
+    },
+    updateArticle: async (req) => {
+      const response = await blogClient.updateArticle({
+        articleId: req.articleId,
+        title: req.title,
+        content: req.content,
+        folderId: req.folderId || '',
+        tags: req.tags || [],
+        status: req.status === 'draft' ? 1 : 2,
+      })
+      return {
+        article: response.article
+          ? {
+              id: response.article.id,
+              title: response.article.title,
+              content: response.article.content,
+              folderId: response.article.folderId,
+              tags: response.article.tags,
+              status: response.article.status === 1 ? 'draft' : 'published',
+              createdAt: { toDate: () => response.article?.createdAt?.toDate() || new Date() },
+              updatedAt: { toDate: () => response.article?.updatedAt?.toDate() || new Date() },
+            }
+          : null,
+      }
+    },
+    deleteArticle: async (req) => {
+      await blogClient.deleteArticle({ articleId: req.articleId })
+      return {}
     },
     listArticles: async (req = {}) => {
       const response = await blogClient.listArticles({
@@ -131,6 +164,7 @@ export const clients = {
         pageToken: req.pageToken ?? '',
         folderId: req.folderId ?? '',
         tag: req.tag ?? '',
+        status: req.status === 'draft' ? 1 : req.status === 'published' ? 2 : 0,
       })
       return {
         articles: (response.articles || []).map((article) => ({
@@ -139,6 +173,7 @@ export const clients = {
           content: article.content,
           folderId: article.folderId,
           tags: article.tags,
+          status: article.status === 1 ? 'draft' : 'published',
           createdAt: { toDate: () => article.createdAt?.toDate() || new Date() },
           updatedAt: { toDate: () => article.updatedAt?.toDate() || new Date() },
         })),
@@ -157,8 +192,42 @@ export const clients = {
               content: response.article.content,
               folderId: response.article.folderId,
               tags: response.article.tags,
+              status: response.article.status === 1 ? 'draft' : 'published',
               createdAt: { toDate: () => response.article?.createdAt?.toDate() || new Date() },
               updatedAt: { toDate: () => response.article?.updatedAt?.toDate() || new Date() },
+            }
+          : null,
+      }
+    },
+    createFolder: async (req) => {
+      const response = await blogClient.createFolder({
+        name: req.name,
+        parentFolderId: req.parentFolderId || '',
+      })
+      return {
+        folder: response.folder
+          ? {
+              id: response.folder.id,
+              name: response.folder.name,
+              parentFolderId: response.folder.parentFolderId,
+              children: response.folder.children || [],
+            }
+          : null,
+      }
+    },
+    updateFolder: async (req) => {
+      const response = await blogClient.updateFolder({
+        folderId: req.folderId,
+        name: req.name,
+        parentFolderId: req.parentFolderId || '',
+      })
+      return {
+        folder: response.folder
+          ? {
+              id: response.folder.id,
+              name: response.folder.name,
+              parentFolderId: response.folder.parentFolderId,
+              children: response.folder.children || [],
             }
           : null,
       }

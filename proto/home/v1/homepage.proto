@@ -27,10 +27,18 @@ service PostService {
 service BlogService {
   // CreateArticle creates a new blog article
   rpc CreateArticle(CreateArticleRequest) returns (CreateArticleResponse);
+  // UpdateArticle updates an existing blog article
+  rpc UpdateArticle(UpdateArticleRequest) returns (UpdateArticleResponse);
+  // DeleteArticle deletes a blog article
+  rpc DeleteArticle(DeleteArticleRequest) returns (google.protobuf.Empty);
   // ListArticles returns articles with folder filter support
   rpc ListArticles(ListArticlesRequest) returns (ListArticlesResponse);
   // GetArticle returns a single article by ID
   rpc GetArticle(GetArticleRequest) returns (GetArticleResponse);
+  // CreateFolder creates a folder for blog organization
+  rpc CreateFolder(CreateFolderRequest) returns (CreateFolderResponse);
+  // UpdateFolder updates folder name or hierarchy
+  rpc UpdateFolder(UpdateFolderRequest) returns (UpdateFolderResponse);
 }
 
 // AlbumService handles photo albums and image uploads
@@ -108,6 +116,12 @@ message Folder {
   repeated Folder children = 4;
 }
 
+enum ArticleStatus {
+  ARTICLE_STATUS_UNSPECIFIED = 0;
+  ARTICLE_STATUS_DRAFT = 1;
+  ARTICLE_STATUS_PUBLISHED = 2;
+}
+
 message Article {
   string id = 1;
   string title = 2;
@@ -116,6 +130,7 @@ message Article {
   repeated string tags = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
+  ArticleStatus status = 8;
 }
 
 message CreateArticleRequest {
@@ -123,10 +138,28 @@ message CreateArticleRequest {
   string content = 2;
   string folder_id = 3;
   repeated string tags = 4;
+  ArticleStatus status = 5;
 }
 
 message CreateArticleResponse {
   Article article = 1;
+}
+
+message UpdateArticleRequest {
+  string article_id = 1;
+  string title = 2;
+  string content = 3;
+  string folder_id = 4;
+  repeated string tags = 5;
+  ArticleStatus status = 6;
+}
+
+message UpdateArticleResponse {
+  Article article = 1;
+}
+
+message DeleteArticleRequest {
+  string article_id = 1;
 }
 
 message ListArticlesRequest {
@@ -134,6 +167,7 @@ message ListArticlesRequest {
   string page_token = 2;
   string folder_id = 3;
   string tag = 4;
+  ArticleStatus status = 5;
 }
 
 message ListArticlesResponse {
@@ -149,6 +183,25 @@ message GetArticleRequest {
 
 message GetArticleResponse {
   Article article = 1;
+}
+
+message CreateFolderRequest {
+  string name = 1;
+  string parent_folder_id = 2;
+}
+
+message CreateFolderResponse {
+  Folder folder = 1;
+}
+
+message UpdateFolderRequest {
+  string folder_id = 1;
+  string name = 2;
+  string parent_folder_id = 3;
+}
+
+message UpdateFolderResponse {
+  Folder folder = 1;
 }
 
 // Album messages

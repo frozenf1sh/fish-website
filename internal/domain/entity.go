@@ -27,6 +27,7 @@ type Article struct {
 	Content   string
 	FolderID  string
 	Tags      []string
+	Status    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -54,15 +55,15 @@ type Image struct {
 
 // Settings represents user settings
 type Settings struct {
-	DisplayName         string
-	Bio               string
-	AvatarURL         string
-	TwitterURL       string
-	GitHubURL        string
-	BilibiliURL      string
-	CustomLinks       string // JSON string
-	BackgroundImageURL string
+	DisplayName            string
+	Bio                    string
+	AvatarURL              string
+	TwitterURL             string
+	GitHubURL              string
+	BilibiliURL            string
+	CustomLinks            string // JSON string
+	BackgroundImageURL     string
 	SakuraParticlesEnabled bool
-	ThemeColor        string
-	UpdatedAt         time.Time
+	ThemeColor             string
+	UpdatedAt              time.Time
 }

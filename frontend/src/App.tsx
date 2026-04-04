@@ -8,6 +8,7 @@ import { SettingsDrawer } from './components/SettingsDrawer'
 import { HomePage } from './pages/HomePage'
 import { BlogPage } from './pages/BlogPage'
 import { AlbumsPage } from './pages/AlbumsPage'
+import { SearchPage } from './pages/SearchPage'
 import { useStore } from './store/useStore'
 
 function App() {
@@ -70,7 +71,7 @@ function App() {
       <SakuraParticles enabled={sakuraEnabled} />
 
       {/* 操作按钮 */}
-      <div className="fixed top-6 right-6 z-50 flex gap-3">
+      <div className="fixed top-3 right-3 sm:top-6 sm:right-6 z-50 flex gap-2 sm:gap-3">
         {isLoggedIn && (
           <motion.button
             initial={{ opacity: 0, y: -20 }}
@@ -79,10 +80,10 @@ function App() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowSettingsDrawer(true)}
-            className="glass-card px-4 py-2 rounded-full flex items-center gap-2 text-white/80 hover:text-white transition-all"
+            className="glass-card px-3 sm:px-4 py-2 rounded-full flex items-center gap-2 text-white/80 hover:text-white transition-all"
           >
             <span className="text-xl">⚙️</span>
-            <span className="text-sm font-medium">设置</span>
+            <span className="hidden sm:inline text-sm font-medium">设置</span>
           </motion.button>
         )}
         <motion.button
@@ -98,10 +99,10 @@ function App() {
               setShowLoginModal(true)
             }
           }}
-          className="glass-card px-4 py-2 rounded-full flex items-center gap-2 text-white/80 hover:text-white transition-all"
+          className="glass-card px-3 sm:px-4 py-2 rounded-full flex items-center gap-2 text-white/80 hover:text-white transition-all"
         >
           <span className="text-xl">{isLoggedIn ? '🚪' : '🌸'}</span>
-          <span className="text-sm font-medium">{isLoggedIn ? '退出' : sakuraEnabled ? '樱花' : '关闭'}</span>
+          <span className="hidden sm:inline text-sm font-medium">{isLoggedIn ? '退出' : sakuraEnabled ? '樱花' : '关闭'}</span>
         </motion.button>
       </div>
 
@@ -112,6 +113,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/albums" element={<AlbumsPage />} />
+            <Route path="/search" element={<SearchPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
