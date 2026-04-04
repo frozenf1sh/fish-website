@@ -119,13 +119,16 @@ func (r *postgresBlogRepository) CreateArticle(ctx context.Context, article *dom
 	if article.ID == "" {
 		article.ID = xid.New().String()
 	}
+	if article.Status == "" {
+		article.Status = "published"
+	}
 	tagsJSON, err := json.Marshal(article.Tags)
 	if err != nil {
 		return nil, fmt.Errorf("marshal tags: %w", err)
 	}
 	_, err = r.pool.Exec(ctx,
-		"INSERT INTO articles (id, title, content, folder_id, tags, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-		article.ID, article.Title, article.Content, nullString(article.FolderID), tagsJSON, article.CreatedAt, article.UpdatedAt,
+		"INSERT INTO articles (id, title, content, folder_id, tags, status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+		article.ID, article.Title, article.Content, nullString(article.FolderID), tagsJSON, article.Status, article.CreatedAt, article.UpdatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("insert article: %w", err)
@@ -133,17 +136,45 @@ func (r *postgresBlogRepository) CreateArticle(ctx context.Context, article *dom
 	return article, nil
 }
 
-func (r *postgresBlogRepository) ListArticles(ctx context.Context, pageSize int, pageToken string, folderID string, tag string) ([]*domain.Article, string, bool, error) {
+func (r *postgresBlogRepository) UpdateArticle(ctx context.Context, article *domain.Article) (*domain.Article, error) {
+	tagsJSON, err := json.Marshal(article.Tags)
+	if err != nil {
+		return nil, fmt.Errorf("marshal tags: %w", err)
+	}
+
+	_, err = r.pool.Exec(ctx,
+		`UPDATE articles
+		 SET title = $1, content = $2, folder_id = $3, tags = $4, status = $5, updated_at = $6
+		 WHERE id = $7`,
+		article.Title, article.Content, nullString(article.FolderID), tagsJSON, article.Status, article.UpdatedAt, article.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update article: %w", err)
+	}
+
+	return article, nil
+}
+
+func (r *postgresBlogRepository) DeleteArticle(ctx context.Context, articleID string) error {
+	_, err := r.pool.Exec(ctx, "DELETE FROM articles WHERE id = $1", articleID)
+	if err != nil {
+		return fmt.Errorf("delete article: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresBlogRepository) ListArticles(ctx context.Context, pageSize int, pageToken string, folderID string, tag string, status string) ([]*domain.Article, string, bool, error) {
 	query := `
-		SELECT id, title, content, folder_id, tags, created_at, updated_at
+		SELECT id, title, content, folder_id, tags, status, created_at, updated_at
 		FROM articles
 		WHERE ($1 = '' OR id < $1)
 		AND ($2 = '' OR folder_id = $2)
 		AND ($3 = '' OR tags @> to_jsonb($3::text))
+		AND ($4 = '' OR status = $4)
 		ORDER BY created_at DESC
-		LIMIT $4
+		LIMIT $5
 	`
-	rows, err := r.pool.Query(ctx, query, pageToken, nullString(folderID), tag, pageSize+1)
+	rows, err := r.pool.Query(ctx, query, pageToken, nullString(folderID), tag, status, pageSize+1)
 	if err != nil {
 		return nil, "", false, fmt.Errorf("query articles: %w", err)
 	}
@@ -154,7 +185,7 @@ func (r *postgresBlogRepository) ListArticles(ctx context.Context, pageSize int,
 		var article domain.Article
 		var tagsJSON []byte
 		var folderID sql.NullString
-		err := rows.Scan(&article.ID, &article.Title, &article.Content, &folderID, &tagsJSON, &article.CreatedAt, &article.UpdatedAt)
+		err := rows.Scan(&article.ID, &article.Title, &article.Content, &folderID, &tagsJSON, &article.Status, &article.CreatedAt, &article.UpdatedAt)
 		if err != nil {
 			return nil, "", false, fmt.Errorf("scan article: %w", err)
 		}
@@ -186,9 +217,9 @@ func (r *postgresBlogRepository) GetArticle(ctx context.Context, articleID strin
 	var tagsJSON []byte
 	var folderID sql.NullString
 	err := r.pool.QueryRow(ctx,
-		"SELECT id, title, content, folder_id, tags, created_at, updated_at FROM articles WHERE id = $1",
+		"SELECT id, title, content, folder_id, tags, status, created_at, updated_at FROM articles WHERE id = $1",
 		articleID,
-	).Scan(&article.ID, &article.Title, &article.Content, &folderID, &tagsJSON, &article.CreatedAt, &article.UpdatedAt)
+	).Scan(&article.ID, &article.Title, &article.Content, &folderID, &tagsJSON, &article.Status, &article.CreatedAt, &article.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("query article: %w", err)
 	}
@@ -199,6 +230,33 @@ func (r *postgresBlogRepository) GetArticle(ctx context.Context, articleID strin
 		return nil, fmt.Errorf("unmarshal tags: %w", err)
 	}
 	return &article, nil
+}
+
+func (r *postgresBlogRepository) CreateFolder(ctx context.Context, folder *domain.Folder) (*domain.Folder, error) {
+	if folder.ID == "" {
+		folder.ID = xid.New().String()
+	}
+
+	_, err := r.pool.Exec(ctx,
+		"INSERT INTO folders (id, name, parent_folder_id) VALUES ($1, $2, $3)",
+		folder.ID, folder.Name, nullString(folder.ParentFolderID),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("insert folder: %w", err)
+	}
+
+	return folder, nil
+}
+
+func (r *postgresBlogRepository) UpdateFolder(ctx context.Context, folder *domain.Folder) (*domain.Folder, error) {
+	_, err := r.pool.Exec(ctx,
+		"UPDATE folders SET name = $1, parent_folder_id = $2 WHERE id = $3",
+		folder.Name, nullString(folder.ParentFolderID), folder.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update folder: %w", err)
+	}
+	return folder, nil
 }
 
 func (r *postgresBlogRepository) GetFolders(ctx context.Context) ([]*domain.Folder, error) {

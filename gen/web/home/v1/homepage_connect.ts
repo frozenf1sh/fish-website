@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreatePostRequest, CreatePostResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteArticleRequest, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -92,6 +92,28 @@ export const BlogService = {
       kind: MethodKind.Unary,
     },
     /**
+     * UpdateArticle updates an existing blog article
+     *
+     * @generated from rpc home.v1.BlogService.UpdateArticle
+     */
+    updateArticle: {
+      name: "UpdateArticle",
+      I: UpdateArticleRequest,
+      O: UpdateArticleResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * DeleteArticle deletes a blog article
+     *
+     * @generated from rpc home.v1.BlogService.DeleteArticle
+     */
+    deleteArticle: {
+      name: "DeleteArticle",
+      I: DeleteArticleRequest,
+      O: Empty,
+      kind: MethodKind.Unary,
+    },
+    /**
      * ListArticles returns articles with folder filter support
      *
      * @generated from rpc home.v1.BlogService.ListArticles
@@ -111,6 +133,28 @@ export const BlogService = {
       name: "GetArticle",
       I: GetArticleRequest,
       O: GetArticleResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * CreateFolder creates a folder for blog organization
+     *
+     * @generated from rpc home.v1.BlogService.CreateFolder
+     */
+    createFolder: {
+      name: "CreateFolder",
+      I: CreateFolderRequest,
+      O: CreateFolderResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * UpdateFolder updates folder name or hierarchy
+     *
+     * @generated from rpc home.v1.BlogService.UpdateFolder
+     */
+    updateFolder: {
+      name: "UpdateFolder",
+      I: UpdateFolderRequest,
+      O: UpdateFolderResponse,
       kind: MethodKind.Unary,
     },
   }

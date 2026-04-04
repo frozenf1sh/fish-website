@@ -60,6 +60,26 @@ export function AlbumsPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const uploadWithRetry = async (url: string, file: File, headers: Record<string, string>, retries = 2) => {
+    let lastError: unknown
+    for (let i = 0; i <= retries; i += 1) {
+      try {
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers,
+          body: file,
+        })
+        if (!res.ok) {
+          throw new Error(`upload failed with status ${res.status}`)
+        }
+        return
+      } catch (err) {
+        lastError = err
+      }
+    }
+    throw lastError
+  }
+
   useEffect(() => {
     const loadAlbums = async () => {
       setIsLoadingAlbums(true)
@@ -201,11 +221,7 @@ export function AlbumsPage() {
           headers['Content-Type'] = compressedFile.type
         }
 
-        await fetch(req.uploadUrl, {
-          method: 'PUT',
-          headers,
-          body: compressedFile,
-        })
+        await uploadWithRetry(req.uploadUrl, compressedFile, headers)
 
         const confirm = await clients.album.confirmImageUpload({
           imageId: req.imageId,
@@ -429,6 +445,8 @@ export function AlbumsPage() {
                             whileHover={{ scale: 1.03 }}
                             src={image.thumbnailUrl || image.url}
                             alt="Album"
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover cursor-pointer"
                             onClick={() => {
                               if (selectionMode) {
@@ -482,7 +500,7 @@ export function AlbumsPage() {
                                 onClick={() => setSelectedImage(event.imageUrl!)}
                                 className="w-full h-24 rounded-xl overflow-hidden"
                               >
-                                <img src={event.imageUrl} alt="timeline" className="w-full h-full object-cover" />
+                                <img src={event.imageUrl} alt="timeline" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                               </button>
                             ) : (
                               <div className="h-24 rounded-xl bg-gradient-to-br from-pink-300/20 to-rose-300/20 border border-white/10 flex items-center justify-center text-white/80 text-sm">

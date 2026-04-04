@@ -96,7 +96,7 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
       animate={{ x: 0, opacity: 1 }}
       transition={{ delay: 0.2 + index * 0.1 }}
       whileHover={{ scale: 1.01, y: -2 }}
-      className="glass-card rounded-4xl p-6 transition-all cursor-pointer relative group"
+      className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 transition-all cursor-pointer relative group"
     >
       {isLoggedIn && (
         <button
@@ -104,36 +104,36 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
             e.stopPropagation()
             handleDelete()
           }}
-          className="absolute top-4 right-4 p-2 rounded-xl bg-red-500/20 text-red-300 opacity-0 group-hover:opacity-100 hover:bg-red-500/40 hover:text-white transition-all"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-xl bg-red-500/20 text-red-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-500/40 hover:text-white transition-all"
           title="删除"
         >
           🗑️
         </button>
       )}
-      <div className="flex gap-4">
+      <div className="flex gap-3 sm:gap-4">
         <div className="flex-shrink-0">
           {avatarUrl ? (
-            <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20 shadow-lg">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-white/20 shadow-lg">
               <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white text-xl shadow-lg">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white text-lg sm:text-xl shadow-lg">
               🌸
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-white font-semibold">{displayName}</span>
-            <span className="text-white/40 text-sm">· {item.timestamp}</span>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-white font-semibold text-sm sm:text-base">{displayName}</span>
+            <span className="text-white/40 text-xs sm:text-sm">· {item.timestamp}</span>
           </div>
 
           {isShortContent ? (
-            <p className="text-white/90 whitespace-pre-line mb-4 leading-relaxed">
+            <p className="text-white/90 whitespace-pre-line mb-3 sm:mb-4 leading-relaxed text-sm sm:text-base">
               {item.content}
             </p>
           ) : (
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <MarkdownViewer content={item.content} />
             </div>
           )}
@@ -232,7 +232,7 @@ const SystemCard = ({ item, index }: { item: TimelineItem; index: number }) => {
       animate={{ x: 0, opacity: 1 }}
       transition={{ delay: 0.2 + index * 0.1 }}
       whileHover={{ scale: 1.01 }}
-      className="glass-light rounded-4xl p-5 transition-all cursor-pointer"
+      className="glass-light rounded-3xl sm:rounded-4xl p-4 sm:p-5 transition-all cursor-pointer"
     >
       <div className="flex items-start gap-4">
         <div className="flex-1">
@@ -260,7 +260,7 @@ const BlogCard = ({ item, index }: { item: TimelineItem; index: number }) => {
       animate={{ x: 0, opacity: 1 }}
       transition={{ delay: 0.2 + index * 0.1 }}
       whileHover={{ scale: 1.01, y: -2 }}
-      className="glass-card rounded-4xl p-6 transition-all cursor-pointer overflow-hidden relative"
+      className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 transition-all cursor-pointer overflow-hidden relative"
     >
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 z-10"></div>
       <div className="mt-1">
@@ -294,7 +294,7 @@ const AlbumCard = ({ item, index }: { item: TimelineItem; index: number }) => {
       animate={{ x: 0, opacity: 1 }}
       transition={{ delay: 0.2 + index * 0.1 }}
       whileHover={{ scale: 1.01, y: -2 }}
-      className="glass-card rounded-4xl p-6 transition-all cursor-pointer overflow-hidden relative"
+      className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 transition-all cursor-pointer overflow-hidden relative"
     >
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-400 via-rose-400 to-red-400 z-10"></div>
       <div className="mt-1 flex items-center gap-4">
@@ -358,9 +358,9 @@ export function Timeline() {
   }, [])
 
   return (
-    <div className="relative pl-14">
+    <div className="relative pl-0 sm:pl-14 px-3 sm:px-0">
       {/* 垂直线条 */}
-      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-400/50 via-purple-400/50 to-pink-400/50 rounded-full"></div>
+      <div className="hidden sm:block absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-400/50 via-purple-400/50 to-pink-400/50 rounded-full"></div>
 
       <div className="space-y-4 pb-8">
         {isLoading ? (
@@ -375,8 +375,10 @@ export function Timeline() {
         ) : (
           timelineItems.map((item, index) => (
             <div key={item.id} className="relative">
-              <TimelineNode type={item.type} index={index} />
-              <div className="ml-14">
+              <div className="hidden sm:block">
+                <TimelineNode type={item.type} index={index} />
+              </div>
+              <div className="ml-0 sm:ml-14">
                 {item.type === 'post' && <PostCard item={item} index={index} onDelete={id => setTimelineItems(prev => prev.filter(i => i.id !== id))} />}
                 {item.type === 'system' && <SystemCard item={item} index={index} />}
                 {item.type === 'blog' && <BlogCard item={item} index={index} />}
@@ -389,7 +391,7 @@ export function Timeline() {
 
       {/* 加载更多指示器 */}
       {!isLoading && timelineItems.length > 0 && (
-        <div className="text-center py-8 ml-14">
+        <div className="text-center py-8 ml-0 sm:ml-14">
           <div className="inline-flex items-center gap-2 text-white/60 glass-light px-6 py-3 rounded-full">
             <div className="w-2 h-2 rounded-full bg-white/60 animate-bounce"></div>
             <div className="w-2 h-2 rounded-full bg-white/60 animate-bounce" style={{ animationDelay: '0.1s' }}></div>

@@ -7,6 +7,32 @@ import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialM
 import { Message, proto3, protoInt64, Timestamp } from "@bufbuild/protobuf";
 
 /**
+ * @generated from enum home.v1.ArticleStatus
+ */
+export enum ArticleStatus {
+  /**
+   * @generated from enum value: ARTICLE_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: ARTICLE_STATUS_DRAFT = 1;
+   */
+  DRAFT = 1,
+
+  /**
+   * @generated from enum value: ARTICLE_STATUS_PUBLISHED = 2;
+   */
+  PUBLISHED = 2,
+}
+// Retrieve enum metadata with: proto3.getEnumType(ArticleStatus)
+proto3.util.setEnumType(ArticleStatus, "home.v1.ArticleStatus", [
+  { no: 0, name: "ARTICLE_STATUS_UNSPECIFIED" },
+  { no: 1, name: "ARTICLE_STATUS_DRAFT" },
+  { no: 2, name: "ARTICLE_STATUS_PUBLISHED" },
+]);
+
+/**
  * Auth messages
  *
  * @generated from message home.v1.LoginRequest
@@ -456,6 +482,11 @@ export class Article extends Message<Article> {
    */
   updatedAt?: Timestamp;
 
+  /**
+   * @generated from field: home.v1.ArticleStatus status = 8;
+   */
+  status = ArticleStatus.UNSPECIFIED;
+
   constructor(data?: PartialMessage<Article>) {
     super();
     proto3.util.initPartial(data, this);
@@ -471,6 +502,7 @@ export class Article extends Message<Article> {
     { no: 5, name: "tags", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 6, name: "created_at", kind: "message", T: Timestamp },
     { no: 7, name: "updated_at", kind: "message", T: Timestamp },
+    { no: 8, name: "status", kind: "enum", T: proto3.getEnumType(ArticleStatus) },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Article {
@@ -514,6 +546,11 @@ export class CreateArticleRequest extends Message<CreateArticleRequest> {
    */
   tags: string[] = [];
 
+  /**
+   * @generated from field: home.v1.ArticleStatus status = 5;
+   */
+  status = ArticleStatus.UNSPECIFIED;
+
   constructor(data?: PartialMessage<CreateArticleRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -526,6 +563,7 @@ export class CreateArticleRequest extends Message<CreateArticleRequest> {
     { no: 2, name: "content", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "folder_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "tags", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 5, name: "status", kind: "enum", T: proto3.getEnumType(ArticleStatus) },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateArticleRequest {
@@ -583,6 +621,147 @@ export class CreateArticleResponse extends Message<CreateArticleResponse> {
 }
 
 /**
+ * @generated from message home.v1.UpdateArticleRequest
+ */
+export class UpdateArticleRequest extends Message<UpdateArticleRequest> {
+  /**
+   * @generated from field: string article_id = 1;
+   */
+  articleId = "";
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title = "";
+
+  /**
+   * @generated from field: string content = 3;
+   */
+  content = "";
+
+  /**
+   * @generated from field: string folder_id = 4;
+   */
+  folderId = "";
+
+  /**
+   * @generated from field: repeated string tags = 5;
+   */
+  tags: string[] = [];
+
+  /**
+   * @generated from field: home.v1.ArticleStatus status = 6;
+   */
+  status = ArticleStatus.UNSPECIFIED;
+
+  constructor(data?: PartialMessage<UpdateArticleRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateArticleRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "article_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "title", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "content", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "folder_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "tags", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 6, name: "status", kind: "enum", T: proto3.getEnumType(ArticleStatus) },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateArticleRequest {
+    return new UpdateArticleRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateArticleRequest {
+    return new UpdateArticleRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateArticleRequest {
+    return new UpdateArticleRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateArticleRequest | PlainMessage<UpdateArticleRequest> | undefined, b: UpdateArticleRequest | PlainMessage<UpdateArticleRequest> | undefined): boolean {
+    return proto3.util.equals(UpdateArticleRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdateArticleResponse
+ */
+export class UpdateArticleResponse extends Message<UpdateArticleResponse> {
+  /**
+   * @generated from field: home.v1.Article article = 1;
+   */
+  article?: Article;
+
+  constructor(data?: PartialMessage<UpdateArticleResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateArticleResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "article", kind: "message", T: Article },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateArticleResponse {
+    return new UpdateArticleResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateArticleResponse {
+    return new UpdateArticleResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateArticleResponse {
+    return new UpdateArticleResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateArticleResponse | PlainMessage<UpdateArticleResponse> | undefined, b: UpdateArticleResponse | PlainMessage<UpdateArticleResponse> | undefined): boolean {
+    return proto3.util.equals(UpdateArticleResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.DeleteArticleRequest
+ */
+export class DeleteArticleRequest extends Message<DeleteArticleRequest> {
+  /**
+   * @generated from field: string article_id = 1;
+   */
+  articleId = "";
+
+  constructor(data?: PartialMessage<DeleteArticleRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.DeleteArticleRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "article_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteArticleRequest {
+    return new DeleteArticleRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DeleteArticleRequest {
+    return new DeleteArticleRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DeleteArticleRequest {
+    return new DeleteArticleRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DeleteArticleRequest | PlainMessage<DeleteArticleRequest> | undefined, b: DeleteArticleRequest | PlainMessage<DeleteArticleRequest> | undefined): boolean {
+    return proto3.util.equals(DeleteArticleRequest, a, b);
+  }
+}
+
+/**
  * @generated from message home.v1.ListArticlesRequest
  */
 export class ListArticlesRequest extends Message<ListArticlesRequest> {
@@ -606,6 +785,11 @@ export class ListArticlesRequest extends Message<ListArticlesRequest> {
    */
   tag = "";
 
+  /**
+   * @generated from field: home.v1.ArticleStatus status = 5;
+   */
+  status = ArticleStatus.UNSPECIFIED;
+
   constructor(data?: PartialMessage<ListArticlesRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -618,6 +802,7 @@ export class ListArticlesRequest extends Message<ListArticlesRequest> {
     { no: 2, name: "page_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "folder_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "tag", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "status", kind: "enum", T: proto3.getEnumType(ArticleStatus) },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListArticlesRequest {
@@ -763,6 +948,172 @@ export class GetArticleResponse extends Message<GetArticleResponse> {
 
   static equals(a: GetArticleResponse | PlainMessage<GetArticleResponse> | undefined, b: GetArticleResponse | PlainMessage<GetArticleResponse> | undefined): boolean {
     return proto3.util.equals(GetArticleResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.CreateFolderRequest
+ */
+export class CreateFolderRequest extends Message<CreateFolderRequest> {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name = "";
+
+  /**
+   * @generated from field: string parent_folder_id = 2;
+   */
+  parentFolderId = "";
+
+  constructor(data?: PartialMessage<CreateFolderRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.CreateFolderRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "parent_folder_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateFolderRequest {
+    return new CreateFolderRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateFolderRequest {
+    return new CreateFolderRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateFolderRequest {
+    return new CreateFolderRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CreateFolderRequest | PlainMessage<CreateFolderRequest> | undefined, b: CreateFolderRequest | PlainMessage<CreateFolderRequest> | undefined): boolean {
+    return proto3.util.equals(CreateFolderRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.CreateFolderResponse
+ */
+export class CreateFolderResponse extends Message<CreateFolderResponse> {
+  /**
+   * @generated from field: home.v1.Folder folder = 1;
+   */
+  folder?: Folder;
+
+  constructor(data?: PartialMessage<CreateFolderResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.CreateFolderResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "folder", kind: "message", T: Folder },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateFolderResponse {
+    return new CreateFolderResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateFolderResponse {
+    return new CreateFolderResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateFolderResponse {
+    return new CreateFolderResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CreateFolderResponse | PlainMessage<CreateFolderResponse> | undefined, b: CreateFolderResponse | PlainMessage<CreateFolderResponse> | undefined): boolean {
+    return proto3.util.equals(CreateFolderResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdateFolderRequest
+ */
+export class UpdateFolderRequest extends Message<UpdateFolderRequest> {
+  /**
+   * @generated from field: string folder_id = 1;
+   */
+  folderId = "";
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name = "";
+
+  /**
+   * @generated from field: string parent_folder_id = 3;
+   */
+  parentFolderId = "";
+
+  constructor(data?: PartialMessage<UpdateFolderRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateFolderRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "folder_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "parent_folder_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateFolderRequest {
+    return new UpdateFolderRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateFolderRequest {
+    return new UpdateFolderRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateFolderRequest {
+    return new UpdateFolderRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateFolderRequest | PlainMessage<UpdateFolderRequest> | undefined, b: UpdateFolderRequest | PlainMessage<UpdateFolderRequest> | undefined): boolean {
+    return proto3.util.equals(UpdateFolderRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdateFolderResponse
+ */
+export class UpdateFolderResponse extends Message<UpdateFolderResponse> {
+  /**
+   * @generated from field: home.v1.Folder folder = 1;
+   */
+  folder?: Folder;
+
+  constructor(data?: PartialMessage<UpdateFolderResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateFolderResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "folder", kind: "message", T: Folder },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateFolderResponse {
+    return new UpdateFolderResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateFolderResponse {
+    return new UpdateFolderResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateFolderResponse {
+    return new UpdateFolderResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateFolderResponse | PlainMessage<UpdateFolderResponse> | undefined, b: UpdateFolderResponse | PlainMessage<UpdateFolderResponse> | undefined): boolean {
+    return proto3.util.equals(UpdateFolderResponse, a, b);
   }
 }
 

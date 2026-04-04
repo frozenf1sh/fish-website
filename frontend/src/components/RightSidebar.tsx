@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { CalendarWidget } from './CalendarWidget'
 
 const navItems = [
   { name: '首页', icon: '🏠', path: '/', enabled: true },
+  { name: '搜索', icon: '🔎', path: '/search', enabled: true },
   { name: '相册', icon: '📸', path: '/albums', enabled: true },
   { name: '博客', icon: '📝', path: '/blog', enabled: true },
   { name: '项目', icon: '💻', path: '/projects', enabled: false },
@@ -13,6 +15,7 @@ const navItems = [
 export function RightSidebar() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [keyword, setKeyword] = useState('')
 
   return (
     <motion.div
@@ -22,6 +25,21 @@ export function RightSidebar() {
       className="h-full"
     >
       <div className="sticky top-6 space-y-6">
+        <motion.form
+          onSubmit={(e) => {
+            e.preventDefault()
+            navigate(`/search?q=${encodeURIComponent(keyword.trim())}`)
+          }}
+          className="glass-panel rounded-4xl p-3"
+        >
+          <input
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="搜索内容..."
+            className="w-full px-3 py-2 rounded-2xl bg-white/10 text-white placeholder-white/40 border border-white/20 focus:outline-none"
+          />
+        </motion.form>
+
         {/* 导航面板 */}
         <motion.div
           whileHover={{ scale: 1.01 }}

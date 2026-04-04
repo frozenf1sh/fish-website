@@ -27,12 +27,16 @@ CREATE TABLE IF NOT EXISTS articles (
     content TEXT NOT NULL,
     folder_id VARCHAR(64) REFERENCES folders(id) ON DELETE SET NULL,
     tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+    status VARCHAR(16) NOT NULL DEFAULT 'published',
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'published';
+
 CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_articles_folder_id ON articles(folder_id);
+CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
 
 -- Albums table
 CREATE TABLE IF NOT EXISTS albums (

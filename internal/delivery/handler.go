@@ -146,7 +146,7 @@ func (h *Handler) DeletePost(ctx context.Context, req *connect.Request[homev1.De
 func (h *Handler) CreateArticle(ctx context.Context, req *connect.Request[homev1.CreateArticleRequest]) (*connect.Response[homev1.CreateArticleResponse], error) {
 	logger.Info("received CreateArticle request", logger.String("title", req.Msg.Title), logger.Int("tag_count", len(req.Msg.Tags)))
 
-	article, err := h.blogUsecase.CreateArticle(ctx, req.Msg.Title, req.Msg.Content, req.Msg.FolderId, req.Msg.Tags)
+	article, err := h.blogUsecase.CreateArticle(ctx, req.Msg.Title, req.Msg.Content, req.Msg.FolderId, req.Msg.Tags, fromProtoArticleStatus(req.Msg.Status))
 	if err != nil {
 		logger.Error("CreateArticle failed", logger.Err(err))
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -158,15 +158,49 @@ func (h *Handler) CreateArticle(ctx context.Context, req *connect.Request[homev1
 	}), nil
 }
 
+// UpdateArticle updates an article
+func (h *Handler) UpdateArticle(ctx context.Context, req *connect.Request[homev1.UpdateArticleRequest]) (*connect.Response[homev1.UpdateArticleResponse], error) {
+	logger.Info("received UpdateArticle request", logger.String("article_id", req.Msg.ArticleId))
+
+	article, err := h.blogUsecase.UpdateArticle(
+		ctx,
+		req.Msg.ArticleId,
+		req.Msg.Title,
+		req.Msg.Content,
+		req.Msg.FolderId,
+		req.Msg.Tags,
+		fromProtoArticleStatus(req.Msg.Status),
+	)
+	if err != nil {
+		logger.Error("UpdateArticle failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&homev1.UpdateArticleResponse{Article: toProtoArticle(article)}), nil
+}
+
+// DeleteArticle deletes an article
+func (h *Handler) DeleteArticle(ctx context.Context, req *connect.Request[homev1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error) {
+	logger.Info("received DeleteArticle request", logger.String("article_id", req.Msg.ArticleId))
+
+	if err := h.blogUsecase.DeleteArticle(ctx, req.Msg.ArticleId); err != nil {
+		logger.Error("DeleteArticle failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&emptypb.Empty{}), nil
+}
+
 // ListArticles lists articles
 func (h *Handler) ListArticles(ctx context.Context, req *connect.Request[homev1.ListArticlesRequest]) (*connect.Response[homev1.ListArticlesResponse], error) {
 	logger.Debug("received ListArticles request",
 		logger.Int("page_size", int(req.Msg.PageSize)),
 		logger.String("page_token", req.Msg.PageToken),
 		logger.String("folder_id", req.Msg.FolderId),
-		logger.String("tag", req.Msg.Tag))
+		logger.String("tag", req.Msg.Tag),
+		logger.String("status", fromProtoArticleStatus(req.Msg.Status)))
 
-	articles, nextPageToken, hasMore, folders, err := h.blogUsecase.ListArticles(ctx, int(req.Msg.PageSize), req.Msg.PageToken, req.Msg.FolderId, req.Msg.Tag)
+	articles, nextPageToken, hasMore, folders, err := h.blogUsecase.ListArticles(ctx, int(req.Msg.PageSize), req.Msg.PageToken, req.Msg.FolderId, req.Msg.Tag, fromProtoArticleStatus(req.Msg.Status))
 	if err != nil {
 		logger.Error("ListArticles failed", logger.Err(err))
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -206,6 +240,32 @@ func (h *Handler) GetArticle(ctx context.Context, req *connect.Request[homev1.Ge
 	return connect.NewResponse(&homev1.GetArticleResponse{
 		Article: toProtoArticle(article),
 	}), nil
+}
+
+// CreateFolder creates a blog folder
+func (h *Handler) CreateFolder(ctx context.Context, req *connect.Request[homev1.CreateFolderRequest]) (*connect.Response[homev1.CreateFolderResponse], error) {
+	logger.Info("received CreateFolder request", logger.String("name", req.Msg.Name), logger.String("parent_folder_id", req.Msg.ParentFolderId))
+
+	folder, err := h.blogUsecase.CreateFolder(ctx, req.Msg.Name, req.Msg.ParentFolderId)
+	if err != nil {
+		logger.Error("CreateFolder failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&homev1.CreateFolderResponse{Folder: toProtoFolder(folder)}), nil
+}
+
+// UpdateFolder updates folder hierarchy
+func (h *Handler) UpdateFolder(ctx context.Context, req *connect.Request[homev1.UpdateFolderRequest]) (*connect.Response[homev1.UpdateFolderResponse], error) {
+	logger.Info("received UpdateFolder request", logger.String("folder_id", req.Msg.FolderId), logger.String("parent_folder_id", req.Msg.ParentFolderId))
+
+	folder, err := h.blogUsecase.UpdateFolder(ctx, req.Msg.FolderId, req.Msg.Name, req.Msg.ParentFolderId)
+	if err != nil {
+		logger.Error("UpdateFolder failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&homev1.UpdateFolderResponse{Folder: toProtoFolder(folder)}), nil
 }
 
 // CreateAlbum creates an album
@@ -389,6 +449,29 @@ func toProtoArticle(a *domain.Article) *homev1.Article {
 		Tags:      a.Tags,
 		CreatedAt: timestamppb.New(a.CreatedAt),
 		UpdatedAt: timestamppb.New(a.UpdatedAt),
+		Status:    toProtoArticleStatus(a.Status),
+	}
+}
+
+func toProtoArticleStatus(status string) homev1.ArticleStatus {
+	switch status {
+	case "draft":
+		return homev1.ArticleStatus_ARTICLE_STATUS_DRAFT
+	case "published":
+		return homev1.ArticleStatus_ARTICLE_STATUS_PUBLISHED
+	default:
+		return homev1.ArticleStatus_ARTICLE_STATUS_UNSPECIFIED
+	}
+}
+
+func fromProtoArticleStatus(status homev1.ArticleStatus) string {
+	switch status {
+	case homev1.ArticleStatus_ARTICLE_STATUS_DRAFT:
+		return "draft"
+	case homev1.ArticleStatus_ARTICLE_STATUS_PUBLISHED, homev1.ArticleStatus_ARTICLE_STATUS_UNSPECIFIED:
+		return "published"
+	default:
+		return "published"
 	}
 }
 

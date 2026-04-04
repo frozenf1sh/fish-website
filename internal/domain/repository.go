@@ -15,8 +15,12 @@ type PostRepository interface {
 // BlogRepository defines the interface for blog data access
 type BlogRepository interface {
 	CreateArticle(ctx context.Context, article *Article) (*Article, error)
-	ListArticles(ctx context.Context, pageSize int, pageToken string, folderID string, tag string) ([]*Article, string, bool, error)
+	UpdateArticle(ctx context.Context, article *Article) (*Article, error)
+	DeleteArticle(ctx context.Context, articleID string) error
+	ListArticles(ctx context.Context, pageSize int, pageToken string, folderID string, tag string, status string) ([]*Article, string, bool, error)
 	GetArticle(ctx context.Context, articleID string) (*Article, error)
+	CreateFolder(ctx context.Context, folder *Folder) (*Folder, error)
+	UpdateFolder(ctx context.Context, folder *Folder) (*Folder, error)
 	GetFolders(ctx context.Context) ([]*Folder, error)
 }
 

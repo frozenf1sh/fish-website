@@ -53,11 +53,23 @@ const (
 	// BlogServiceCreateArticleProcedure is the fully-qualified name of the BlogService's CreateArticle
 	// RPC.
 	BlogServiceCreateArticleProcedure = "/home.v1.BlogService/CreateArticle"
+	// BlogServiceUpdateArticleProcedure is the fully-qualified name of the BlogService's UpdateArticle
+	// RPC.
+	BlogServiceUpdateArticleProcedure = "/home.v1.BlogService/UpdateArticle"
+	// BlogServiceDeleteArticleProcedure is the fully-qualified name of the BlogService's DeleteArticle
+	// RPC.
+	BlogServiceDeleteArticleProcedure = "/home.v1.BlogService/DeleteArticle"
 	// BlogServiceListArticlesProcedure is the fully-qualified name of the BlogService's ListArticles
 	// RPC.
 	BlogServiceListArticlesProcedure = "/home.v1.BlogService/ListArticles"
 	// BlogServiceGetArticleProcedure is the fully-qualified name of the BlogService's GetArticle RPC.
 	BlogServiceGetArticleProcedure = "/home.v1.BlogService/GetArticle"
+	// BlogServiceCreateFolderProcedure is the fully-qualified name of the BlogService's CreateFolder
+	// RPC.
+	BlogServiceCreateFolderProcedure = "/home.v1.BlogService/CreateFolder"
+	// BlogServiceUpdateFolderProcedure is the fully-qualified name of the BlogService's UpdateFolder
+	// RPC.
+	BlogServiceUpdateFolderProcedure = "/home.v1.BlogService/UpdateFolder"
 	// AlbumServiceCreateAlbumProcedure is the fully-qualified name of the AlbumService's CreateAlbum
 	// RPC.
 	AlbumServiceCreateAlbumProcedure = "/home.v1.AlbumService/CreateAlbum"
@@ -286,10 +298,18 @@ func (UnimplementedPostServiceHandler) DeletePost(context.Context, *connect.Requ
 type BlogServiceClient interface {
 	// CreateArticle creates a new blog article
 	CreateArticle(context.Context, *connect.Request[v1.CreateArticleRequest]) (*connect.Response[v1.CreateArticleResponse], error)
+	// UpdateArticle updates an existing blog article
+	UpdateArticle(context.Context, *connect.Request[v1.UpdateArticleRequest]) (*connect.Response[v1.UpdateArticleResponse], error)
+	// DeleteArticle deletes a blog article
+	DeleteArticle(context.Context, *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error)
 	// ListArticles returns articles with folder filter support
 	ListArticles(context.Context, *connect.Request[v1.ListArticlesRequest]) (*connect.Response[v1.ListArticlesResponse], error)
 	// GetArticle returns a single article by ID
 	GetArticle(context.Context, *connect.Request[v1.GetArticleRequest]) (*connect.Response[v1.GetArticleResponse], error)
+	// CreateFolder creates a folder for blog organization
+	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
+	// UpdateFolder updates folder name or hierarchy
+	UpdateFolder(context.Context, *connect.Request[v1.UpdateFolderRequest]) (*connect.Response[v1.UpdateFolderResponse], error)
 }
 
 // NewBlogServiceClient constructs a client for the home.v1.BlogService service. By default, it uses
@@ -309,6 +329,18 @@ func NewBlogServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(blogServiceMethods.ByName("CreateArticle")),
 			connect.WithClientOptions(opts...),
 		),
+		updateArticle: connect.NewClient[v1.UpdateArticleRequest, v1.UpdateArticleResponse](
+			httpClient,
+			baseURL+BlogServiceUpdateArticleProcedure,
+			connect.WithSchema(blogServiceMethods.ByName("UpdateArticle")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteArticle: connect.NewClient[v1.DeleteArticleRequest, emptypb.Empty](
+			httpClient,
+			baseURL+BlogServiceDeleteArticleProcedure,
+			connect.WithSchema(blogServiceMethods.ByName("DeleteArticle")),
+			connect.WithClientOptions(opts...),
+		),
 		listArticles: connect.NewClient[v1.ListArticlesRequest, v1.ListArticlesResponse](
 			httpClient,
 			baseURL+BlogServiceListArticlesProcedure,
@@ -321,19 +353,45 @@ func NewBlogServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(blogServiceMethods.ByName("GetArticle")),
 			connect.WithClientOptions(opts...),
 		),
+		createFolder: connect.NewClient[v1.CreateFolderRequest, v1.CreateFolderResponse](
+			httpClient,
+			baseURL+BlogServiceCreateFolderProcedure,
+			connect.WithSchema(blogServiceMethods.ByName("CreateFolder")),
+			connect.WithClientOptions(opts...),
+		),
+		updateFolder: connect.NewClient[v1.UpdateFolderRequest, v1.UpdateFolderResponse](
+			httpClient,
+			baseURL+BlogServiceUpdateFolderProcedure,
+			connect.WithSchema(blogServiceMethods.ByName("UpdateFolder")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // blogServiceClient implements BlogServiceClient.
 type blogServiceClient struct {
 	createArticle *connect.Client[v1.CreateArticleRequest, v1.CreateArticleResponse]
+	updateArticle *connect.Client[v1.UpdateArticleRequest, v1.UpdateArticleResponse]
+	deleteArticle *connect.Client[v1.DeleteArticleRequest, emptypb.Empty]
 	listArticles  *connect.Client[v1.ListArticlesRequest, v1.ListArticlesResponse]
 	getArticle    *connect.Client[v1.GetArticleRequest, v1.GetArticleResponse]
+	createFolder  *connect.Client[v1.CreateFolderRequest, v1.CreateFolderResponse]
+	updateFolder  *connect.Client[v1.UpdateFolderRequest, v1.UpdateFolderResponse]
 }
 
 // CreateArticle calls home.v1.BlogService.CreateArticle.
 func (c *blogServiceClient) CreateArticle(ctx context.Context, req *connect.Request[v1.CreateArticleRequest]) (*connect.Response[v1.CreateArticleResponse], error) {
 	return c.createArticle.CallUnary(ctx, req)
+}
+
+// UpdateArticle calls home.v1.BlogService.UpdateArticle.
+func (c *blogServiceClient) UpdateArticle(ctx context.Context, req *connect.Request[v1.UpdateArticleRequest]) (*connect.Response[v1.UpdateArticleResponse], error) {
+	return c.updateArticle.CallUnary(ctx, req)
+}
+
+// DeleteArticle calls home.v1.BlogService.DeleteArticle.
+func (c *blogServiceClient) DeleteArticle(ctx context.Context, req *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.deleteArticle.CallUnary(ctx, req)
 }
 
 // ListArticles calls home.v1.BlogService.ListArticles.
@@ -346,14 +404,32 @@ func (c *blogServiceClient) GetArticle(ctx context.Context, req *connect.Request
 	return c.getArticle.CallUnary(ctx, req)
 }
 
+// CreateFolder calls home.v1.BlogService.CreateFolder.
+func (c *blogServiceClient) CreateFolder(ctx context.Context, req *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error) {
+	return c.createFolder.CallUnary(ctx, req)
+}
+
+// UpdateFolder calls home.v1.BlogService.UpdateFolder.
+func (c *blogServiceClient) UpdateFolder(ctx context.Context, req *connect.Request[v1.UpdateFolderRequest]) (*connect.Response[v1.UpdateFolderResponse], error) {
+	return c.updateFolder.CallUnary(ctx, req)
+}
+
 // BlogServiceHandler is an implementation of the home.v1.BlogService service.
 type BlogServiceHandler interface {
 	// CreateArticle creates a new blog article
 	CreateArticle(context.Context, *connect.Request[v1.CreateArticleRequest]) (*connect.Response[v1.CreateArticleResponse], error)
+	// UpdateArticle updates an existing blog article
+	UpdateArticle(context.Context, *connect.Request[v1.UpdateArticleRequest]) (*connect.Response[v1.UpdateArticleResponse], error)
+	// DeleteArticle deletes a blog article
+	DeleteArticle(context.Context, *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error)
 	// ListArticles returns articles with folder filter support
 	ListArticles(context.Context, *connect.Request[v1.ListArticlesRequest]) (*connect.Response[v1.ListArticlesResponse], error)
 	// GetArticle returns a single article by ID
 	GetArticle(context.Context, *connect.Request[v1.GetArticleRequest]) (*connect.Response[v1.GetArticleResponse], error)
+	// CreateFolder creates a folder for blog organization
+	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
+	// UpdateFolder updates folder name or hierarchy
+	UpdateFolder(context.Context, *connect.Request[v1.UpdateFolderRequest]) (*connect.Response[v1.UpdateFolderResponse], error)
 }
 
 // NewBlogServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -369,6 +445,18 @@ func NewBlogServiceHandler(svc BlogServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(blogServiceMethods.ByName("CreateArticle")),
 		connect.WithHandlerOptions(opts...),
 	)
+	blogServiceUpdateArticleHandler := connect.NewUnaryHandler(
+		BlogServiceUpdateArticleProcedure,
+		svc.UpdateArticle,
+		connect.WithSchema(blogServiceMethods.ByName("UpdateArticle")),
+		connect.WithHandlerOptions(opts...),
+	)
+	blogServiceDeleteArticleHandler := connect.NewUnaryHandler(
+		BlogServiceDeleteArticleProcedure,
+		svc.DeleteArticle,
+		connect.WithSchema(blogServiceMethods.ByName("DeleteArticle")),
+		connect.WithHandlerOptions(opts...),
+	)
 	blogServiceListArticlesHandler := connect.NewUnaryHandler(
 		BlogServiceListArticlesProcedure,
 		svc.ListArticles,
@@ -381,14 +469,34 @@ func NewBlogServiceHandler(svc BlogServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(blogServiceMethods.ByName("GetArticle")),
 		connect.WithHandlerOptions(opts...),
 	)
+	blogServiceCreateFolderHandler := connect.NewUnaryHandler(
+		BlogServiceCreateFolderProcedure,
+		svc.CreateFolder,
+		connect.WithSchema(blogServiceMethods.ByName("CreateFolder")),
+		connect.WithHandlerOptions(opts...),
+	)
+	blogServiceUpdateFolderHandler := connect.NewUnaryHandler(
+		BlogServiceUpdateFolderProcedure,
+		svc.UpdateFolder,
+		connect.WithSchema(blogServiceMethods.ByName("UpdateFolder")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/home.v1.BlogService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case BlogServiceCreateArticleProcedure:
 			blogServiceCreateArticleHandler.ServeHTTP(w, r)
+		case BlogServiceUpdateArticleProcedure:
+			blogServiceUpdateArticleHandler.ServeHTTP(w, r)
+		case BlogServiceDeleteArticleProcedure:
+			blogServiceDeleteArticleHandler.ServeHTTP(w, r)
 		case BlogServiceListArticlesProcedure:
 			blogServiceListArticlesHandler.ServeHTTP(w, r)
 		case BlogServiceGetArticleProcedure:
 			blogServiceGetArticleHandler.ServeHTTP(w, r)
+		case BlogServiceCreateFolderProcedure:
+			blogServiceCreateFolderHandler.ServeHTTP(w, r)
+		case BlogServiceUpdateFolderProcedure:
+			blogServiceUpdateFolderHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -402,12 +510,28 @@ func (UnimplementedBlogServiceHandler) CreateArticle(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.CreateArticle is not implemented"))
 }
 
+func (UnimplementedBlogServiceHandler) UpdateArticle(context.Context, *connect.Request[v1.UpdateArticleRequest]) (*connect.Response[v1.UpdateArticleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.UpdateArticle is not implemented"))
+}
+
+func (UnimplementedBlogServiceHandler) DeleteArticle(context.Context, *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.DeleteArticle is not implemented"))
+}
+
 func (UnimplementedBlogServiceHandler) ListArticles(context.Context, *connect.Request[v1.ListArticlesRequest]) (*connect.Response[v1.ListArticlesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.ListArticles is not implemented"))
 }
 
 func (UnimplementedBlogServiceHandler) GetArticle(context.Context, *connect.Request[v1.GetArticleRequest]) (*connect.Response[v1.GetArticleResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.GetArticle is not implemented"))
+}
+
+func (UnimplementedBlogServiceHandler) CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.CreateFolder is not implemented"))
+}
+
+func (UnimplementedBlogServiceHandler) UpdateFolder(context.Context, *connect.Request[v1.UpdateFolderRequest]) (*connect.Response[v1.UpdateFolderResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.UpdateFolder is not implemented"))
 }
 
 // AlbumServiceClient is a client for the home.v1.AlbumService service.

@@ -27,6 +27,26 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
   const { settings } = useStore()
   const avatarUrl = settings?.avatarUrl
 
+  const uploadWithRetry = async (url: string, file: File, headers: Record<string, string>, retries = 2) => {
+    let lastError: unknown
+    for (let i = 0; i <= retries; i += 1) {
+      try {
+        const res = await fetch(url, {
+          method: 'PUT',
+          body: file,
+          headers,
+        })
+        if (!res.ok) {
+          throw new Error(`upload failed with status ${res.status}`)
+        }
+        return
+      } catch (err) {
+        lastError = err
+      }
+    }
+    throw lastError
+  }
+
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
@@ -61,11 +81,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
         if (compressedFile.type && !headers['Content-Type']) {
             headers['Content-Type'] = compressedFile.type
         }
-        await fetch(reqRes.uploadUrl, {
-          method: 'PUT',
-          body: compressedFile,
-          headers,
-        })
+        await uploadWithRetry(reqRes.uploadUrl, compressedFile, headers)
 
         const confRes = await clients.album.confirmImageUpload({
           imageId: reqRes.imageId,
@@ -120,16 +136,16 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      className="glass-panel rounded-4xl p-6 mb-6"
+      className="glass-panel rounded-3xl sm:rounded-4xl p-4 sm:p-6 mb-4 sm:mb-6 mx-3 sm:mx-0"
     >
       <form onSubmit={handleSubmit}>
-        <div className="flex gap-4">
+        <div className="flex gap-3 sm:gap-4">
           {avatarUrl ? (
-            <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20 shadow-lg flex-shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-white/20 shadow-lg flex-shrink-0">
               <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white text-xl shadow-lg flex-shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white text-lg sm:text-xl shadow-lg flex-shrink-0">
               🌸
             </div>
           )}
@@ -138,13 +154,13 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="在想些什么呢？"
-              className="w-full bg-transparent text-white/90 placeholder-white/40 resize-none outline-none text-lg leading-relaxed min-h-[80px]"
+              className="w-full bg-transparent text-white/90 placeholder-white/40 resize-none outline-none text-base sm:text-lg leading-relaxed min-h-[72px] sm:min-h-[80px]"
               rows={3}
               disabled={isSubmitting}
             />
 
             {selectedImages.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mt-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-4">
                 {selectedImages.map((img) => (
                   <div
                     key={img.id}
@@ -153,6 +169,8 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
                     <img 
                       src={img.url} 
                       alt="Selected preview" 
+                      loading="lazy"
+                      decoding="async"
                       className={`w-full h-full object-cover transition-opacity ${img.isUploading ? 'opacity-50' : 'opacity-100'}`}
                     />
                     {img.isUploading && (
@@ -173,7 +191,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
               </div>
             )}
 
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/20">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-white/20">
               <div className="flex gap-3">
                 <input
                   ref={fileInputRef}
@@ -231,7 +249,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
               <button
                 type="submit"
                 disabled={isSubmitting || (!content.trim() && selectedImages.length === 0) || selectedImages.some(img => img.isUploading)}
-                className="btn-primary px-6 py-2.5 rounded-2xl text-white font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary w-full sm:w-auto justify-center px-6 py-2.5 rounded-2xl text-white font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <LoadingSpinner size="sm" text="发布中..." />
