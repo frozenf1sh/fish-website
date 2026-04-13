@@ -121,7 +121,7 @@ export function SearchPage() {
                 {articles.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => navigate(`/blog?article=${item.id}`)}
+                    onClick={() => navigate(`/blog/${item.id}`)}
                     className="w-full text-left rounded-2xl border border-white/15 bg-white/5 px-4 py-3 hover:bg-white/10"
                   >
                     <p className="text-white font-medium">{item.title}</p>

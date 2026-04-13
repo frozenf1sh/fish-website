@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/frozenfish/fish-website/internal/domain"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/xid"
 )
@@ -117,7 +118,12 @@ type postgresBlogRepository PostgresRepository
 
 func (r *postgresBlogRepository) CreateArticle(ctx context.Context, article *domain.Article) (*domain.Article, error) {
 	if article.ID == "" {
-		article.ID = xid.New().String()
+		id, err := uuid.NewV7()
+		if err != nil {
+			article.ID = xid.New().String()
+		} else {
+			article.ID = id.String()
+		}
 	}
 	if article.Status == "" {
 		article.Status = "published"

@@ -1,27 +1,54 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 interface MarkdownViewerProps {
   content: string
+  theme?: 'dark' | 'light'
 }
 
-export const MarkdownViewer = memo(function MarkdownViewer({ content }: MarkdownViewerProps) {
+function CodeBlock({ children, theme }: { children: React.ReactNode; theme: 'dark' | 'light' }) {
+  const [copied, setCopied] = useState(false)
+  const text = String(children || '')
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1200)
+    } catch {
+      setCopied(false)
+    }
+  }
+
   return (
-    <div className="prose prose-invert max-w-none">
+    <div className={`my-4 rounded-3xl overflow-hidden ${theme === 'dark' ? 'bg-black/40 backdrop-blur-sm border border-white/10' : 'bg-slate-100 border border-slate-300'}`}>
+      <div className={`flex justify-end px-3 py-2 ${theme === 'dark' ? 'border-b border-white/10' : 'border-b border-slate-300'}`}>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={`text-xs px-2 py-1 rounded-lg transition-all ${theme === 'dark' ? 'bg-white/10 text-white/80 hover:bg-white/20' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
+        >
+          {copied ? '已复制' : '复制代码'}
+        </button>
+      </div>
+      <pre className={`text-sm p-4 overflow-auto ${theme === 'dark' ? 'text-white/90' : 'text-slate-800'}`}>{children}</pre>
+    </div>
+  )
+}
+
+export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'dark' }: MarkdownViewerProps) {
+  return (
+    <div className={theme === 'dark' ? 'prose prose-invert max-w-none' : 'prose prose-slate max-w-none'}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           code({ node, inline, className, children, ...props }: any) {
             if (!inline) {
-              return (
-                <div className="my-4 p-4 rounded-3xl bg-black/40 backdrop-blur-sm border border-white/10 overflow-auto">
-                  <pre className="text-white/90 text-sm">{children}</pre>
-                </div>
-              )
+              return <CodeBlock theme={theme}>{children}</CodeBlock>
             }
             return (
-              <code className="px-1.5 py-0.5 rounded-lg bg-white/10 text-pink-200" {...props}>
+              <code className={theme === 'dark' ? 'px-1.5 py-0.5 rounded-lg bg-white/10 text-pink-200' : 'px-1.5 py-0.5 rounded-lg bg-slate-200 text-rose-700'} {...props}>
                 {children}
               </code>
             )
@@ -37,7 +64,7 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content }: Markdown
                   {...props}
                 />
                 {alt && (
-                  <p className="text-center text-white/50 text-sm mt-2 italic">
+                  <p className={theme === 'dark' ? 'text-center text-white/50 text-sm mt-2 italic' : 'text-center text-slate-500 text-sm mt-2 italic'}>
                     {alt}
                   </p>
                 )}
@@ -50,7 +77,7 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content }: Markdown
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-300 hover:text-blue-200 underline"
+                className={theme === 'dark' ? 'text-blue-300 hover:text-blue-200 underline' : 'text-blue-700 hover:text-blue-600 underline'}
                 {...props}
               >
                 {children}

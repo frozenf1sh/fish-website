@@ -124,6 +124,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:articleId" element={<BlogPage />} />
             <Route path="/albums" element={<AlbumsPage />} />
             <Route path="/search" element={<SearchPage />} />
           </Route>
