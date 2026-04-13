@@ -748,22 +748,22 @@ export function BlogPage() {
         ) : !sharedArticle ? (
           <div className="glass-card rounded-4xl p-8 text-center text-white/70">文章不存在或已删除</div>
         ) : (
-          <div className="glass-panel rounded-3xl sm:rounded-4xl p-4 sm:p-6">
-            <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-white/15">
+          <div className="bg-white text-slate-900 rounded-none sm:rounded-3xl border border-slate-200 shadow-xl p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-slate-200">
               <div>
-                <h1 className="text-white text-2xl sm:text-3xl font-bold">{sharedArticle.title}</h1>
-                <p className="text-white/55 text-sm mt-1">
+                <h1 className="text-slate-900 text-2xl sm:text-3xl font-bold">{sharedArticle.title}</h1>
+                <p className="text-slate-500 text-sm mt-1">
                   创建于 {formatDate(sharedArticle.createdAt)}
                   {isUpdatedAfterCreated(sharedArticle) ? ` · 修改于 ${formatDate(sharedArticle.updatedAt)}` : ''}
                 </p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => copyShareUrl(sharedArticle.id)} className="px-3 py-2 rounded-2xl border border-white/25 text-white/85 hover:bg-white/10">复制链接</button>
-                <button onClick={() => navigate('/blog')} className="px-3 py-2 rounded-2xl border border-white/25 text-white/85 hover:bg-white/10">返回列表</button>
+                <button onClick={() => copyShareUrl(sharedArticle.id)} className="px-3 py-2 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-100">复制链接</button>
+                <button onClick={() => navigate('/blog')} className="px-3 py-2 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-100">返回列表</button>
               </div>
             </div>
-            <div className="mt-5 text-white">
-              <MarkdownViewer content={sharedArticle.content} theme="dark" />
+            <div className="mt-5 text-slate-900">
+              <MarkdownViewer content={sharedArticle.content} theme="light" />
             </div>
           </div>
         )}

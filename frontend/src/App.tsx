@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { SakuraParticles } from './components/SakuraParticles'
 import { Layout } from './components/Layout'
 import { LoginModal } from './components/LoginModal'
@@ -16,6 +16,7 @@ import { useStore } from './store/useStore'
 import { readSiteBehaviorConfig } from './utils/siteConfig'
 
 function App() {
+  const location = useLocation()
   const {
     settings,
     showLoginModal,
@@ -26,6 +27,9 @@ function App() {
   } = useStore()
 
   const sakuraEnabled = settings?.sakuraParticlesEnabled ?? true
+  const siteBehavior = readSiteBehaviorConfig(settings?.customLinks)
+  const baseTextMode = siteBehavior.baseTextMode
+  const isBlogArticleRoute = /^\/blog\//.test(location.pathname)
 
   useEffect(() => {
     fetchSettings()
@@ -115,9 +119,14 @@ function App() {
           --glass-blur-card: ${blurVal * 0.8}px;
           --glass-blur-light: ${blurVal * 0.5}px;
           --bg-overlay-a: ${bgA};
+          --site-base-text-color: ${baseTextMode === 'black' ? '#111827' : '#f8fafc'};
+        }
+
+        .site-base-text .main-content {
+          color: var(--site-base-text-color);
         }
       `}</style>
-      <div className="min-h-screen relative overflow-hidden">
+      <div className={`min-h-screen relative overflow-hidden ${isBlogArticleRoute ? '' : 'site-base-text'}`}>
         {/* 背景图 */}
       {settings?.backgroundImageUrl && (
         <>

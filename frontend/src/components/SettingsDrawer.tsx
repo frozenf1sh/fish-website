@@ -22,6 +22,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
   const [hiddenTitle, setHiddenTitle] = useState('快回来看看！')
   const [focusTitle, setFocusTitle] = useState('欢迎回来！')
   const [faviconUrl, setFaviconUrl] = useState('')
+  const [baseTextMode, setBaseTextMode] = useState<'white' | 'black'>('white')
 
   useEffect(() => {
     if (settings) {
@@ -31,6 +32,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
       setHiddenTitle(config.hiddenTitle)
       setFocusTitle(config.focusTitle)
       setFaviconUrl(config.faviconUrl)
+      setBaseTextMode(config.baseTextMode)
     }
   }, [settings])
 
@@ -45,23 +47,23 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
       })
 
       const canvas = document.createElement('canvas')
-      canvas.width = 32
-      canvas.height = 32
+      canvas.width = 128
+      canvas.height = 128
       const ctx = canvas.getContext('2d')
       if (!ctx) throw new Error('浏览器不支持 Canvas 上下文')
 
       const sourceSize = Math.min(img.width, img.height)
       const sx = Math.floor((img.width - sourceSize) / 2)
       const sy = Math.floor((img.height - sourceSize) / 2)
-      ctx.clearRect(0, 0, 32, 32)
-      ctx.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, 32, 32)
+      ctx.clearRect(0, 0, 128, 128)
+      ctx.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, 128, 128)
 
       const blob = await new Promise<Blob | null>((resolve) => {
         canvas.toBlob((result) => resolve(result), 'image/png')
       })
       if (!blob) throw new Error('生成 favicon 失败')
 
-      return new File([blob], 'site-favicon-32.png', { type: 'image/png', lastModified: Date.now() })
+      return new File([blob], 'site-favicon-128.png', { type: 'image/png', lastModified: Date.now() })
     } finally {
       URL.revokeObjectURL(sourceUrl)
     }
@@ -135,6 +137,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
         hiddenTitle,
         focusTitle,
         faviconUrl,
+        baseTextMode,
       })
       await updateSettings({
         ...localSettings,
@@ -348,7 +351,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                         {faviconUrl && (
                           <div className="mb-3 inline-flex items-center gap-3 px-3 py-2 rounded-xl bg-white/10 border border-white/15">
                             <img src={faviconUrl} alt="favicon preview" className="w-8 h-8 rounded-md border border-white/20" />
-                            <span className="text-white/70 text-xs">将以 32x32 PNG 形式保存</span>
+                            <span className="text-white/70 text-xs">将以 128x128 PNG 形式保存</span>
                           </div>
                         )}
                         <input
@@ -426,6 +429,29 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                             className="absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg"
                           />
                         </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 glass-light rounded-2xl">
+                        <div>
+                          <p className="text-white/90 font-medium">全站基础文字色</p>
+                          <p className="text-white/50 text-sm">黑字 / 白字（不影响博客文章详情页）</p>
+                        </div>
+                        <div className="inline-flex rounded-xl overflow-hidden border border-white/20">
+                          <button
+                            type="button"
+                            onClick={() => setBaseTextMode('white')}
+                            className={`px-3 py-1.5 text-sm ${baseTextMode === 'white' ? 'bg-white/25 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'}`}
+                          >
+                            白字
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBaseTextMode('black')}
+                            className={`px-3 py-1.5 text-sm ${baseTextMode === 'black' ? 'bg-white/25 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'}`}
+                          >
+                            黑字
+                          </button>
+                        </div>
                       </div>
 
                       {/* 进阶UI组件外观自定义 */}
