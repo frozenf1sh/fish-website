@@ -429,7 +429,7 @@ func (h *Handler) ConfirmImageUpload(ctx context.Context, req *connect.Request[h
 func (h *Handler) UpdateAlbum(ctx context.Context, req *connect.Request[homev1.UpdateAlbumRequest]) (*connect.Response[homev1.UpdateAlbumResponse], error) {
 	logger.Info("received UpdateAlbum request", logger.String("album_id", req.Msg.AlbumId))
 
-	album, err := h.albumUsecase.UpdateAlbum(ctx, req.Msg.AlbumId, req.Msg.Name)
+	album, err := h.albumUsecase.UpdateAlbum(ctx, req.Msg.AlbumId, req.Msg.Name, req.Msg.Description, req.Msg.IsPublic)
 	if err != nil {
 		logger.Error("UpdateAlbum failed", logger.Err(err))
 		return nil, connect.NewError(connect.CodeInternal, err)

@@ -125,7 +125,7 @@ func (u *AlbumUsecase) CreateAlbum(ctx context.Context, name, description string
 	return createdAlbum, nil
 }
 
-func (u *AlbumUsecase) UpdateAlbum(ctx context.Context, albumID, name string) (*domain.Album, error) {
+func (u *AlbumUsecase) UpdateAlbum(ctx context.Context, albumID, name, description string, isPublic bool) (*domain.Album, error) {
 	if albumID == "" {
 		return nil, fmt.Errorf("album id is required")
 	}
@@ -136,9 +136,9 @@ func (u *AlbumUsecase) UpdateAlbum(ctx context.Context, albumID, name string) (*
 	if err != nil {
 		return nil, fmt.Errorf("get album: %w", err)
 	}
-	if name != "" {
-		album.Name = name
-	}
+	album.Name = name
+	album.Description = description
+	album.IsPublic = isPublic
 	updated, err := u.albumRepo.UpdateAlbum(ctx, album)
 	if err != nil {
 		return nil, fmt.Errorf("update album: %w", err)

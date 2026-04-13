@@ -316,6 +316,8 @@ message ConfirmImageUploadResponse {
 message UpdateAlbumRequest {
   string album_id = 1;
   string name = 2;
+  string description = 3;
+  bool is_public = 4;
 }
 
 message UpdateAlbumResponse {

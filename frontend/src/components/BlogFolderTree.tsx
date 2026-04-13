@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
 import { showToast } from '../lib/toast'
+import { ConfirmDialog } from './ConfirmDialog'
 
 interface Folder {
   id: string
@@ -74,6 +75,7 @@ export function BlogFolderTree() {
   const [isLoading, setIsLoading] = useState(true)
   const [creatingName, setCreatingName] = useState('')
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
+  const [confirmDeleteFolderOpen, setConfirmDeleteFolderOpen] = useState(false)
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const isLoggedIn = useStore((state) => state.isLoggedIn)
@@ -224,7 +226,7 @@ export function BlogFolderTree() {
 
             {activeId !== 'root' && (
               <button
-                onClick={deleteCurrentFolder}
+                onClick={() => setConfirmDeleteFolderOpen(true)}
                 className="w-full px-3 py-2 rounded-xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35"
               >
                 删除当前目录（子目录与文章归根）
@@ -233,6 +235,20 @@ export function BlogFolderTree() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteFolderOpen}
+        title="删除目录"
+        message="确定删除当前目录吗？其子目录会一起删除，目录内文章会移动到根目录。"
+        confirmText="确认删除"
+        cancelText="取消"
+        danger
+        onCancel={() => setConfirmDeleteFolderOpen(false)}
+        onConfirm={async () => {
+          await deleteCurrentFolder()
+          setConfirmDeleteFolderOpen(false)
+        }}
+      />
     </div>
   )
 }

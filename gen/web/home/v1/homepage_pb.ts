@@ -1930,6 +1930,16 @@ export class UpdateAlbumRequest extends Message<UpdateAlbumRequest> {
    */
   name = "";
 
+  /**
+   * @generated from field: string description = 3;
+   */
+  description = "";
+
+  /**
+   * @generated from field: bool is_public = 4;
+   */
+  isPublic = false;
+
   constructor(data?: PartialMessage<UpdateAlbumRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -1940,6 +1950,8 @@ export class UpdateAlbumRequest extends Message<UpdateAlbumRequest> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "album_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "description", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "is_public", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateAlbumRequest {

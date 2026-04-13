@@ -384,6 +384,8 @@ export const clients = {
       const response = await albumClient.updateAlbum({
         albumId: req.albumId,
         name: req.name,
+        description: req.description || '',
+        isPublic: !!req.isPublic,
       })
       return {
         album: response.album

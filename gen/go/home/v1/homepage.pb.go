@@ -2368,6 +2368,8 @@ type UpdateAlbumRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AlbumId       string                 `protobuf:"bytes,1,opt,name=album_id,json=albumId,proto3" json:"album_id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	IsPublic      bool                   `protobuf:"varint,4,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2414,6 +2416,20 @@ func (x *UpdateAlbumRequest) GetName() string {
 		return x.Name
 	}
 	return ""
+}
+
+func (x *UpdateAlbumRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *UpdateAlbumRequest) GetIsPublic() bool {
+	if x != nil {
+		return x.IsPublic
+	}
+	return false
 }
 
 type UpdateAlbumResponse struct {
@@ -3153,10 +3169,12 @@ const file_home_v1_homepage_proto_rawDesc = "" +
 	"\n" +
 	"upload_url\x18\x02 \x01(\tR\tuploadUrl\"B\n" +
 	"\x1aConfirmImageUploadResponse\x12$\n" +
-	"\x05image\x18\x01 \x01(\v2\x0e.home.v1.ImageR\x05image\"C\n" +
+	"\x05image\x18\x01 \x01(\v2\x0e.home.v1.ImageR\x05image\"\x82\x01\n" +
 	"\x12UpdateAlbumRequest\x12\x19\n" +
 	"\balbum_id\x18\x01 \x01(\tR\aalbumId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\";\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1b\n" +
+	"\tis_public\x18\x04 \x01(\bR\bisPublic\";\n" +
 	"\x13UpdateAlbumResponse\x12$\n" +
 	"\x05album\x18\x01 \x01(\v2\x0e.home.v1.AlbumR\x05album\"|\n" +
 	"\x11MoveImagesRequest\x12\"\n" +

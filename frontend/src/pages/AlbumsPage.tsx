@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LoadingSpinner } from '../components/LoadingSpinner'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { clients } from '../lib/connect'
 import { showToast } from '../lib/toast'
 import { compressImage } from '../utils/imageCompressor'
@@ -58,7 +59,15 @@ export function AlbumsPage() {
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([])
   const [moveTargetAlbumId, setMoveTargetAlbumId] = useState('')
   const [isMoveMode, setIsMoveMode] = useState(false)
-  const [renameInput, setRenameInput] = useState('')
+  const [isEditAlbumOpen, setIsEditAlbumOpen] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editIsPublic, setEditIsPublic] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [confirmDeleteTitle, setConfirmDeleteTitle] = useState('')
+  const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('')
+  const [pendingDeleteImageIds, setPendingDeleteImageIds] = useState<string[]>([])
+  const [pendingDeleteAlbumId, setPendingDeleteAlbumId] = useState('')
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -70,7 +79,7 @@ export function AlbumsPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isMoving, setIsMoving] = useState(false)
-  const [isRenaming, setIsRenaming] = useState(false)
+  const [isSavingAlbumEdit, setIsSavingAlbumEdit] = useState(false)
   const [isDeletingAlbum, setIsDeletingAlbum] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -100,7 +109,17 @@ export function AlbumsPage() {
       setIsLoadingAlbums(true)
       try {
         const response = await clients.album.listAlbums({ pageSize: 100, onlyPublic: !isLoggedIn })
-        const loadedAlbums = response.albums || []
+        let loadedAlbums = (response.albums as Album[] | undefined) || []
+        if (isLoggedIn && !loadedAlbums.some((item) => item.id === RECYCLE_BIN_ALBUM_ID)) {
+          try {
+            const recycle = await clients.album.getAlbum({ albumId: RECYCLE_BIN_ALBUM_ID })
+            if (recycle.album) {
+              loadedAlbums = [...loadedAlbums, recycle.album as Album]
+            }
+          } catch {
+            // Ignore and keep current list if recycle bin cannot be fetched.
+          }
+        }
         setAlbums(loadedAlbums)
         if (loadedAlbums.length > 0) {
           setSelectedAlbumId((prev) => prev || loadedAlbums[0].id)
@@ -142,7 +161,6 @@ export function AlbumsPage() {
   }, [selectedAlbumId])
 
   useEffect(() => {
-    setRenameInput(selectedAlbum?.name || '')
     setIsMoveMode(false)
     setMoveTargetAlbumId('')
     setSelectionMode(false)
@@ -166,7 +184,17 @@ export function AlbumsPage() {
     setIsLoadingAlbums(true)
     try {
       const response = await clients.album.listAlbums({ pageSize: 100, onlyPublic: !isLoggedIn })
-      const loadedAlbums = (response.albums as Album[] | undefined) || []
+      let loadedAlbums = (response.albums as Album[] | undefined) || []
+      if (isLoggedIn && !loadedAlbums.some((item) => item.id === RECYCLE_BIN_ALBUM_ID)) {
+        try {
+          const recycle = await clients.album.getAlbum({ albumId: RECYCLE_BIN_ALBUM_ID })
+          if (recycle.album) {
+            loadedAlbums = [...loadedAlbums, recycle.album as Album]
+          }
+        } catch {
+          // Ignore and keep current list if recycle bin cannot be fetched.
+        }
+      }
       setAlbums(loadedAlbums)
       if (loadedAlbums.length === 0) {
         setSelectedAlbumId('')
@@ -310,6 +338,19 @@ export function AlbumsPage() {
     }
   }
 
+  const requestDeleteImages = (imageIds: string[]) => {
+    if (!selectedAlbumId || imageIds.length === 0) return
+    setPendingDeleteImageIds(imageIds)
+    setPendingDeleteAlbumId('')
+    setConfirmDeleteTitle(selectedAlbumId === RECYCLE_BIN_ALBUM_ID ? '永久删除照片' : '删除照片')
+    setConfirmDeleteMessage(
+      selectedAlbumId === RECYCLE_BIN_ALBUM_ID
+        ? `确定永久删除所选 ${imageIds.length} 张照片吗？此操作不可恢复。`
+        : `确定删除所选 ${imageIds.length} 张照片吗？照片会移动到回收站。`,
+    )
+    setConfirmDeleteOpen(true)
+  }
+
   const handleMoveImages = async () => {
     if (!selectedAlbumId || !moveTargetAlbumId || selectedImageIds.length === 0) return
 
@@ -342,40 +383,77 @@ export function AlbumsPage() {
     }
   }
 
-  const handleRenameAlbum = async () => {
-    if (!selectedAlbum || !renameInput.trim()) return
+  const openEditAlbum = () => {
+    if (!selectedAlbum) return
+    setEditName(selectedAlbum.name || '')
+    setEditDescription(selectedAlbum.description || '')
+    setEditIsPublic(!!selectedAlbum.isPublic)
+    setIsEditAlbumOpen(true)
+  }
+
+  const handleSaveAlbumEdit = async () => {
+    if (!selectedAlbum || !editName.trim()) return
     if (isSpecialAlbum(selectedAlbum.id)) {
       showToast({ type: 'error', message: '默认相册和回收站不支持改名' })
       return
     }
-    setIsRenaming(true)
+    setIsSavingAlbumEdit(true)
     try {
-      await clients.album.updateAlbum({ albumId: selectedAlbum.id, name: renameInput.trim() })
-      showToast({ type: 'success', message: '相册名称已更新' })
+      await clients.album.updateAlbum({
+        albumId: selectedAlbum.id,
+        name: editName.trim(),
+        description: editDescription.trim(),
+        isPublic: editIsPublic,
+      })
+      showToast({ type: 'success', message: '相册信息已更新' })
       await refreshAlbums(selectedAlbum.id)
+      setIsEditAlbumOpen(false)
     } catch (err) {
-      console.error('Failed to rename album:', err)
-      showToast({ type: 'error', message: '相册改名失败，请稍后重试' })
+      console.error('Failed to update album:', err)
+      showToast({ type: 'error', message: '编辑相册失败，请稍后重试' })
     } finally {
-      setIsRenaming(false)
+      setIsSavingAlbumEdit(false)
     }
   }
 
   const handleDeleteAlbum = async () => {
-    if (!selectedAlbum || isSpecialAlbum(selectedAlbum.id)) return
-    if (!window.confirm(`确定删除相册《${selectedAlbum.name}》吗？其中照片会自动移动到回收站。`)) return
+    const albumId = pendingDeleteAlbumId
+    if (!albumId) return
 
     setIsDeletingAlbum(true)
     try {
-      await clients.album.deleteAlbum({ albumId: selectedAlbum.id })
+      await clients.album.deleteAlbum({ albumId })
       showToast({ type: 'success', message: '相册已删除，照片已移入回收站' })
       await refreshAlbums(RECYCLE_BIN_ALBUM_ID)
       setSelectedAlbumId(RECYCLE_BIN_ALBUM_ID)
+      setConfirmDeleteOpen(false)
+      setPendingDeleteAlbumId('')
     } catch (err) {
       console.error('Failed to delete album:', err)
       showToast({ type: 'error', message: '删除相册失败，请稍后重试' })
     } finally {
       setIsDeletingAlbum(false)
+    }
+  }
+
+  const requestDeleteAlbum = () => {
+    if (!selectedAlbum || isSpecialAlbum(selectedAlbum.id)) return
+    setPendingDeleteImageIds([])
+    setPendingDeleteAlbumId(selectedAlbum.id)
+    setConfirmDeleteTitle('删除相册')
+    setConfirmDeleteMessage(`确定删除相册《${selectedAlbum.name}》吗？其中照片会自动移动到回收站。`)
+    setConfirmDeleteOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (pendingDeleteAlbumId) {
+      await handleDeleteAlbum()
+      return
+    }
+    if (pendingDeleteImageIds.length > 0) {
+      await handleDeleteImages(pendingDeleteImageIds)
+      setConfirmDeleteOpen(false)
+      setPendingDeleteImageIds([])
     }
   }
 
@@ -481,7 +559,15 @@ export function AlbumsPage() {
                 </button>
                 {selectedAlbum && !isSpecialAlbum(selectedAlbum.id) && (
                   <button
-                    onClick={handleDeleteAlbum}
+                    onClick={openEditAlbum}
+                    className="px-4 py-2 rounded-2xl border border-white/30 text-white/90 hover:bg-white/10"
+                  >
+                    编辑相册
+                  </button>
+                )}
+                {selectedAlbum && !isSpecialAlbum(selectedAlbum.id) && (
+                  <button
+                    onClick={requestDeleteAlbum}
                     disabled={isDeletingAlbum}
                     className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50"
                   >
@@ -504,23 +590,6 @@ export function AlbumsPage() {
                     <div>
                     <h3 className="text-xl font-semibold text-white">{selectedAlbum.name}</h3>
                     <p className="text-sm text-white/60 mt-1">{selectedAlbum.description || '暂无描述'}</p>
-                    {isLoggedIn && !isSpecialAlbum(selectedAlbum.id) && (
-                      <div className="mt-3 flex items-center gap-2">
-                        <input
-                          value={renameInput}
-                          onChange={(e) => setRenameInput(e.target.value)}
-                          placeholder="相册新名称"
-                          className="px-3 py-1.5 rounded-xl bg-white/10 text-white border border-white/20 focus:outline-none focus:border-white/40 text-sm"
-                        />
-                        <button
-                          onClick={handleRenameAlbum}
-                          disabled={isRenaming || !renameInput.trim()}
-                          className="px-3 py-1.5 rounded-xl border border-white/25 text-white/85 hover:bg-white/10 text-sm disabled:opacity-50"
-                        >
-                          {isRenaming ? '保存中...' : '重命名'}
-                        </button>
-                      </div>
-                    )}
                     </div>
                     {isLoggedIn && (
                     <div className="flex items-center gap-2">
@@ -576,7 +645,7 @@ export function AlbumsPage() {
                       )}
                       {selectionMode && selectedImageIds.length > 0 && (
                         <button
-                          onClick={() => handleDeleteImages(selectedImageIds)}
+                          onClick={() => requestDeleteImages(selectedImageIds)}
                           disabled={isDeleting || isMoving}
                           className="px-3 py-1.5 rounded-full border text-sm bg-red-500/25 text-red-100 border-red-300/40 hover:bg-red-500/35 disabled:opacity-50"
                         >
@@ -633,7 +702,7 @@ export function AlbumsPage() {
                                   </button>
                                 ) : isLoggedIn ? (
                                   <button
-                                    onClick={() => handleDeleteImages([image.id])}
+                                    onClick={() => requestDeleteImages([image.id])}
                                     disabled={isDeleting}
                                     className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-red-500/75 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
                                   >
@@ -675,6 +744,87 @@ export function AlbumsPage() {
                   setSelectedImage(null)
                 }}
               />
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title={confirmDeleteTitle}
+        message={confirmDeleteMessage}
+        confirmText="确认删除"
+        cancelText="取消"
+        danger
+        loading={isDeleting || isDeletingAlbum}
+        onCancel={() => {
+          if (isDeleting || isDeletingAlbum) return
+          setConfirmDeleteOpen(false)
+          setPendingDeleteAlbumId('')
+          setPendingDeleteImageIds([])
+        }}
+        onConfirm={handleConfirmDelete}
+      />
+
+      {createPortal(
+        <AnimatePresence>
+          {isEditAlbumOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[145] bg-black/55 backdrop-blur-sm p-4 flex items-center justify-center"
+              onClick={() => !isSavingAlbumEdit && setIsEditAlbumOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.96, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.96, opacity: 0 }}
+                className="w-full max-w-lg rounded-3xl border border-white/20 bg-slate-900/95 text-white shadow-2xl p-5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-lg font-semibold">编辑相册</h3>
+                <div className="mt-4 space-y-3">
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="相册名称"
+                    className="w-full px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 focus:outline-none focus:border-white/40"
+                  />
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="相册描述"
+                    className="w-full min-h-[92px] px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 focus:outline-none focus:border-white/40"
+                  />
+                  <label className="inline-flex items-center gap-2 text-white/85 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={editIsPublic}
+                      onChange={(e) => setEditIsPublic(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    公开相册
+                  </label>
+                </div>
+                <div className="mt-5 flex justify-end gap-2">
+                  <button
+                    onClick={() => setIsEditAlbumOpen(false)}
+                    disabled={isSavingAlbumEdit}
+                    className="px-4 py-2 rounded-xl border border-white/25 text-white/85 hover:bg-white/10 disabled:opacity-50"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleSaveAlbumEdit}
+                    disabled={isSavingAlbumEdit || !editName.trim()}
+                    className="px-4 py-2 rounded-xl bg-sky-500/85 text-white hover:bg-sky-500 disabled:opacity-50"
+                  >
+                    {isSavingAlbumEdit ? '保存中...' : '保存修改'}
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>,

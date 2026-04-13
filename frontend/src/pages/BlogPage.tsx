@@ -5,6 +5,7 @@ import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
 import { MarkdownViewer } from '../components/MarkdownViewer'
 import { LoadingSpinner } from '../components/LoadingSpinner'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { showToast } from '../lib/toast'
 import { compressImage } from '../utils/imageCompressor'
 
@@ -80,6 +81,7 @@ export function BlogPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [movePath, setMovePath] = useState<string[]>([ROOT_FOLDER_ID])
   const [isManaging, setIsManaging] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   const articleMap = useMemo(() => {
     const map = new Map<string, BlogArticle>()
@@ -444,6 +446,11 @@ export function BlogPage() {
     }
   }
 
+  const requestDeleteSelected = () => {
+    if (selectedIds.length === 0) return
+    setConfirmDeleteOpen(true)
+  }
+
   const moveSelectedToFolder = async () => {
     if (selectedIds.length === 0) return
     const resolvedPath = getResolvedMovePath()
@@ -681,7 +688,7 @@ export function BlogPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <button onClick={moveSelectedToFolder} disabled={isManaging || selectedIds.length === 0} className="px-4 py-2 rounded-2xl border border-white/30 text-white hover:bg-white/10 disabled:opacity-50">移动到所选文件夹</button>
-              <button onClick={deleteSelected} disabled={isManaging || selectedIds.length === 0} className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50">删除所选</button>
+              <button onClick={requestDeleteSelected} disabled={isManaging || selectedIds.length === 0} className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50">删除所选</button>
             </div>
           </div>
         </div>
@@ -781,6 +788,24 @@ export function BlogPage() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="删除博客"
+        message={`确定删除已选 ${selectedIds.length} 篇文章吗？此操作不可恢复。`}
+        confirmText="确认删除"
+        cancelText="取消"
+        danger
+        loading={isManaging}
+        onCancel={() => {
+          if (isManaging) return
+          setConfirmDeleteOpen(false)
+        }}
+        onConfirm={async () => {
+          await deleteSelected()
+          setConfirmDeleteOpen(false)
+        }}
+      />
     </div>
   )
 }
