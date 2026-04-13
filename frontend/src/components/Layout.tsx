@@ -2,11 +2,12 @@ import { motion } from 'framer-motion'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LeftSidebar } from './LeftSidebar'
 import { RightSidebar } from './RightSidebar'
+import { useStore } from '../store/useStore'
 
 const mobileTabs = [
   { icon: '🏠', label: '首页', path: '/' },
-  { icon: '🔎', label: '搜索', path: '/search' },
   { icon: '📸', label: '相册', path: '/albums' },
+  { icon: '🔎', label: '搜索', path: '/search' },
   { icon: '📝', label: '博客', path: '/blog' },
   {
     icon: (
@@ -23,6 +24,7 @@ const mobileTabs = [
 export function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const avatarUrl = useStore((state) => state.settings?.avatarUrl)
 
   return (
     <div className="min-h-screen">
@@ -32,8 +34,12 @@ export function Layout() {
             onClick={() => navigate('/')}
             className="flex items-center gap-2 text-white"
           >
-            <span className="text-xl">𝕏</span>
-            <span className="text-sm font-semibold tracking-wide">FISH FEED</span>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="avatar" className="w-7 h-7 rounded-full object-cover border border-white/30" />
+            ) : (
+              <span className="w-7 h-7 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-sm">🐟</span>
+            )}
+            <span className="text-sm font-semibold tracking-wide">冻鱼的小站</span>
           </button>
           <button
             onClick={() => navigate('/search')}
@@ -80,17 +86,17 @@ export function Layout() {
 
       {/* 移动端底部导航 */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl border-t border-white/20 bg-black/30 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
-        <div className="flex justify-around items-center px-3 pt-2">
+        <div className="grid grid-cols-5 gap-1 items-center px-2 pt-2">
           {mobileTabs.map(({ icon, label, path }) => {
             const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
             return (
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`flex flex-col items-center justify-center gap-1 min-w-20 py-2 rounded-2xl transition-all ${isActive ? 'bg-white/25 text-white' : 'text-white/70'}`}
+              className={`w-full min-w-0 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl transition-all ${isActive ? 'bg-white/25 text-white' : 'text-white/70'}`}
             >
               <span className="text-xl leading-none flex items-center justify-center">{icon}</span>
-              <span className="text-[11px] tracking-wide">{label}</span>
+              <span className="text-[11px] tracking-wide truncate">{label}</span>
             </button>
             )
           })}

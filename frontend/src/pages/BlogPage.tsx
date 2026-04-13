@@ -6,6 +6,7 @@ import { useStore } from '../store/useStore'
 import { MarkdownViewer } from '../components/MarkdownViewer'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { BlogFolderTree } from '../components/BlogFolderTree'
 import { showToast } from '../lib/toast'
 import { compressImage } from '../utils/imageCompressor'
 
@@ -655,6 +656,10 @@ export function BlogPage() {
           )}
         </div>
       </motion.div>
+
+      <div className="lg:hidden">
+        <BlogFolderTree />
+      </div>
 
       {isLoggedIn && manageMode && (
         <div className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 space-y-3">
