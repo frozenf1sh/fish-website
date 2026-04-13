@@ -31,6 +31,7 @@ func (i *AuthInterceptor) RequireAuth() connect.Interceptor {
 		return connect.UnaryFunc(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			// Skip auth for specified procedures
 			if isPublicProcedure(req.Spec().Procedure) {
+				ctx = i.attachOptionalUser(ctx, req.Header())
 				return next(ctx, req)
 			}
 
@@ -56,6 +57,27 @@ func (i *AuthInterceptor) RequireAuth() connect.Interceptor {
 			return next(ctx, req)
 		})
 	})
+}
+
+// attachOptionalUser tries to authenticate bearer token for public endpoints.
+// It never returns an error: invalid/missing tokens are treated as anonymous.
+func (i *AuthInterceptor) attachOptionalUser(ctx context.Context, headers http.Header) context.Context {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return ctx
+	}
+
+	token, err := extractToken(headers)
+	if err != nil {
+		return ctx
+	}
+
+	valid, err := i.authUsecase.ValidateToken(ctx, token)
+	if err != nil || !valid {
+		return ctx
+	}
+
+	return context.WithValue(ctx, userContextKey, "admin")
 }
 
 func extractToken(headers http.Header) (string, error) {
