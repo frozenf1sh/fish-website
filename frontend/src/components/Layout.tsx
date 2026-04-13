@@ -2,12 +2,22 @@ import { motion } from 'framer-motion'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LeftSidebar } from './LeftSidebar'
 import { RightSidebar } from './RightSidebar'
- 
+
 const mobileTabs = [
   { icon: '🏠', label: '首页', path: '/' },
   { icon: '🔎', label: '搜索', path: '/search' },
   { icon: '📸', label: '相册', path: '/albums' },
   { icon: '📝', label: '博客', path: '/blog' },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M20 21a8 8 0 0 0-16 0" />
+        <circle cx="12" cy="8" r="4" />
+      </svg>
+    ),
+    label: '我',
+    path: '/me',
+  },
 ]
 
 export function Layout() {
@@ -72,14 +82,14 @@ export function Layout() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl border-t border-white/20 bg-black/30 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
         <div className="flex justify-around items-center px-3 pt-2">
           {mobileTabs.map(({ icon, label, path }) => {
-            const isActive = location.pathname === path
+            const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
             return (
             <button
               key={path}
               onClick={() => navigate(path)}
               className={`flex flex-col items-center justify-center gap-1 min-w-20 py-2 rounded-2xl transition-all ${isActive ? 'bg-white/25 text-white' : 'text-white/70'}`}
             >
-              <span className="text-xl leading-none">{icon}</span>
+              <span className="text-xl leading-none flex items-center justify-center">{icon}</span>
               <span className="text-[11px] tracking-wide">{label}</span>
             </button>
             )

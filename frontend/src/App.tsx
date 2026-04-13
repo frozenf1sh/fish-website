@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { SakuraParticles } from './components/SakuraParticles'
 import { Layout } from './components/Layout'
@@ -10,6 +9,7 @@ import { BlogPage } from './pages/BlogPage'
 import { PostPage } from './pages/PostPage'
 import { AlbumsPage } from './pages/AlbumsPage'
 import { SearchPage } from './pages/SearchPage'
+import { MePage } from './pages/MePage'
 import { ToastCenter } from './components/ToastCenter'
 import { showToast } from './lib/toast'
 import { useStore } from './store/useStore'
@@ -17,7 +17,6 @@ import { useStore } from './store/useStore'
 function App() {
   const {
     settings,
-    isLoggedIn,
     showLoginModal,
     showSettingsDrawer,
     setShowLoginModal,
@@ -85,42 +84,6 @@ function App() {
       {/* 樱花粒子背景 */}
       <SakuraParticles enabled={sakuraEnabled} />
 
-      {/* 操作按钮 */}
-      <div className="fixed top-3 right-3 sm:top-6 sm:right-6 z-50 flex gap-2 sm:gap-3 lg:hidden">
-        {isLoggedIn && (
-          <motion.button
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowSettingsDrawer(true)}
-            className="glass-card px-3 sm:px-4 py-2 rounded-full flex items-center gap-2 text-white/80 hover:text-white transition-all"
-          >
-            <span className="text-xl">⚙️</span>
-            <span className="hidden sm:inline text-sm font-medium">设置</span>
-          </motion.button>
-        )}
-        <motion.button
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => {
-            if (isLoggedIn) {
-              useStore.getState().logout()
-            } else {
-              setShowLoginModal(true)
-            }
-          }}
-          className="glass-card px-3 sm:px-4 py-2 rounded-full flex items-center gap-2 text-white/80 hover:text-white transition-all"
-        >
-          <span className="text-xl">{isLoggedIn ? '🚪' : '🌸'}</span>
-          <span className="hidden sm:inline text-sm font-medium">{isLoggedIn ? '退出' : sakuraEnabled ? '樱花' : '关闭'}</span>
-        </motion.button>
-      </div>
-
       {/* 主内容 */}
       <div className="main-content relative z-10">
         <Routes>
@@ -131,6 +94,7 @@ function App() {
             <Route path="/post/:postId" element={<PostPage />} />
             <Route path="/albums" element={<AlbumsPage />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/me" element={<MePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

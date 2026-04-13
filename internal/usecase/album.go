@@ -217,6 +217,11 @@ func (u *AlbumUsecase) ListAlbums(ctx context.Context, pageSize int, pageToken s
 	if err != nil {
 		return nil, "", false, fmt.Errorf("list albums: %w", err)
 	}
+	for _, album := range albums {
+		if album.ID == defaultAlbumID || album.ID == recycleBinAlbumID {
+			album.IsPublic = false
+		}
+	}
 
 	return albums, nextPageToken, hasMore, nil
 }
@@ -226,6 +231,9 @@ func (u *AlbumUsecase) GetAlbumWithImages(ctx context.Context, albumID string, i
 	album, err := u.albumRepo.GetAlbum(ctx, albumID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get album: %w", err)
+	}
+	if album.ID == defaultAlbumID || album.ID == recycleBinAlbumID {
+		album.IsPublic = false
 	}
 	if !includePrivate && !album.IsPublic {
 		return nil, nil, domain.ErrUnauthorized

@@ -499,7 +499,7 @@ func (r *postgresAlbumRepository) ListAlbums(ctx context.Context, pageSize int, 
 		SELECT id, name, description, is_public, created_at
 		FROM albums
 		WHERE ($1 = '' OR id < $1)
-		AND (NOT $2 OR is_public = true)
+		AND (NOT $2 OR (is_public = true AND id NOT IN ('default', 'recycle-bin')))
 		ORDER BY created_at DESC
 		LIMIT $3
 	`

@@ -27,6 +27,11 @@ interface AlbumImage {
   createdAt: { toDate?: () => Date }
 }
 
+interface AlbumCardMeta {
+  count: number
+  coverUrl: string
+}
+
 interface ImageReferenceItem {
   imageId: string
   url: string
@@ -66,6 +71,7 @@ export function AlbumsPage() {
   const [selectedAlbumId, setSelectedAlbumId] = useState<string>('')
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
   const [albumImages, setAlbumImages] = useState<AlbumImage[]>([])
+  const [albumCardMeta, setAlbumCardMeta] = useState<Record<string, AlbumCardMeta>>({})
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([])
@@ -101,6 +107,30 @@ export function AlbumsPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const sortedAlbums = useMemo(() => {
+    const rank = (id: string) => {
+      if (id === DEFAULT_ALBUM_ID) return 0
+      if (id === RECYCLE_BIN_ALBUM_ID) return 1
+      return 2
+    }
+    return [...albums].sort((a, b) => {
+      const ra = rank(a.id)
+      const rb = rank(b.id)
+      if (ra !== rb) return ra - rb
+      const ta = a.createdAt?.toDate?.()?.getTime?.() || 0
+      const tb = b.createdAt?.toDate?.()?.getTime?.() || 0
+      return tb - ta
+    })
+  }, [albums])
+
+  const referenceLookup = useMemo(() => {
+    const map = new Map<string, ImageReferenceItem>()
+    for (const item of referenceItems) {
+      map.set(item.imageId, item)
+    }
+    return map
+  }, [referenceItems])
+
   const uploadWithRetry = async (url: string, file: File, headers: Record<string, string>, retries = 2) => {
     let lastError: unknown
     for (let i = 0; i <= retries; i += 1) {
@@ -121,6 +151,27 @@ export function AlbumsPage() {
     throw lastError
   }
 
+  const hydrateAlbumCardMeta = async (list: Album[]) => {
+    const entries = await Promise.all(
+      list.map(async (album) => {
+        try {
+          const detail = await clients.album.getAlbum({ albumId: album.id })
+          const images = (detail.images as AlbumImage[] | undefined) || []
+          return [album.id, { count: images.length, coverUrl: images[0]?.thumbnailUrl || images[0]?.url || '' }] as const
+        } catch {
+          return [album.id, { count: 0, coverUrl: '' }] as const
+        }
+      }),
+    )
+    setAlbumCardMeta((prev) => {
+      const next = { ...prev }
+      for (const [id, meta] of entries) {
+        next[id] = meta
+      }
+      return next
+    })
+  }
+
   useEffect(() => {
     const loadAlbums = async () => {
       setIsLoadingAlbums(true)
@@ -138,9 +189,11 @@ export function AlbumsPage() {
           }
         }
         setAlbums(loadedAlbums)
-        if (loadedAlbums.length > 0) {
-          setSelectedAlbumId((prev) => prev || loadedAlbums[0].id)
-        }
+        await hydrateAlbumCardMeta(loadedAlbums)
+        setSelectedAlbumId((prev) => {
+          if (!prev) return ''
+          return loadedAlbums.some((item) => item.id === prev) ? prev : ''
+        })
       } catch (err) {
         console.error('Failed to load albums:', err)
       } finally {
@@ -182,6 +235,7 @@ export function AlbumsPage() {
     setMoveTargetAlbumId('')
     setSelectionMode(false)
     setSelectedImageIds([])
+    setReferenceItems([])
   }, [selectedAlbum?.id])
 
   const groupedImages = useMemo(() => {
@@ -213,12 +267,13 @@ export function AlbumsPage() {
         }
       }
       setAlbums(loadedAlbums)
+      await hydrateAlbumCardMeta(loadedAlbums)
       if (loadedAlbums.length === 0) {
         setSelectedAlbumId('')
       } else if (preferAlbumId && loadedAlbums.some((item) => item.id === preferAlbumId)) {
         setSelectedAlbumId(preferAlbumId)
-      } else if (!loadedAlbums.some((item) => item.id === selectedAlbumId)) {
-        setSelectedAlbumId(loadedAlbums[0].id)
+      } else if (!selectedAlbumId || !loadedAlbums.some((item) => item.id === selectedAlbumId)) {
+        setSelectedAlbumId('')
       }
     } finally {
       setIsLoadingAlbums(false)
@@ -571,215 +626,267 @@ export function AlbumsPage() {
       )}
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-4xl p-6">
-            <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-              <div className="flex gap-2 flex-wrap">
-                {isLoadingAlbums && albums.length === 0 && (
-                  <span className="text-white/60 text-sm">相册加载中...</span>
-                )}
-                {albums.map((album) => (
-                  <button
-                    key={album.id}
-                    onClick={() => setSelectedAlbumId(album.id)}
-                    className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
-                      selectedAlbumId === album.id
-                        ? 'bg-white/30 text-white border-white/40'
-                        : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20 hover:text-white'
-                    }`}
-                  >
-                    {album.name}{album.id === RECYCLE_BIN_ALBUM_ID ? '（回收站）' : ''}
-                  </button>
-                ))}
-              </div>
-
-              {isLoggedIn && (
-              <div className="flex gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleUploadImages}
-                  disabled={!selectedAlbumId || isUploading}
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={!selectedAlbumId || isUploading || isDeleting}
-                  className="btn-primary px-4 py-2 rounded-2xl text-white disabled:opacity-50"
-                >
-                  {isUploading ? '上传中...' : '上传图片'}
-                </button>
-                {selectedAlbum && !isSpecialAlbum(selectedAlbum.id) && (
-                  <button
-                    onClick={openEditAlbum}
-                    className="px-4 py-2 rounded-2xl border border-white/30 text-white/90 hover:bg-white/10"
-                  >
-                    编辑相册
-                  </button>
-                )}
-                {selectedAlbum && !isSpecialAlbum(selectedAlbum.id) && (
-                  <button
-                    onClick={requestDeleteAlbum}
-                    disabled={isDeletingAlbum}
-                    className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50"
-                  >
-                    {isDeletingAlbum ? '删除中...' : '删除相册'}
-                  </button>
-                )}
-                {selectedAlbum && isSpecialAlbum(selectedAlbum.id) && (
-                  <button
-                    onClick={handleAnalyzeReferences}
-                    disabled={isAnalyzingReferences}
-                    className="px-4 py-2 rounded-2xl border border-amber-300/40 text-amber-100 bg-amber-500/20 hover:bg-amber-500/35 disabled:opacity-50"
-                  >
-                    {isAnalyzingReferences ? '分析中...' : '引用分析'}
-                  </button>
-                )}
-              </div>
-              )}
+        {!selectedAlbumId ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h3 className="text-lg font-semibold text-white">选择相册</h3>
+              {isLoadingAlbums && <span className="text-white/60 text-sm">相册加载中...</span>}
             </div>
-
-            {!selectedAlbum ? (
+            {sortedAlbums.length === 0 ? (
               <div className="text-center py-10 text-white/60">
                 <p className="text-4xl mb-3">📸</p>
                 <p>请先创建一个相册</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                <div>
-                  <div className="mb-4 text-white/75 flex items-center justify-between gap-3 flex-wrap">
-                    <div>
-                    <h3 className="text-xl font-semibold text-white">{selectedAlbum.name}</h3>
-                    <p className="text-sm text-white/60 mt-1">{selectedAlbum.description || '暂无描述'}</p>
-                    </div>
-                    {isLoggedIn && (
-                    <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {sortedAlbums.map((album) => {
+                  const meta = albumCardMeta[album.id] || { count: 0, coverUrl: '' }
+                  return (
+                    <button
+                      key={album.id}
+                      onClick={() => setSelectedAlbumId(album.id)}
+                      className="text-left rounded-2xl overflow-hidden border border-white/20 transition-all hover:border-white/40"
+                    >
+                      <div className="aspect-square bg-black/20 relative">
+                        {meta.coverUrl ? (
+                          <img src={meta.coverUrl} alt={album.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-slate-500/20 via-white/10 to-slate-200/20 flex items-center justify-center text-4xl">
+                            {album.id === RECYCLE_BIN_ALBUM_ID ? '🗑️' : '🖼️'}
+                          </div>
+                        )}
+                        {isSpecialAlbum(album.id) && (
+                          <span className="absolute top-2 left-2 px-2 py-1 rounded-lg bg-black/45 text-white text-xs">
+                            {album.id === DEFAULT_ALBUM_ID ? '默认相册' : '回收站'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-3 bg-white/5">
+                        <p className="text-white font-medium truncate">{album.name}</p>
+                        <p className="text-white/65 text-xs mt-1">{meta.count} 张照片</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ) : !selectedAlbum ? (
+          <div className="space-y-4">
+            {isLoadingAlbumDetail ? (
+              <div className="py-3">
+                <LoadingSpinner text="正在加载相册详情..." />
+              </div>
+            ) : (
+              <div className="text-center py-10 text-white/60">
+                <p>相册不存在或已被删除</p>
+              </div>
+            )}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setSelectedAlbumId('')}
+                className="px-4 py-2 rounded-2xl border border-white/30 text-white/90 hover:bg-white/10"
+              >
+                退出相册
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="mb-4 text-white/75 flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="text-xl font-semibold text-white">{selectedAlbum.name}</h3>
+                <p className="text-sm text-white/60 mt-1">{selectedAlbum.description || '暂无描述'}</p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <button
+                  onClick={() => setSelectedAlbumId('')}
+                  className="px-4 py-2 rounded-2xl border border-white/30 text-white/90 hover:bg-white/10"
+                >
+                  退出相册
+                </button>
+                {isLoggedIn && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleUploadImages}
+                      disabled={isUploading}
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading || isDeleting}
+                      className="btn-primary px-4 py-2 rounded-2xl text-white disabled:opacity-50"
+                    >
+                      {isUploading ? '上传中...' : '上传图片'}
+                    </button>
+                    {!isSpecialAlbum(selectedAlbum.id) && (
                       <button
-                        onClick={() => {
-                          setSelectionMode((prev) => !prev)
-                          setSelectedImageIds([])
-                        }}
+                        onClick={openEditAlbum}
+                        className="px-4 py-2 rounded-2xl border border-white/30 text-white/90 hover:bg-white/10"
+                      >
+                        编辑相册
+                      </button>
+                    )}
+                    {!isSpecialAlbum(selectedAlbum.id) && (
+                      <button
+                        onClick={requestDeleteAlbum}
+                        disabled={isDeletingAlbum}
+                        className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50"
+                      >
+                        {isDeletingAlbum ? '删除中...' : '删除相册'}
+                      </button>
+                    )}
+                    {isSpecialAlbum(selectedAlbum.id) && (
+                      <button
+                        onClick={handleAnalyzeReferences}
+                        disabled={isAnalyzingReferences}
+                        className="px-4 py-2 rounded-2xl border border-amber-300/40 text-amber-100 bg-amber-500/20 hover:bg-amber-500/35 disabled:opacity-50"
+                      >
+                        {isAnalyzingReferences ? '分析中...' : '引用分析'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSelectionMode((prev) => !prev)
+                        setSelectedImageIds([])
+                      }}
+                      className={`px-3 py-1.5 rounded-full border text-sm transition-all ${
+                        selectionMode
+                          ? 'bg-white/25 text-white border-white/40'
+                          : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20 hover:text-white'
+                      }`}
+                    >
+                      {selectionMode ? '退出多选' : '多选'}
+                    </button>
+                    {selectionMode && (
+                      <button
+                        onClick={() => setIsMoveMode((prev) => !prev)}
                         className={`px-3 py-1.5 rounded-full border text-sm transition-all ${
-                          selectionMode
+                          isMoveMode
                             ? 'bg-white/25 text-white border-white/40'
                             : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20 hover:text-white'
                         }`}
                       >
-                        {selectionMode ? '退出多选' : '多选'}
+                        {isMoveMode ? '取消移动' : '移动到相册'}
                       </button>
-                      {selectionMode && (
-                        <button
-                          onClick={() => setIsMoveMode((prev) => !prev)}
-                          className={`px-3 py-1.5 rounded-full border text-sm transition-all ${
-                            isMoveMode
-                              ? 'bg-white/25 text-white border-white/40'
-                              : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20 hover:text-white'
-                          }`}
-                        >
-                          {isMoveMode ? '取消移动' : '移动到相册'}
-                        </button>
-                      )}
-                      {selectionMode && isMoveMode && (
-                        <>
-                          <select
-                            value={moveTargetAlbumId}
-                            onChange={(e) => setMoveTargetAlbumId(e.target.value)}
-                            className="px-3 py-1.5 rounded-full border text-sm bg-white/10 text-white border-white/20"
-                          >
-                            <option value="">选择目标相册</option>
-                            {albums
-                              .filter((album) => album.id !== selectedAlbumId)
-                              .map((album) => (
-                                <option key={album.id} value={album.id} className="text-slate-900">
-                                  {album.name}
-                                </option>
-                              ))}
-                          </select>
-                          <button
-                            onClick={handleMoveImages}
-                            disabled={isMoving || !moveTargetAlbumId || selectedImageIds.length === 0}
-                            className="px-3 py-1.5 rounded-full border text-sm bg-emerald-500/25 text-emerald-100 border-emerald-300/40 hover:bg-emerald-500/35 disabled:opacity-50"
-                          >
-                            {isMoving ? '移动中...' : `移动已选 ${selectedImageIds.length}`}
-                          </button>
-                        </>
-                      )}
-                      {selectionMode && selectedImageIds.length > 0 && (
-                        <button
-                          onClick={() => requestDeleteImages(selectedImageIds)}
-                          disabled={isDeleting || isMoving}
-                          className="px-3 py-1.5 rounded-full border text-sm bg-red-500/25 text-red-100 border-red-300/40 hover:bg-red-500/35 disabled:opacity-50"
-                        >
-                          {isDeleting ? '删除中...' : `删除已选 ${selectedImageIds.length}`}
-                        </button>
-                      )}
-                    </div>
                     )}
-                  </div>
-
-                  {(isUploading || isLoadingAlbumDetail) && (
-                    <div className="py-3">
-                      <LoadingSpinner text={isUploading ? '正在上传图片...' : '正在加载相册详情...'} />
-                    </div>
-                  )}
-
-                  {albumImages.length === 0 ? (
-                    <div className="text-center py-14 text-white/55 glass-light rounded-3xl">这个相册还没有图片</div>
-                  ) : (
-                    <div className="space-y-6">
-                      {groupedImages.map((group) => (
-                        <div key={group.time} className="space-y-3">
-                          <h4 className="text-white/85 font-semibold">{group.label}</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {group.images.map((image) => (
-                              <div key={image.id} className="relative h-52 rounded-3xl overflow-hidden border border-white/15 bg-black/10 group">
-                                <motion.img
-                                  whileHover={{ scale: 1.03 }}
-                                  src={image.thumbnailUrl || image.url}
-                                  alt="Album"
-                                  loading="lazy"
-                                  decoding="async"
-                                  className="w-full h-full object-cover cursor-pointer"
-                                  onClick={() => {
-                                    if (selectionMode) {
-                                      toggleImageSelection(image.id)
-                                      return
-                                    }
-                                    setSelectedImage(image.url)
-                                  }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
-
-                                {isLoggedIn && selectionMode ? (
-                                  <button
-                                    onClick={() => toggleImageSelection(image.id)}
-                                    className={`absolute top-2 left-2 w-7 h-7 rounded-full border flex items-center justify-center text-sm ${
-                                      selectedImageIds.includes(image.id)
-                                        ? 'bg-white text-black border-white'
-                                        : 'bg-black/45 text-white border-white/40'
-                                    }`}
-                                  >
-                                    {selectedImageIds.includes(image.id) ? '✓' : ''}
-                                  </button>
-                                ) : isLoggedIn ? (
-                                  <button
-                                    onClick={() => requestDeleteImages([image.id])}
-                                    disabled={isDeleting}
-                                    className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-red-500/75 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
-                                  >
-                                    删除
-                                  </button>
-                                ) : null}
-                              </div>
+                    {selectionMode && isMoveMode && (
+                      <>
+                        <select
+                          value={moveTargetAlbumId}
+                          onChange={(e) => setMoveTargetAlbumId(e.target.value)}
+                          className="px-3 py-1.5 rounded-full border text-sm bg-white/10 text-white border-white/20"
+                        >
+                          <option value="">选择目标相册</option>
+                          {albums
+                            .filter((album) => album.id !== selectedAlbumId)
+                            .map((album) => (
+                              <option key={album.id} value={album.id} className="text-slate-900">
+                                {album.name}
+                              </option>
                             ))}
-                          </div>
+                        </select>
+                        <button
+                          onClick={handleMoveImages}
+                          disabled={isMoving || !moveTargetAlbumId || selectedImageIds.length === 0}
+                          className="px-3 py-1.5 rounded-full border text-sm bg-emerald-500/25 text-emerald-100 border-emerald-300/40 hover:bg-emerald-500/35 disabled:opacity-50"
+                        >
+                          {isMoving ? '移动中...' : `移动已选 ${selectedImageIds.length}`}
+                        </button>
+                      </>
+                    )}
+                    {selectionMode && selectedImageIds.length > 0 && (
+                      <button
+                        onClick={() => requestDeleteImages(selectedImageIds)}
+                        disabled={isDeleting || isMoving}
+                        className="px-3 py-1.5 rounded-full border text-sm bg-red-500/25 text-red-100 border-red-300/40 hover:bg-red-500/35 disabled:opacity-50"
+                      >
+                        {isDeleting ? '删除中...' : `删除已选 ${selectedImageIds.length}`}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {(isUploading || isLoadingAlbumDetail) && (
+              <div className="py-3">
+                <LoadingSpinner text={isUploading ? '正在上传图片...' : '正在加载相册详情...'} />
+              </div>
+            )}
+
+            {albumImages.length === 0 ? (
+              <div className="text-center py-14 text-white/55 glass-light rounded-3xl">这个相册还没有图片</div>
+            ) : (
+              <div className="space-y-6">
+                {groupedImages.map((group) => (
+                  <div key={group.time} className="space-y-3">
+                    <h4 className="text-white/85 font-semibold">{group.label}</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {group.images.map((image) => (
+                        <div key={image.id} className="relative h-52 rounded-3xl overflow-hidden border border-white/15 bg-black/10 group">
+                          <motion.img
+                            whileHover={{ scale: 1.03 }}
+                            src={image.thumbnailUrl || image.url}
+                            alt="Album"
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => {
+                              if (selectionMode) {
+                                toggleImageSelection(image.id)
+                                return
+                              }
+                              setSelectedImage(image.url)
+                            }}
+                          />
+                          {referenceLookup.has(image.id) && !selectionMode && (
+                            <div
+                              className={`absolute inset-0 pointer-events-none ${referenceLookup.get(image.id)?.safeToDelete ? 'bg-emerald-500/35' : 'bg-red-500/35'}`}
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
+                          {referenceLookup.has(image.id) && !selectionMode && (
+                            <span
+                              className={`absolute bottom-2 left-2 px-2 py-1 rounded-md text-xs ${referenceLookup.get(image.id)?.safeToDelete ? 'bg-emerald-800/80 text-emerald-100' : 'bg-red-900/80 text-red-100'}`}
+                            >
+                              {referenceLookup.get(image.id)?.safeToDelete ? '可删除' : '有引用'}
+                            </span>
+                          )}
+
+                          {isLoggedIn && selectionMode ? (
+                            <button
+                              onClick={() => toggleImageSelection(image.id)}
+                              className={`absolute top-2 left-2 w-7 h-7 rounded-full border flex items-center justify-center text-sm ${
+                                selectedImageIds.includes(image.id)
+                                  ? 'bg-white text-black border-white'
+                                  : 'bg-black/45 text-white border-white/40'
+                              }`}
+                            >
+                              {selectedImageIds.includes(image.id) ? '✓' : ''}
+                            </button>
+                          ) : isLoggedIn ? (
+                            <button
+                              onClick={() => requestDeleteImages([image.id])}
+                              disabled={isDeleting}
+                              className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-red-500/75 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                            >
+                              删除
+                            </button>
+                          ) : null}
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
             )}
+          </div>
+        )}
       </motion.div>
 
       {createPortal(
