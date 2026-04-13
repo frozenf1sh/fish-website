@@ -125,8 +125,17 @@ function App() {
         .site-base-text .main-content {
           color: var(--site-base-text-color);
         }
+
+        .site-base-text-black .main-content [class*="text-white"] {
+          color: #111827 !important;
+        }
+
+        .site-base-text-black .main-content [class*="placeholder-white"]::placeholder,
+        .site-base-text-black .main-content [class*="placeholder:text-white"]::placeholder {
+          color: rgba(17, 24, 39, 0.5) !important;
+        }
       `}</style>
-      <div className={`min-h-screen relative overflow-hidden ${isBlogArticleRoute ? '' : 'site-base-text'}`}>
+      <div className={`min-h-screen relative overflow-hidden ${isBlogArticleRoute ? '' : (baseTextMode === 'black' ? 'site-base-text site-base-text-black' : 'site-base-text')}`}>
         {/* 背景图 */}
       {settings?.backgroundImageUrl && (
         <>
