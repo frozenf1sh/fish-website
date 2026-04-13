@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore'
 import { LoadingSpinner } from './LoadingSpinner'
 import { compressImage, validateImageFile } from '../utils/imageCompressor'
 import { clients } from '../lib/connect'
+import { showToast } from '../lib/toast'
 
 interface SettingsDrawerProps {
   isOpen: boolean
@@ -29,7 +30,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
   ) => {
     const validation = validateImageFile(file)
     if (!validation.valid) {
-      alert(validation.error)
+      showToast({ type: 'warning', message: validation.error || '文件校验失败' })
       return
     }
 
@@ -71,7 +72,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
       }
     } catch (error) {
       console.error('Image upload failed:', error)
-      alert('图片上传失败，请重试')
+      showToast({ type: 'error', message: '图片上传失败，请重试' })
     } finally {
       setUploadingImage(null)
     }

@@ -5,6 +5,7 @@ import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
 import { MarkdownViewer } from '../components/MarkdownViewer'
 import { LoadingSpinner } from '../components/LoadingSpinner'
+import { showToast } from '../lib/toast'
 
 interface BlogArticle {
   id: string
@@ -17,9 +18,16 @@ interface BlogArticle {
   updatedAt?: { toDate?: () => Date }
 }
 
+interface FolderNode {
+  id: string
+  name: string
+  children?: FolderNode[]
+}
+
 type PreviewMode = 'split' | 'edit' | 'preview'
 
 const ROOT_FOLDER_ID = 'root'
+const BLOG_LIST_TIMEOUT_MS = 15000
 
 const formatDate = (d?: { toDate?: () => Date }) => {
   if (!d?.toDate) return '刚刚'
@@ -46,6 +54,7 @@ export function BlogPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [folderTree, setFolderTree] = useState<FolderNode[]>([{ id: ROOT_FOLDER_ID, name: '根目录', children: [] }])
 
   const [sharedArticle, setSharedArticle] = useState<BlogArticle | null>(null)
   const [isLoadingShared, setIsLoadingShared] = useState(false)
@@ -59,7 +68,7 @@ export function BlogPage() {
 
   const [manageMode, setManageMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [newFolderName, setNewFolderName] = useState('')
+  const [movePath, setMovePath] = useState<string[]>([ROOT_FOLDER_ID])
   const [isManaging, setIsManaging] = useState(false)
 
   const articleMap = useMemo(() => {
@@ -78,10 +87,50 @@ export function BlogPage() {
   const copyShareUrl = async (id: string) => {
     try {
       await navigator.clipboard.writeText(getShareUrl(id))
-      alert('分享链接已复制')
+      showToast({ type: 'success', message: '分享链接已复制' })
     } catch {
-      alert('复制失败，请手动复制地址栏链接')
+      showToast({ type: 'error', message: '复制失败，请手动复制地址栏链接' })
     }
+  }
+
+  const normalizeFolders = (folders: FolderNode[]) => {
+    if (!folders.length) {
+      return [{ id: ROOT_FOLDER_ID, name: '根目录', children: [] }]
+    }
+    if (folders.some((f) => f.id === ROOT_FOLDER_ID)) {
+      return folders
+    }
+    return [{ id: ROOT_FOLDER_ID, name: '根目录', children: folders }]
+  }
+
+  const findFolderById = (nodes: FolderNode[], id: string): FolderNode | null => {
+    for (const node of nodes) {
+      if (node.id === id) return node
+      const found = findFolderById(node.children || [], id)
+      if (found) return found
+    }
+    return null
+  }
+
+  const getLevelOptions = (level: number, path: string[]) => {
+    if (level === 0) return folderTree
+    const parentId = path[level - 1]
+    const parent = parentId ? findFolderById(folderTree, parentId) : null
+    return parent?.children || []
+  }
+
+  const getMoveLevels = () => {
+    const levels: FolderNode[][] = []
+    let level = 0
+    while (true) {
+      const options = getLevelOptions(level, movePath)
+      if (options.length === 0) break
+      levels.push(options)
+      if (!movePath[level]) break
+      level += 1
+      if (level > 16) break
+    }
+    return levels
   }
 
   const resetComposer = () => {
@@ -103,21 +152,27 @@ export function BlogPage() {
     }
 
     try {
-      const response = await clients.blog.listArticles({
+      const listPromise = clients.blog.listArticles({
         pageSize: 20,
         pageToken: requestPageToken,
         folderId,
         status: 'published',
       })
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('BLOG_LIST_TIMEOUT')), BLOG_LIST_TIMEOUT_MS)
+      })
+      const response = await Promise.race([listPromise, timeoutPromise])
 
       const newArticles = (response.articles || []) as BlogArticle[]
+      setFolderTree(normalizeFolders((response.folders || []) as FolderNode[]))
       setArticles((prev) => (reset ? newArticles : [...prev, ...newArticles]))
       setNextPageToken(response.nextPageToken || '')
       setHasMore(!!response.hasMore)
       setError(null)
     } catch (err) {
       console.error('Failed to load blog articles:', err)
-      setError('加载博客失败，请稍后重试')
+      const message = err instanceof Error && err.message === 'BLOG_LIST_TIMEOUT' ? '加载超时，请点击重试或刷新页面' : '加载博客失败，请稍后重试'
+      setError(message)
       if (reset) {
         setArticles([])
         setNextPageToken('')
@@ -143,6 +198,10 @@ export function BlogPage() {
     loadArticles({ reset: true, pageToken: '' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articleId, folderId])
+
+  useEffect(() => {
+    setMovePath([folderId || ROOT_FOLDER_ID])
+  }, [folderId, manageMode])
 
   useEffect(() => {
     if (!articleId) {
@@ -186,7 +245,10 @@ export function BlogPage() {
 
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim() || !content.trim()) return
+    if (!title.trim() || !content.trim()) {
+      showToast({ type: 'warning', message: '请先填写标题和正文内容' })
+      return
+    }
 
     setIsPublishing(true)
     try {
@@ -206,18 +268,21 @@ export function BlogPage() {
       } else {
         await loadArticles({ reset: true, pageToken: '' })
       }
-      alert('文章已创建')
+      showToast({ type: 'success', message: '文章已创建' })
     } catch (err) {
       console.error('Failed to create article:', err)
-      alert('创建文章失败，请重试')
+      showToast({ type: 'error', message: '创建文章失败，请重试' })
     } finally {
       setIsPublishing(false)
     }
   }
 
+  const toggleArticleSelected = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
+  }
+
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return
-    if (!window.confirm(`确认删除选中的 ${selectedIds.length} 篇文章吗？`)) return
 
     setIsManaging(true)
     try {
@@ -225,30 +290,21 @@ export function BlogPage() {
       setSelectedIds([])
       await loadArticles({ reset: true, pageToken: '' })
       window.dispatchEvent(new Event('blog:updated'))
-      alert('删除成功')
+      showToast({ type: 'success', message: `已删除 ${selectedIds.length} 篇文章` })
     } catch (err) {
       console.error('Failed to delete selected articles:', err)
-      alert('删除失败，请重试')
+      showToast({ type: 'error', message: '删除失败，请重试' })
     } finally {
       setIsManaging(false)
     }
   }
 
-  const moveSelectedToNewFolder = async () => {
-    if (!newFolderName.trim() || selectedIds.length === 0) return
+  const moveSelectedToFolder = async () => {
+    if (selectedIds.length === 0) return
+    const targetFolderId = movePath[movePath.length - 1] || folderId || ROOT_FOLDER_ID
 
     setIsManaging(true)
     try {
-      const createdFolder = await clients.blog.createFolder({
-        name: newFolderName.trim(),
-        parentFolderId: folderId,
-      })
-
-      const targetFolderId = createdFolder.folder?.id
-      if (!targetFolderId) {
-        throw new Error('创建目标文件夹失败')
-      }
-
       await Promise.all(
         selectedIds.map(async (id) => {
           const article = articleMap.get(id)
@@ -265,13 +321,12 @@ export function BlogPage() {
       )
 
       setSelectedIds([])
-      setNewFolderName('')
       await loadArticles({ reset: true, pageToken: '' })
       window.dispatchEvent(new Event('blog:updated'))
-      alert('已移动到新文件夹')
+      showToast({ type: 'success', message: '文章已移动到所选目录' })
     } catch (err) {
       console.error('Failed to move selected articles:', err)
-      alert('移动失败，请重试')
+      showToast({ type: 'error', message: '移动失败，请重试' })
     } finally {
       setIsManaging(false)
     }
@@ -384,7 +439,7 @@ export function BlogPage() {
             >
               取消
             </button>
-            <button type="submit" disabled={isPublishing || !title.trim() || !content.trim()} className="px-5 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50">
+            <button type="submit" disabled={isPublishing} className="px-5 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50">
               {isPublishing ? '创建中...' : '发布文章'}
             </button>
           </div>
@@ -432,15 +487,30 @@ export function BlogPage() {
       {isLoggedIn && manageMode && (
         <div className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 space-y-3">
           <p className="text-white/85 text-sm">已选中 {selectedIds.length} 篇文章</p>
-          <div className="flex flex-col md:flex-row gap-3">
-            <input
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="输入新文件夹名称"
-              className="flex-1 px-4 py-2 rounded-2xl bg-white/10 text-white border border-white/20"
-            />
-            <button onClick={moveSelectedToNewFolder} disabled={isManaging || selectedIds.length === 0 || !newFolderName.trim()} className="px-4 py-2 rounded-2xl border border-white/30 text-white hover:bg-white/10 disabled:opacity-50">移动到新文件夹</button>
-            <button onClick={deleteSelected} disabled={isManaging || selectedIds.length === 0} className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50">删除所选</button>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              {getMoveLevels().map((options, index) => (
+                <select
+                  key={`folder-level-${index}`}
+                  value={movePath[index] || ''}
+                  onChange={(e) => {
+                    const selected = e.target.value
+                    setMovePath((prev) => [...prev.slice(0, index), selected])
+                  }}
+                  className="min-w-[140px] px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20"
+                >
+                  {options.map((node) => (
+                    <option key={node.id} value={node.id} className="text-slate-900">
+                      {node.name}
+                    </option>
+                  ))}
+                </select>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button onClick={moveSelectedToFolder} disabled={isManaging || selectedIds.length === 0} className="px-4 py-2 rounded-2xl border border-white/30 text-white hover:bg-white/10 disabled:opacity-50">移动到所选文件夹</button>
+              <button onClick={deleteSelected} disabled={isManaging || selectedIds.length === 0} className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50">删除所选</button>
+            </div>
           </div>
         </div>
       )}
@@ -450,7 +520,15 @@ export function BlogPage() {
           <LoadingSpinner text="正在加载博客..." />
         </div>
       ) : error ? (
-        <div className="glass-card rounded-4xl p-8 text-center text-red-200">{error}</div>
+        <div className="glass-card rounded-4xl p-8 text-center text-red-200 space-y-4">
+          <p>{error}</p>
+          <button
+            onClick={() => loadArticles({ reset: true, pageToken: '' })}
+            className="px-4 py-2 rounded-2xl border border-white/30 text-white hover:bg-white/10"
+          >
+            重试加载
+          </button>
+        </div>
       ) : articles.length === 0 ? (
         <div className="glass-card rounded-4xl p-10 text-center text-white/60">
           <p className="text-5xl mb-3">📝</p>
@@ -464,29 +542,32 @@ export function BlogPage() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.04 }}
-              className="w-full text-left glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6"
+              onClick={() => {
+                if (isLoggedIn && manageMode) {
+                  toggleArticleSelected(article.id)
+                  return
+                }
+                navigate(`/blog/${article.id}`)
+              }}
+              className={`w-full text-left glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 cursor-pointer border transition-all ${selectedIds.includes(article.id) ? 'border-sky-300 ring-2 ring-sky-300/60' : 'border-transparent hover:border-white/20'}`}
             >
               <div className="flex items-start justify-between gap-3">
-                <button onClick={() => navigate(`/blog/${article.id}`)} className="text-left flex-1">
+                <div className="text-left flex-1">
                   <h3 className="text-white text-lg sm:text-xl font-semibold mb-2">{article.title}</h3>
                   <p className="text-white/65 text-sm mb-3 line-clamp-2">{article.content.replace(/#+\s?.*\n/g, '').trim()}</p>
-                </button>
+                </div>
                 <div className="flex items-center gap-2">
-                  {isLoggedIn && manageMode && (
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(article.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedIds((prev) => [...prev, article.id])
-                        } else {
-                          setSelectedIds((prev) => prev.filter((id) => id !== article.id))
-                        }
+                  {!manageMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        copyShareUrl(article.id)
                       }}
-                      className="w-4 h-4"
-                    />
+                      className="px-3 py-1.5 rounded-xl border border-white/25 text-white/85 hover:bg-white/10"
+                    >
+                      复制链接
+                    </button>
                   )}
-                  <button onClick={() => copyShareUrl(article.id)} className="px-3 py-1.5 rounded-xl border border-white/25 text-white/85 hover:bg-white/10">复制链接</button>
                 </div>
               </div>
 

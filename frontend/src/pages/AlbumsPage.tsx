@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { clients } from '../lib/connect'
+import { showToast } from '../lib/toast'
 import { compressImage } from '../utils/imageCompressor'
 import { useStore } from '../store/useStore'
 
@@ -188,7 +189,7 @@ export function AlbumsPage() {
       setIsPublic(false)
     } catch (err) {
       console.error('Failed to create album:', err)
-      alert('创建相册失败，请稍后重试')
+      showToast({ type: 'error', message: '创建相册失败，请稍后重试' })
     } finally {
       setIsCreating(false)
     }
@@ -247,7 +248,7 @@ export function AlbumsPage() {
       setSelectedImageIds([])
     } catch (err) {
       console.error('Failed to upload image:', err)
-      alert('上传图片失败，请稍后重试')
+      showToast({ type: 'error', message: '上传图片失败，请稍后重试' })
     } finally {
       setIsUploading(false)
     }
@@ -269,7 +270,6 @@ export function AlbumsPage() {
 
   const handleDeleteImages = async (imageIds: string[]) => {
     if (!selectedAlbumId || imageIds.length === 0) return
-    if (!window.confirm(`确定删除 ${imageIds.length} 张照片吗？`)) return
 
     setIsDeleting(true)
     try {
@@ -284,10 +284,10 @@ export function AlbumsPage() {
       setSelectedImageIds([])
 
       const scheduledAt = response.scheduledDeleteAt?.toDate?.() || new Date()
-      alert(`已删除 ${response.deletedCount} 张照片，OSS 文件将在 ${formatTime(scheduledAt)} 后清理。`)
+      showToast({ type: 'success', message: `已删除 ${response.deletedCount} 张照片，OSS 文件将在 ${formatTime(scheduledAt)} 后清理。` })
     } catch (err) {
       console.error('Failed to delete images:', err)
-      alert('删除失败，请稍后重试')
+      showToast({ type: 'error', message: '删除失败，请稍后重试' })
     } finally {
       setIsDeleting(false)
     }

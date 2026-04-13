@@ -9,6 +9,8 @@ import { HomePage } from './pages/HomePage'
 import { BlogPage } from './pages/BlogPage'
 import { AlbumsPage } from './pages/AlbumsPage'
 import { SearchPage } from './pages/SearchPage'
+import { ToastCenter } from './components/ToastCenter'
+import { showToast } from './lib/toast'
 import { useStore } from './store/useStore'
 
 function App() {
@@ -31,7 +33,7 @@ function App() {
   useEffect(() => {
     const handleAuthExpired = () => {
       useStore.getState().logout()
-      alert('登录已过期，请重新登录')
+      showToast({ type: 'warning', message: '登录已过期，请重新登录' })
     }
 
     window.addEventListener('auth:expired', handleAuthExpired)
@@ -143,6 +145,7 @@ function App() {
         isOpen={showSettingsDrawer}
         onClose={() => setShowSettingsDrawer(false)}
       />
+      <ToastCenter />
     </div>
     </>
   )

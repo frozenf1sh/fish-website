@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MarkdownViewer } from './MarkdownViewer'
 import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
+import { showToast } from '../lib/toast'
 
 type TimelineItemType = 'post' | 'system' | 'blog' | 'album'
 
@@ -80,13 +81,13 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
   const avatarUrl = settings?.avatarUrl
 
   const handleDelete = async () => {
-    if (!window.confirm('确定要删除这条动态吗？')) return
     try {
       await clients.post.deletePost({ id: item.id })
       onDelete?.(item.id)
+      showToast({ type: 'success', message: '动态已删除' })
     } catch (err) {
       console.error('Failed to delete post:', err)
-      alert('删除失败，请重试')
+      showToast({ type: 'error', message: '删除失败，请重试' })
     }
   }
 
