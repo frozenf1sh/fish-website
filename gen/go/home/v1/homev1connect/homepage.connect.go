@@ -95,6 +95,12 @@ const (
 	AlbumServiceUpdateAlbumProcedure = "/home.v1.AlbumService/UpdateAlbum"
 	// AlbumServiceMoveImagesProcedure is the fully-qualified name of the AlbumService's MoveImages RPC.
 	AlbumServiceMoveImagesProcedure = "/home.v1.AlbumService/MoveImages"
+	// AlbumServiceAnalyzeImageReferencesProcedure is the fully-qualified name of the AlbumService's
+	// AnalyzeImageReferences RPC.
+	AlbumServiceAnalyzeImageReferencesProcedure = "/home.v1.AlbumService/AnalyzeImageReferences"
+	// AlbumServiceRepairImageReferencesProcedure is the fully-qualified name of the AlbumService's
+	// RepairImageReferences RPC.
+	AlbumServiceRepairImageReferencesProcedure = "/home.v1.AlbumService/RepairImageReferences"
 	// AlbumServiceDeleteImagesProcedure is the fully-qualified name of the AlbumService's DeleteImages
 	// RPC.
 	AlbumServiceDeleteImagesProcedure = "/home.v1.AlbumService/DeleteImages"
@@ -649,6 +655,10 @@ type AlbumServiceClient interface {
 	UpdateAlbum(context.Context, *connect.Request[v1.UpdateAlbumRequest]) (*connect.Response[v1.UpdateAlbumResponse], error)
 	// MoveImages moves selected images to another album while preserving upload time
 	MoveImages(context.Context, *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error)
+	// AnalyzeImageReferences analyzes whether images in an album are still referenced
+	AnalyzeImageReferences(context.Context, *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error)
+	// RepairImageReferences repairs reference counter consistency from source data
+	RepairImageReferences(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.RepairImageReferencesResponse], error)
 	// DeleteImages deletes images from album and schedules delayed object deletion
 	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
 	// DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
@@ -708,6 +718,18 @@ func NewAlbumServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(albumServiceMethods.ByName("MoveImages")),
 			connect.WithClientOptions(opts...),
 		),
+		analyzeImageReferences: connect.NewClient[v1.AnalyzeImageReferencesRequest, v1.AnalyzeImageReferencesResponse](
+			httpClient,
+			baseURL+AlbumServiceAnalyzeImageReferencesProcedure,
+			connect.WithSchema(albumServiceMethods.ByName("AnalyzeImageReferences")),
+			connect.WithClientOptions(opts...),
+		),
+		repairImageReferences: connect.NewClient[emptypb.Empty, v1.RepairImageReferencesResponse](
+			httpClient,
+			baseURL+AlbumServiceRepairImageReferencesProcedure,
+			connect.WithSchema(albumServiceMethods.ByName("RepairImageReferences")),
+			connect.WithClientOptions(opts...),
+		),
 		deleteImages: connect.NewClient[v1.DeleteImagesRequest, v1.DeleteImagesResponse](
 			httpClient,
 			baseURL+AlbumServiceDeleteImagesProcedure,
@@ -725,15 +747,17 @@ func NewAlbumServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // albumServiceClient implements AlbumServiceClient.
 type albumServiceClient struct {
-	createAlbum        *connect.Client[v1.CreateAlbumRequest, v1.CreateAlbumResponse]
-	listAlbums         *connect.Client[v1.ListAlbumsRequest, v1.ListAlbumsResponse]
-	getAlbum           *connect.Client[v1.GetAlbumRequest, v1.GetAlbumResponse]
-	uploadImageRequest *connect.Client[v1.UploadImageRequestRequest, v1.UploadImageRequestResponse]
-	confirmImageUpload *connect.Client[v1.ConfirmImageUploadRequest, v1.ConfirmImageUploadResponse]
-	updateAlbum        *connect.Client[v1.UpdateAlbumRequest, v1.UpdateAlbumResponse]
-	moveImages         *connect.Client[v1.MoveImagesRequest, v1.MoveImagesResponse]
-	deleteImages       *connect.Client[v1.DeleteImagesRequest, v1.DeleteImagesResponse]
-	deleteAlbum        *connect.Client[v1.DeleteAlbumRequest, emptypb.Empty]
+	createAlbum            *connect.Client[v1.CreateAlbumRequest, v1.CreateAlbumResponse]
+	listAlbums             *connect.Client[v1.ListAlbumsRequest, v1.ListAlbumsResponse]
+	getAlbum               *connect.Client[v1.GetAlbumRequest, v1.GetAlbumResponse]
+	uploadImageRequest     *connect.Client[v1.UploadImageRequestRequest, v1.UploadImageRequestResponse]
+	confirmImageUpload     *connect.Client[v1.ConfirmImageUploadRequest, v1.ConfirmImageUploadResponse]
+	updateAlbum            *connect.Client[v1.UpdateAlbumRequest, v1.UpdateAlbumResponse]
+	moveImages             *connect.Client[v1.MoveImagesRequest, v1.MoveImagesResponse]
+	analyzeImageReferences *connect.Client[v1.AnalyzeImageReferencesRequest, v1.AnalyzeImageReferencesResponse]
+	repairImageReferences  *connect.Client[emptypb.Empty, v1.RepairImageReferencesResponse]
+	deleteImages           *connect.Client[v1.DeleteImagesRequest, v1.DeleteImagesResponse]
+	deleteAlbum            *connect.Client[v1.DeleteAlbumRequest, emptypb.Empty]
 }
 
 // CreateAlbum calls home.v1.AlbumService.CreateAlbum.
@@ -771,6 +795,16 @@ func (c *albumServiceClient) MoveImages(ctx context.Context, req *connect.Reques
 	return c.moveImages.CallUnary(ctx, req)
 }
 
+// AnalyzeImageReferences calls home.v1.AlbumService.AnalyzeImageReferences.
+func (c *albumServiceClient) AnalyzeImageReferences(ctx context.Context, req *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error) {
+	return c.analyzeImageReferences.CallUnary(ctx, req)
+}
+
+// RepairImageReferences calls home.v1.AlbumService.RepairImageReferences.
+func (c *albumServiceClient) RepairImageReferences(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[v1.RepairImageReferencesResponse], error) {
+	return c.repairImageReferences.CallUnary(ctx, req)
+}
+
 // DeleteImages calls home.v1.AlbumService.DeleteImages.
 func (c *albumServiceClient) DeleteImages(ctx context.Context, req *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error) {
 	return c.deleteImages.CallUnary(ctx, req)
@@ -797,6 +831,10 @@ type AlbumServiceHandler interface {
 	UpdateAlbum(context.Context, *connect.Request[v1.UpdateAlbumRequest]) (*connect.Response[v1.UpdateAlbumResponse], error)
 	// MoveImages moves selected images to another album while preserving upload time
 	MoveImages(context.Context, *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error)
+	// AnalyzeImageReferences analyzes whether images in an album are still referenced
+	AnalyzeImageReferences(context.Context, *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error)
+	// RepairImageReferences repairs reference counter consistency from source data
+	RepairImageReferences(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.RepairImageReferencesResponse], error)
 	// DeleteImages deletes images from album and schedules delayed object deletion
 	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
 	// DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
@@ -852,6 +890,18 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(albumServiceMethods.ByName("MoveImages")),
 		connect.WithHandlerOptions(opts...),
 	)
+	albumServiceAnalyzeImageReferencesHandler := connect.NewUnaryHandler(
+		AlbumServiceAnalyzeImageReferencesProcedure,
+		svc.AnalyzeImageReferences,
+		connect.WithSchema(albumServiceMethods.ByName("AnalyzeImageReferences")),
+		connect.WithHandlerOptions(opts...),
+	)
+	albumServiceRepairImageReferencesHandler := connect.NewUnaryHandler(
+		AlbumServiceRepairImageReferencesProcedure,
+		svc.RepairImageReferences,
+		connect.WithSchema(albumServiceMethods.ByName("RepairImageReferences")),
+		connect.WithHandlerOptions(opts...),
+	)
 	albumServiceDeleteImagesHandler := connect.NewUnaryHandler(
 		AlbumServiceDeleteImagesProcedure,
 		svc.DeleteImages,
@@ -880,6 +930,10 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 			albumServiceUpdateAlbumHandler.ServeHTTP(w, r)
 		case AlbumServiceMoveImagesProcedure:
 			albumServiceMoveImagesHandler.ServeHTTP(w, r)
+		case AlbumServiceAnalyzeImageReferencesProcedure:
+			albumServiceAnalyzeImageReferencesHandler.ServeHTTP(w, r)
+		case AlbumServiceRepairImageReferencesProcedure:
+			albumServiceRepairImageReferencesHandler.ServeHTTP(w, r)
 		case AlbumServiceDeleteImagesProcedure:
 			albumServiceDeleteImagesHandler.ServeHTTP(w, r)
 		case AlbumServiceDeleteAlbumProcedure:
@@ -919,6 +973,14 @@ func (UnimplementedAlbumServiceHandler) UpdateAlbum(context.Context, *connect.Re
 
 func (UnimplementedAlbumServiceHandler) MoveImages(context.Context, *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.MoveImages is not implemented"))
+}
+
+func (UnimplementedAlbumServiceHandler) AnalyzeImageReferences(context.Context, *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.AnalyzeImageReferences is not implemented"))
+}
+
+func (UnimplementedAlbumServiceHandler) RepairImageReferences(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.RepairImageReferencesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.RepairImageReferences is not implemented"))
 }
 
 func (UnimplementedAlbumServiceHandler) DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error) {

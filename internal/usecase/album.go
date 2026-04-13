@@ -18,18 +18,47 @@ const (
 
 // AlbumUsecase handles album business logic
 type AlbumUsecase struct {
-	albumRepo   domain.AlbumRepository
-	fileStorage domain.FileStorage
+	albumRepo    domain.AlbumRepository
+	fileStorage  domain.FileStorage
+	imageRefRepo domain.ImageReferenceRepository
 }
 
 // NewAlbumUsecase creates a new AlbumUsecase
-func NewAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage) *AlbumUsecase {
+func NewAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage, imageRefRepo domain.ImageReferenceRepository) *AlbumUsecase {
 	u := &AlbumUsecase{
-		albumRepo:   albumRepo,
-		fileStorage: fileStorage,
+		albumRepo:    albumRepo,
+		fileStorage:  fileStorage,
+		imageRefRepo: imageRefRepo,
 	}
 	go u.startRecycleBinCleaner()
 	return u
+}
+
+func (u *AlbumUsecase) AnalyzeImageReferences(ctx context.Context, albumID string) ([]*domain.ImageReferenceRecord, *domain.ImageReferenceSummary, error) {
+	records, err := u.imageRefRepo.AnalyzeByAlbum(ctx, albumID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("analyze image references: %w", err)
+	}
+
+	summary := &domain.ImageReferenceSummary{AlbumID: albumID, TotalImages: len(records)}
+	for _, rec := range records {
+		summary.TotalRefCount += rec.ReferenceCount
+		if rec.ReferenceCount > 0 {
+			summary.ReferencedImages += 1
+		} else {
+			summary.DeletableImages += 1
+		}
+	}
+
+	return records, summary, nil
+}
+
+func (u *AlbumUsecase) RepairImageReferenceConsistency(ctx context.Context) (*domain.ImageReferenceRepairResult, error) {
+	result, err := u.imageRefRepo.RepairConsistency(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("repair image references: %w", err)
+	}
+	return result, nil
 }
 
 func (u *AlbumUsecase) ensureRecycleBinAlbum(ctx context.Context) error {

@@ -409,6 +409,37 @@ export const clients = {
         movedCount: Number(response.movedCount || 0),
       }
     },
+    analyzeImageReferences: async (req) => {
+      const response = await albumClient.analyzeImageReferences({
+        albumId: req.albumId,
+      })
+      return {
+        references: (response.references || []).map((r) => ({
+          imageId: r.imageId,
+          url: r.url,
+          fileName: r.fileName,
+          referenceCount: Number(r.referenceCount || 0),
+          postReferenceCount: Number(r.postReferenceCount || 0),
+          blogReferenceCount: Number(r.blogReferenceCount || 0),
+          avatarReferenceCount: Number(r.avatarReferenceCount || 0),
+          backgroundReferenceCount: Number(r.backgroundReferenceCount || 0),
+          safeToDelete: !!r.safeToDelete,
+        })),
+        totalImages: Number(response.totalImages || 0),
+        deletableImages: Number(response.deletableImages || 0),
+        referencedImages: Number(response.referencedImages || 0),
+        totalReferenceCount: Number(response.totalReferenceCount || 0),
+      }
+    },
+    repairImageReferences: async () => {
+      const response = await albumClient.repairImageReferences({})
+      return {
+        processedImages: Number(response.processedImages || 0),
+        referencedImages: Number(response.referencedImages || 0),
+        totalReferenceCount: Number(response.totalReferenceCount || 0),
+        repairedAt: { toDate: () => response.repairedAt?.toDate() || new Date() },
+      }
+    },
     deleteImages: async (req) => {
       const response = await albumClient.deleteImages({
         albumId: req.albumId,

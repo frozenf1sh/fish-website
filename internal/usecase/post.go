@@ -10,15 +10,17 @@ import (
 
 // PostUsecase handles post business logic
 type PostUsecase struct {
-	postRepo  domain.PostRepository
-	albumRepo domain.AlbumRepository
+	postRepo     domain.PostRepository
+	albumRepo    domain.AlbumRepository
+	imageRefRepo domain.ImageReferenceRepository
 }
 
 // NewPostUsecase creates a new PostUsecase
-func NewPostUsecase(postRepo domain.PostRepository, albumRepo domain.AlbumRepository) *PostUsecase {
+func NewPostUsecase(postRepo domain.PostRepository, albumRepo domain.AlbumRepository, imageRefRepo domain.ImageReferenceRepository) *PostUsecase {
 	return &PostUsecase{
-		postRepo:  postRepo,
-		albumRepo: albumRepo,
+		postRepo:     postRepo,
+		albumRepo:    albumRepo,
+		imageRefRepo: imageRefRepo,
 	}
 }
 
@@ -46,6 +48,9 @@ func (u *PostUsecase) CreatePost(ctx context.Context, content string, imageIDs [
 	createdPost, err := u.postRepo.Create(ctx, post)
 	if err != nil {
 		return nil, fmt.Errorf("create post: %w", err)
+	}
+	if err := u.imageRefRepo.AdjustByURLs(ctx, imageURLs, "post", 1); err != nil {
+		return nil, fmt.Errorf("update post image references: %w", err)
 	}
 
 	return createdPost, nil
@@ -97,13 +102,32 @@ func (u *PostUsecase) UpdatePost(ctx context.Context, id, content string, imageU
 		return nil, fmt.Errorf("update post: %w", err)
 	}
 
+	added, removed := diffURLCounts(existing.ImageURLs, imageURLs)
+	if len(added) > 0 {
+		if err := u.imageRefRepo.AdjustByURLs(ctx, added, "post", 1); err != nil {
+			return nil, fmt.Errorf("increment post image references: %w", err)
+		}
+	}
+	if len(removed) > 0 {
+		if err := u.imageRefRepo.AdjustByURLs(ctx, removed, "post", -1); err != nil {
+			return nil, fmt.Errorf("decrement post image references: %w", err)
+		}
+	}
+
 	return updated, nil
 }
 
 // DeletePost deletes a post by ID
 func (u *PostUsecase) DeletePost(ctx context.Context, id string) error {
+	existing, err := u.postRepo.Get(ctx, id)
+	if err != nil {
+		return fmt.Errorf("get existing post: %w", err)
+	}
 	if err := u.postRepo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("delete post: %w", err)
+	}
+	if err := u.imageRefRepo.AdjustByURLs(ctx, existing.ImageURLs, "post", -1); err != nil {
+		return fmt.Errorf("decrement post image references: %w", err)
 	}
 	return nil
 }

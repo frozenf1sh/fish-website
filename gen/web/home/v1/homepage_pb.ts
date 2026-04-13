@@ -2095,6 +2095,244 @@ export class MoveImagesResponse extends Message<MoveImagesResponse> {
 }
 
 /**
+ * @generated from message home.v1.ImageReference
+ */
+export class ImageReference extends Message<ImageReference> {
+  /**
+   * @generated from field: string image_id = 1;
+   */
+  imageId = "";
+
+  /**
+   * @generated from field: string url = 2;
+   */
+  url = "";
+
+  /**
+   * @generated from field: string file_name = 3;
+   */
+  fileName = "";
+
+  /**
+   * @generated from field: int32 reference_count = 4;
+   */
+  referenceCount = 0;
+
+  /**
+   * @generated from field: int32 post_reference_count = 5;
+   */
+  postReferenceCount = 0;
+
+  /**
+   * @generated from field: int32 blog_reference_count = 6;
+   */
+  blogReferenceCount = 0;
+
+  /**
+   * @generated from field: int32 avatar_reference_count = 7;
+   */
+  avatarReferenceCount = 0;
+
+  /**
+   * @generated from field: int32 background_reference_count = 8;
+   */
+  backgroundReferenceCount = 0;
+
+  /**
+   * @generated from field: bool safe_to_delete = 9;
+   */
+  safeToDelete = false;
+
+  constructor(data?: PartialMessage<ImageReference>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.ImageReference";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "image_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "file_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 5, name: "post_reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 6, name: "blog_reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 7, name: "avatar_reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 8, name: "background_reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 9, name: "safe_to_delete", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ImageReference {
+    return new ImageReference().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ImageReference {
+    return new ImageReference().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ImageReference {
+    return new ImageReference().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ImageReference | PlainMessage<ImageReference> | undefined, b: ImageReference | PlainMessage<ImageReference> | undefined): boolean {
+    return proto3.util.equals(ImageReference, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.AnalyzeImageReferencesRequest
+ */
+export class AnalyzeImageReferencesRequest extends Message<AnalyzeImageReferencesRequest> {
+  /**
+   * @generated from field: string album_id = 1;
+   */
+  albumId = "";
+
+  constructor(data?: PartialMessage<AnalyzeImageReferencesRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.AnalyzeImageReferencesRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "album_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AnalyzeImageReferencesRequest {
+    return new AnalyzeImageReferencesRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AnalyzeImageReferencesRequest {
+    return new AnalyzeImageReferencesRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AnalyzeImageReferencesRequest {
+    return new AnalyzeImageReferencesRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AnalyzeImageReferencesRequest | PlainMessage<AnalyzeImageReferencesRequest> | undefined, b: AnalyzeImageReferencesRequest | PlainMessage<AnalyzeImageReferencesRequest> | undefined): boolean {
+    return proto3.util.equals(AnalyzeImageReferencesRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.AnalyzeImageReferencesResponse
+ */
+export class AnalyzeImageReferencesResponse extends Message<AnalyzeImageReferencesResponse> {
+  /**
+   * @generated from field: repeated home.v1.ImageReference references = 1;
+   */
+  references: ImageReference[] = [];
+
+  /**
+   * @generated from field: int32 total_images = 2;
+   */
+  totalImages = 0;
+
+  /**
+   * @generated from field: int32 deletable_images = 3;
+   */
+  deletableImages = 0;
+
+  /**
+   * @generated from field: int32 referenced_images = 4;
+   */
+  referencedImages = 0;
+
+  /**
+   * @generated from field: int32 total_reference_count = 5;
+   */
+  totalReferenceCount = 0;
+
+  constructor(data?: PartialMessage<AnalyzeImageReferencesResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.AnalyzeImageReferencesResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "references", kind: "message", T: ImageReference, repeated: true },
+    { no: 2, name: "total_images", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "deletable_images", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "referenced_images", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 5, name: "total_reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AnalyzeImageReferencesResponse {
+    return new AnalyzeImageReferencesResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AnalyzeImageReferencesResponse {
+    return new AnalyzeImageReferencesResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AnalyzeImageReferencesResponse {
+    return new AnalyzeImageReferencesResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AnalyzeImageReferencesResponse | PlainMessage<AnalyzeImageReferencesResponse> | undefined, b: AnalyzeImageReferencesResponse | PlainMessage<AnalyzeImageReferencesResponse> | undefined): boolean {
+    return proto3.util.equals(AnalyzeImageReferencesResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.RepairImageReferencesResponse
+ */
+export class RepairImageReferencesResponse extends Message<RepairImageReferencesResponse> {
+  /**
+   * @generated from field: int32 processed_images = 1;
+   */
+  processedImages = 0;
+
+  /**
+   * @generated from field: int32 referenced_images = 2;
+   */
+  referencedImages = 0;
+
+  /**
+   * @generated from field: int32 total_reference_count = 3;
+   */
+  totalReferenceCount = 0;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp repaired_at = 4;
+   */
+  repairedAt?: Timestamp;
+
+  constructor(data?: PartialMessage<RepairImageReferencesResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.RepairImageReferencesResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "processed_images", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 2, name: "referenced_images", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "total_reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "repaired_at", kind: "message", T: Timestamp },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RepairImageReferencesResponse {
+    return new RepairImageReferencesResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RepairImageReferencesResponse {
+    return new RepairImageReferencesResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RepairImageReferencesResponse {
+    return new RepairImageReferencesResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: RepairImageReferencesResponse | PlainMessage<RepairImageReferencesResponse> | undefined, b: RepairImageReferencesResponse | PlainMessage<RepairImageReferencesResponse> | undefined): boolean {
+    return proto3.util.equals(RepairImageReferencesResponse, a, b);
+  }
+}
+
+/**
  * @generated from message home.v1.DeleteImagesRequest
  */
 export class DeleteImagesRequest extends Message<DeleteImagesRequest> {

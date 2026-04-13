@@ -70,6 +70,19 @@ CREATE TABLE IF NOT EXISTS images (
 
 CREATE INDEX IF NOT EXISTS idx_images_album_id ON images(album_id);
 
+-- Image reference counters for posts/blog/settings usage analysis
+CREATE TABLE IF NOT EXISTS image_references (
+    image_id VARCHAR(64) PRIMARY KEY REFERENCES images(id) ON DELETE CASCADE,
+    ref_count INTEGER NOT NULL DEFAULT 0,
+    post_ref_count INTEGER NOT NULL DEFAULT 0,
+    blog_ref_count INTEGER NOT NULL DEFAULT 0,
+    avatar_ref_count INTEGER NOT NULL DEFAULT 0,
+    background_ref_count INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_image_references_ref_count ON image_references(ref_count);
+
 -- Settings table (we'll store only one row)
 CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),

@@ -27,6 +27,18 @@ interface AlbumImage {
   createdAt: { toDate?: () => Date }
 }
 
+interface ImageReferenceItem {
+  imageId: string
+  url: string
+  fileName: string
+  referenceCount: number
+  postReferenceCount: number
+  blogReferenceCount: number
+  avatarReferenceCount: number
+  backgroundReferenceCount: number
+  safeToDelete: boolean
+}
+
 const RECYCLE_BIN_ALBUM_ID = 'recycle-bin'
 const DEFAULT_ALBUM_ID = 'default'
 
@@ -68,6 +80,11 @@ export function AlbumsPage() {
   const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('')
   const [pendingDeleteImageIds, setPendingDeleteImageIds] = useState<string[]>([])
   const [pendingDeleteAlbumId, setPendingDeleteAlbumId] = useState('')
+  const [isReferencePanelOpen, setIsReferencePanelOpen] = useState(false)
+  const [isAnalyzingReferences, setIsAnalyzingReferences] = useState(false)
+  const [isRepairingReferences, setIsRepairingReferences] = useState(false)
+  const [referenceItems, setReferenceItems] = useState<ImageReferenceItem[]>([])
+  const [referenceSummary, setReferenceSummary] = useState({ totalImages: 0, deletableImages: 0, referencedImages: 0, totalReferenceCount: 0 })
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -457,6 +474,41 @@ export function AlbumsPage() {
     }
   }
 
+  const handleAnalyzeReferences = async () => {
+    if (!selectedAlbumId) return
+    setIsAnalyzingReferences(true)
+    try {
+      const response = await clients.album.analyzeImageReferences({ albumId: selectedAlbumId })
+      setReferenceItems((response.references as ImageReferenceItem[]) || [])
+      setReferenceSummary({
+        totalImages: response.totalImages || 0,
+        deletableImages: response.deletableImages || 0,
+        referencedImages: response.referencedImages || 0,
+        totalReferenceCount: response.totalReferenceCount || 0,
+      })
+      setIsReferencePanelOpen(true)
+    } catch (err) {
+      console.error('Failed to analyze references:', err)
+      showToast({ type: 'error', message: '引用分析失败，请稍后重试' })
+    } finally {
+      setIsAnalyzingReferences(false)
+    }
+  }
+
+  const handleRepairReferences = async () => {
+    setIsRepairingReferences(true)
+    try {
+      const result = await clients.album.repairImageReferences()
+      showToast({ type: 'success', message: `一致性修复完成：${result.referencedImages} 张被引用图片` })
+      await handleAnalyzeReferences()
+    } catch (err) {
+      console.error('Failed to repair references:', err)
+      showToast({ type: 'error', message: '一致性修复失败，请稍后重试' })
+    } finally {
+      setIsRepairingReferences(false)
+    }
+  }
+
   return (
     <div className="space-y-6 pb-8">
       <motion.div
@@ -572,6 +624,15 @@ export function AlbumsPage() {
                     className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50"
                   >
                     {isDeletingAlbum ? '删除中...' : '删除相册'}
+                  </button>
+                )}
+                {selectedAlbum && isSpecialAlbum(selectedAlbum.id) && (
+                  <button
+                    onClick={handleAnalyzeReferences}
+                    disabled={isAnalyzingReferences}
+                    className="px-4 py-2 rounded-2xl border border-amber-300/40 text-amber-100 bg-amber-500/20 hover:bg-amber-500/35 disabled:opacity-50"
+                  >
+                    {isAnalyzingReferences ? '分析中...' : '引用分析'}
                   </button>
                 )}
               </div>
@@ -823,6 +884,87 @@ export function AlbumsPage() {
                   >
                     {isSavingAlbumEdit ? '保存中...' : '保存修改'}
                   </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
+
+      {createPortal(
+        <AnimatePresence>
+          {isReferencePanelOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[146] bg-black/55 backdrop-blur-sm p-4 flex items-center justify-center"
+              onClick={() => !isRepairingReferences && setIsReferencePanelOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.96, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.96, opacity: 0 }}
+                className="w-full max-w-4xl max-h-[86vh] rounded-3xl border border-white/20 bg-slate-900/95 text-white shadow-2xl p-5 overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <h3 className="text-lg font-semibold">图片引用分析</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleRepairReferences}
+                      disabled={isRepairingReferences}
+                      className="px-3 py-1.5 rounded-xl border border-sky-300/40 text-sky-100 bg-sky-500/20 hover:bg-sky-500/35 disabled:opacity-50"
+                    >
+                      {isRepairingReferences ? '修复中...' : '一致性修复'}
+                    </button>
+                    <button
+                      onClick={() => setIsReferencePanelOpen(false)}
+                      disabled={isRepairingReferences}
+                      className="px-3 py-1.5 rounded-xl border border-white/25 text-white/85 hover:bg-white/10 disabled:opacity-50"
+                    >
+                      关闭
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div className="rounded-xl bg-white/10 p-3">总图片: {referenceSummary.totalImages}</div>
+                  <div className="rounded-xl bg-emerald-500/20 p-3">可安全删除: {referenceSummary.deletableImages}</div>
+                  <div className="rounded-xl bg-amber-500/20 p-3">被引用图片: {referenceSummary.referencedImages}</div>
+                  <div className="rounded-xl bg-white/10 p-3">总引用计数: {referenceSummary.totalReferenceCount}</div>
+                </div>
+
+                <div className="mt-4 overflow-auto max-h-[58vh] rounded-2xl border border-white/15">
+                  <table className="w-full text-sm">
+                    <thead className="bg-white/10 sticky top-0">
+                      <tr>
+                        <th className="text-left px-3 py-2">图片</th>
+                        <th className="text-left px-3 py-2">总引用</th>
+                        <th className="text-left px-3 py-2">帖子</th>
+                        <th className="text-left px-3 py-2">博客</th>
+                        <th className="text-left px-3 py-2">头像</th>
+                        <th className="text-left px-3 py-2">背景</th>
+                        <th className="text-left px-3 py-2">删除安全性</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {referenceItems.map((item) => (
+                        <tr key={item.imageId} className="border-t border-white/10">
+                          <td className="px-3 py-2 truncate max-w-[280px]" title={item.fileName}>{item.fileName || item.imageId}</td>
+                          <td className="px-3 py-2">{item.referenceCount}</td>
+                          <td className="px-3 py-2">{item.postReferenceCount}</td>
+                          <td className="px-3 py-2">{item.blogReferenceCount}</td>
+                          <td className="px-3 py-2">{item.avatarReferenceCount}</td>
+                          <td className="px-3 py-2">{item.backgroundReferenceCount}</td>
+                          <td className={`px-3 py-2 ${item.safeToDelete ? 'text-emerald-300' : 'text-amber-200'}`}>
+                            {item.safeToDelete ? '可删除' : '有引用'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </motion.div>
             </motion.div>

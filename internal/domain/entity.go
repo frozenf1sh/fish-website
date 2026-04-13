@@ -68,3 +68,33 @@ type Settings struct {
 	ThemeColor             string
 	UpdatedAt              time.Time
 }
+
+// ImageReferenceRecord stores aggregated references for one image.
+type ImageReferenceRecord struct {
+	ImageID            string
+	URL                string
+	FileName           string
+	ReferenceCount     int
+	PostReferenceCount int
+	BlogReferenceCount int
+	AvatarRefCount     int
+	BackgroundRefCount int
+}
+
+// ImageReferenceSummary summarizes analysis for an album.
+type ImageReferenceSummary struct {
+	AlbumID          string
+	TotalImages      int
+	DeletableImages  int
+	ReferencedImages int
+	TotalRefCount    int
+	LastRepairedAt   time.Time
+}
+
+// ImageReferenceRepairResult reports data repaired by consistency rebuild.
+type ImageReferenceRepairResult struct {
+	ProcessedImages  int
+	ReferencedImages int
+	TotalRefCount    int
+	RepairedAt       time.Time
+}

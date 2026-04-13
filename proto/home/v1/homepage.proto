@@ -63,6 +63,10 @@ service AlbumService {
   rpc UpdateAlbum(UpdateAlbumRequest) returns (UpdateAlbumResponse);
   // MoveImages moves selected images to another album while preserving upload time
   rpc MoveImages(MoveImagesRequest) returns (MoveImagesResponse);
+  // AnalyzeImageReferences analyzes whether images in an album are still referenced
+  rpc AnalyzeImageReferences(AnalyzeImageReferencesRequest) returns (AnalyzeImageReferencesResponse);
+  // RepairImageReferences repairs reference counter consistency from source data
+  rpc RepairImageReferences(google.protobuf.Empty) returns (RepairImageReferencesResponse);
   // DeleteImages deletes images from album and schedules delayed object deletion
   rpc DeleteImages(DeleteImagesRequest) returns (DeleteImagesResponse);
   // DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
@@ -332,6 +336,37 @@ message MoveImagesRequest {
 
 message MoveImagesResponse {
   int32 moved_count = 1;
+}
+
+message ImageReference {
+  string image_id = 1;
+  string url = 2;
+  string file_name = 3;
+  int32 reference_count = 4;
+  int32 post_reference_count = 5;
+  int32 blog_reference_count = 6;
+  int32 avatar_reference_count = 7;
+  int32 background_reference_count = 8;
+  bool safe_to_delete = 9;
+}
+
+message AnalyzeImageReferencesRequest {
+  string album_id = 1;
+}
+
+message AnalyzeImageReferencesResponse {
+  repeated ImageReference references = 1;
+  int32 total_images = 2;
+  int32 deletable_images = 3;
+  int32 referenced_images = 4;
+  int32 total_reference_count = 5;
+}
+
+message RepairImageReferencesResponse {
+  int32 processed_images = 1;
+  int32 referenced_images = 2;
+  int32 total_reference_count = 3;
+  google.protobuf.Timestamp repaired_at = 4;
 }
 
 message DeleteImagesRequest {

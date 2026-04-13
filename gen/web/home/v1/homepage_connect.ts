@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteAlbumRequest, DeleteArticleRequest, DeleteFolderRequest, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, MoveImagesRequest, MoveImagesResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { AnalyzeImageReferencesRequest, AnalyzeImageReferencesResponse, ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteAlbumRequest, DeleteArticleRequest, DeleteFolderRequest, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, MoveImagesRequest, MoveImagesResponse, RepairImageReferencesResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -276,6 +276,28 @@ export const AlbumService = {
       name: "MoveImages",
       I: MoveImagesRequest,
       O: MoveImagesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * AnalyzeImageReferences analyzes whether images in an album are still referenced
+     *
+     * @generated from rpc home.v1.AlbumService.AnalyzeImageReferences
+     */
+    analyzeImageReferences: {
+      name: "AnalyzeImageReferences",
+      I: AnalyzeImageReferencesRequest,
+      O: AnalyzeImageReferencesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * RepairImageReferences repairs reference counter consistency from source data
+     *
+     * @generated from rpc home.v1.AlbumService.RepairImageReferences
+     */
+    repairImageReferences: {
+      name: "RepairImageReferences",
+      I: Empty,
+      O: RepairImageReferencesResponse,
       kind: MethodKind.Unary,
     },
     /**

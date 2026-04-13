@@ -7,8 +7,9 @@
 package main
 
 import (
-	"connectrpc.com/connect"
 	"context"
+
+	"connectrpc.com/connect"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/frozenfish/fish-website/internal/domain"
 	"github.com/frozenfish/fish-website/internal/middleware"
@@ -29,17 +30,18 @@ func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) 
 	postgresRepository := providePostgresRepository(pool)
 	postRepository := providePostRepository(postgresRepository)
 	albumRepository := provideAlbumRepository(postgresRepository)
-	postUsecase := providePostUsecase(postRepository, albumRepository)
+	imageReferenceRepository := provideImageReferenceRepository(postgresRepository)
+	postUsecase := providePostUsecase(postRepository, albumRepository, imageReferenceRepository)
 	blogRepository := provideBlogRepository(postgresRepository)
-	blogUsecase := provideBlogUsecase(blogRepository)
+	blogUsecase := provideBlogUsecase(blogRepository, imageReferenceRepository)
 	minIOStorage, err := provideMinIOStorage(cfg)
 	if err != nil {
 		return nil, err
 	}
 	fileStorage := provideFileStorage(minIOStorage)
-	albumUsecase := provideAlbumUsecase(albumRepository, fileStorage)
+	albumUsecase := provideAlbumUsecase(albumRepository, fileStorage, imageReferenceRepository)
 	settingsRepository := provideSettingsRepository(postgresRepository)
-	settingsUsecase := provideSettingsUsecase(settingsRepository)
+	settingsUsecase := provideSettingsUsecase(settingsRepository, imageReferenceRepository)
 	handler := provideHandler(authUsecase, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
 	interceptor := provideAuthInterceptor(authUsecase)
 	server := NewServer(cfg, pool, handler, interceptor)
@@ -79,6 +81,10 @@ func provideSettingsRepository(repo *repository.PostgresRepository) domain.Setti
 	return repo.NewSettingsRepository()
 }
 
+func provideImageReferenceRepository(repo *repository.PostgresRepository) domain.ImageReferenceRepository {
+	return repo.NewImageReferenceRepository()
+}
+
 func provideMinIOStorage(cfg *config.Config) (*repository.MinIOStorage, error) {
 	return repository.NewMinIOStorage(cfg)
 }
@@ -91,20 +97,20 @@ func provideAuthUsecase(cfg *config.Config) *usecase.AuthUsecase {
 	return usecase.NewAuthUsecase(cfg)
 }
 
-func providePostUsecase(repo domain.PostRepository, albumRepo domain.AlbumRepository) *usecase.PostUsecase {
-	return usecase.NewPostUsecase(repo, albumRepo)
+func providePostUsecase(repo domain.PostRepository, albumRepo domain.AlbumRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.PostUsecase {
+	return usecase.NewPostUsecase(repo, albumRepo, imageRefRepo)
 }
 
-func provideBlogUsecase(repo domain.BlogRepository) *usecase.BlogUsecase {
-	return usecase.NewBlogUsecase(repo)
+func provideBlogUsecase(repo domain.BlogRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.BlogUsecase {
+	return usecase.NewBlogUsecase(repo, imageRefRepo)
 }
 
-func provideAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage) *usecase.AlbumUsecase {
-	return usecase.NewAlbumUsecase(albumRepo, fileStorage)
+func provideAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage, imageRefRepo domain.ImageReferenceRepository) *usecase.AlbumUsecase {
+	return usecase.NewAlbumUsecase(albumRepo, fileStorage, imageRefRepo)
 }
 
-func provideSettingsUsecase(repo domain.SettingsRepository) *usecase.SettingsUsecase {
-	return usecase.NewSettingsUsecase(repo)
+func provideSettingsUsecase(repo domain.SettingsRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.SettingsUsecase {
+	return usecase.NewSettingsUsecase(repo, imageRefRepo)
 }
 
 func provideHandler(

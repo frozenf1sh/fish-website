@@ -55,3 +55,10 @@ type FileStorage interface {
 	IsObjectExists(ctx context.Context, objectName string) (bool, error)
 	DeleteObject(ctx context.Context, objectName string) error
 }
+
+// ImageReferenceRepository tracks and analyzes image usage references.
+type ImageReferenceRepository interface {
+	AdjustByURLs(ctx context.Context, urls []string, source string, delta int) error
+	AnalyzeByAlbum(ctx context.Context, albumID string) ([]*ImageReferenceRecord, error)
+	RepairConsistency(ctx context.Context) (*ImageReferenceRepairResult, error)
+}

@@ -11,11 +11,12 @@ import (
 // SettingsUsecase handles settings business logic
 type SettingsUsecase struct {
 	settingsRepo domain.SettingsRepository
+	imageRefRepo domain.ImageReferenceRepository
 }
 
 // NewSettingsUsecase creates a new SettingsUsecase
-func NewSettingsUsecase(settingsRepo domain.SettingsRepository) *SettingsUsecase {
-	return &SettingsUsecase{settingsRepo: settingsRepo}
+func NewSettingsUsecase(settingsRepo domain.SettingsRepository, imageRefRepo domain.ImageReferenceRepository) *SettingsUsecase {
+	return &SettingsUsecase{settingsRepo: settingsRepo, imageRefRepo: imageRefRepo}
 }
 
 // GetSettings gets the current settings
@@ -44,6 +45,8 @@ func (u *SettingsUsecase) UpdateSettings(ctx context.Context, settings *domain.S
 
 	// If no mask provided, update all fields
 	updateAll := len(updateMask) == 0
+	oldAvatarURL := current.AvatarURL
+	oldBackgroundURL := current.BackgroundImageURL
 
 	if updateAll || fieldSet["display_name"] || fieldSet["displayName"] {
 		current.DisplayName = settings.DisplayName
@@ -81,6 +84,32 @@ func (u *SettingsUsecase) UpdateSettings(ctx context.Context, settings *domain.S
 	updated, err := u.settingsRepo.Update(ctx, current)
 	if err != nil {
 		return nil, fmt.Errorf("update settings: %w", err)
+	}
+
+	if oldAvatarURL != current.AvatarURL {
+		if oldAvatarURL != "" {
+			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{oldAvatarURL}, "avatar", -1); err != nil {
+				return nil, fmt.Errorf("decrement avatar reference: %w", err)
+			}
+		}
+		if current.AvatarURL != "" {
+			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{current.AvatarURL}, "avatar", 1); err != nil {
+				return nil, fmt.Errorf("increment avatar reference: %w", err)
+			}
+		}
+	}
+
+	if oldBackgroundURL != current.BackgroundImageURL {
+		if oldBackgroundURL != "" {
+			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{oldBackgroundURL}, "background", -1); err != nil {
+				return nil, fmt.Errorf("decrement background reference: %w", err)
+			}
+		}
+		if current.BackgroundImageURL != "" {
+			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{current.BackgroundImageURL}, "background", 1); err != nil {
+				return nil, fmt.Errorf("increment background reference: %w", err)
+			}
+		}
 	}
 
 	return updated, nil

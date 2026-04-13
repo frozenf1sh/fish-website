@@ -454,6 +454,58 @@ func (h *Handler) MoveImages(ctx context.Context, req *connect.Request[homev1.Mo
 	return connect.NewResponse(&homev1.MoveImagesResponse{MovedCount: int32(movedCount)}), nil
 }
 
+// AnalyzeImageReferences analyzes image references in an album.
+func (h *Handler) AnalyzeImageReferences(ctx context.Context, req *connect.Request[homev1.AnalyzeImageReferencesRequest]) (*connect.Response[homev1.AnalyzeImageReferencesResponse], error) {
+	logger.Info("received AnalyzeImageReferences request", logger.String("album_id", req.Msg.AlbumId))
+
+	records, summary, err := h.albumUsecase.AnalyzeImageReferences(ctx, req.Msg.AlbumId)
+	if err != nil {
+		logger.Error("AnalyzeImageReferences failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	protoRefs := make([]*homev1.ImageReference, len(records))
+	for i, rec := range records {
+		protoRefs[i] = &homev1.ImageReference{
+			ImageId:                  rec.ImageID,
+			Url:                      rec.URL,
+			FileName:                 rec.FileName,
+			ReferenceCount:           int32(rec.ReferenceCount),
+			PostReferenceCount:       int32(rec.PostReferenceCount),
+			BlogReferenceCount:       int32(rec.BlogReferenceCount),
+			AvatarReferenceCount:     int32(rec.AvatarRefCount),
+			BackgroundReferenceCount: int32(rec.BackgroundRefCount),
+			SafeToDelete:             rec.ReferenceCount == 0,
+		}
+	}
+
+	return connect.NewResponse(&homev1.AnalyzeImageReferencesResponse{
+		References:          protoRefs,
+		TotalImages:         int32(summary.TotalImages),
+		DeletableImages:     int32(summary.DeletableImages),
+		ReferencedImages:    int32(summary.ReferencedImages),
+		TotalReferenceCount: int32(summary.TotalRefCount),
+	}), nil
+}
+
+// RepairImageReferences rebuilds reference counters from source data.
+func (h *Handler) RepairImageReferences(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[homev1.RepairImageReferencesResponse], error) {
+	logger.Info("received RepairImageReferences request")
+
+	result, err := h.albumUsecase.RepairImageReferenceConsistency(ctx)
+	if err != nil {
+		logger.Error("RepairImageReferences failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&homev1.RepairImageReferencesResponse{
+		ProcessedImages:     int32(result.ProcessedImages),
+		ReferencedImages:    int32(result.ReferencedImages),
+		TotalReferenceCount: int32(result.TotalRefCount),
+		RepairedAt:          timestamppb.New(result.RepairedAt),
+	}), nil
+}
+
 // DeleteImages moves images to recycle bin (or permanently deletes when in recycle bin).
 func (h *Handler) DeleteImages(ctx context.Context, req *connect.Request[homev1.DeleteImagesRequest]) (*connect.Response[homev1.DeleteImagesResponse], error) {
 	logger.Info("received DeleteImages request",

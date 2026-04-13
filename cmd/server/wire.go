@@ -24,6 +24,7 @@ func InitializeServer(ctx context.Context, cfg *pkgconfig.Config) (*Server, erro
 		providePostRepository,
 		provideBlogRepository,
 		provideAlbumRepository,
+		provideImageReferenceRepository,
 		provideSettingsRepository,
 		provideMinIOStorage,
 		provideFileStorage,
@@ -70,6 +71,10 @@ func provideSettingsRepository(repo *repository.PostgresRepository) domain.Setti
 	return repo.NewSettingsRepository()
 }
 
+func provideImageReferenceRepository(repo *repository.PostgresRepository) domain.ImageReferenceRepository {
+	return repo.NewImageReferenceRepository()
+}
+
 func provideMinIOStorage(cfg *pkgconfig.Config) (*repository.MinIOStorage, error) {
 	return repository.NewMinIOStorage(cfg)
 }
@@ -82,20 +87,20 @@ func provideAuthUsecase(cfg *pkgconfig.Config) *usecase.AuthUsecase {
 	return usecase.NewAuthUsecase(cfg)
 }
 
-func providePostUsecase(repo domain.PostRepository, albumRepo domain.AlbumRepository) *usecase.PostUsecase {
-	return usecase.NewPostUsecase(repo, albumRepo)
+func providePostUsecase(repo domain.PostRepository, albumRepo domain.AlbumRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.PostUsecase {
+	return usecase.NewPostUsecase(repo, albumRepo, imageRefRepo)
 }
 
-func provideBlogUsecase(repo domain.BlogRepository) *usecase.BlogUsecase {
-	return usecase.NewBlogUsecase(repo)
+func provideBlogUsecase(repo domain.BlogRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.BlogUsecase {
+	return usecase.NewBlogUsecase(repo, imageRefRepo)
 }
 
-func provideAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage) *usecase.AlbumUsecase {
-	return usecase.NewAlbumUsecase(albumRepo, fileStorage)
+func provideAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage, imageRefRepo domain.ImageReferenceRepository) *usecase.AlbumUsecase {
+	return usecase.NewAlbumUsecase(albumRepo, fileStorage, imageRefRepo)
 }
 
-func provideSettingsUsecase(repo domain.SettingsRepository) *usecase.SettingsUsecase {
-	return usecase.NewSettingsUsecase(repo)
+func provideSettingsUsecase(repo domain.SettingsRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.SettingsUsecase {
+	return usecase.NewSettingsUsecase(repo, imageRefRepo)
 }
 
 func provideHandler(
