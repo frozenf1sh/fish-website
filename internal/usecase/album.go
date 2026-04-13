@@ -61,10 +61,13 @@ func (u *AlbumUsecase) ListAlbums(ctx context.Context, pageSize int, pageToken s
 }
 
 // GetAlbumWithImages gets one album and its images
-func (u *AlbumUsecase) GetAlbumWithImages(ctx context.Context, albumID string) (*domain.Album, []*domain.Image, error) {
+func (u *AlbumUsecase) GetAlbumWithImages(ctx context.Context, albumID string, includePrivate bool) (*domain.Album, []*domain.Image, error) {
 	album, err := u.albumRepo.GetAlbum(ctx, albumID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get album: %w", err)
+	}
+	if !includePrivate && !album.IsPublic {
+		return nil, nil, domain.ErrUnauthorized
 	}
 
 	images, _, _, err := u.albumRepo.ListImagesByAlbum(ctx, albumID, 500, "")
@@ -86,7 +89,7 @@ func (u *AlbumUsecase) GetPresignedUploadURL(ctx context.Context, albumID, fileN
 				ID:          "default",
 				Name:        "默认相册",
 				Description: "系统默认创建的相册",
-				IsPublic:    true,
+				IsPublic:    false,
 				CreatedAt:   time.Now(),
 			})
 			if err != nil {

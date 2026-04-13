@@ -35,13 +35,13 @@ export function Layout() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-0 sm:px-4 pb-24 lg:pb-6 pt-20 lg:pt-6">
+      <div className="max-w-[1800px] mx-auto px-0 sm:px-4 pb-24 lg:pb-6 pt-20 lg:pt-6">
         <div className="flex gap-0 lg:gap-6">
           {/* 左栏 - 25% */}
           <motion.aside
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="hidden lg:block lg:w-[25%] lg:min-w-[280px]"
+            className="hidden lg:block lg:w-[20%] lg:min-w-[260px]"
           >
             <LeftSidebar />
           </motion.aside>
@@ -51,7 +51,7 @@ export function Layout() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="flex-1 min-w-0 w-full lg:basis-[45%] lg:max-w-[45%] border-x border-white/10"
+            className="flex-1 min-w-0 w-full lg:basis-[80%] lg:max-w-[80%] xl:basis-[72%] xl:max-w-[72%] 2xl:basis-[56%] 2xl:max-w-[56%] border-x border-white/10"
           >
             <Outlet />
           </motion.main>
@@ -61,7 +61,7 @@ export function Layout() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="hidden xl:block xl:w-[30%] xl:min-w-[320px]"
+            className="hidden 2xl:block 2xl:w-[24%] 2xl:min-w-[320px]"
           >
             <RightSidebar />
           </motion.aside>

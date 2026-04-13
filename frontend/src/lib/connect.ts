@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { createPromiseClient } from '@connectrpc/connect'
+import { Code, ConnectError } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   AuthService,
@@ -27,7 +28,18 @@ const transport = createConnectTransport({
       if (token) {
         req.header.set('Authorization', `Bearer ${token}`)
       }
-      return await next(req)
+      try {
+        return await next(req)
+      } catch (err) {
+        const connectErr = ConnectError.from(err)
+        if (connectErr.code === Code.Unauthenticated && getAuthToken()) {
+          setAuthToken(null)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('auth:expired'))
+          }
+        }
+        throw err
+      }
     },
   ],
 })

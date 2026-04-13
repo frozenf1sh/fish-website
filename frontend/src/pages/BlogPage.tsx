@@ -164,7 +164,9 @@ export function BlogPage() {
         .map((item) => item.trim())
         .filter(Boolean)
 
-      if (editingArticleId) {
+      const isEditing = !!editingArticleId
+
+      if (isEditing) {
         await clients.blog.updateArticle({
           articleId: editingArticleId,
           title: title.trim(),
@@ -186,12 +188,18 @@ export function BlogPage() {
       resetComposer()
       window.dispatchEvent(new Event('blog:updated'))
       const next = new URLSearchParams(searchParams)
+      next.set('status', publishAs)
+      if (folderInput.trim()) {
+        next.set('folder', folderInput.trim())
+      }
       next.delete('compose')
       setSearchParams(next)
       await loadArticles({ reset: true, pageToken: '' })
+      alert(isEditing ? '文章已更新' : '文章已创建')
     } catch (err) {
       console.error('Failed to publish article:', err)
-      alert('保存文章失败，请稍后重试')
+      const message = err instanceof Error ? err.message : '未知错误'
+      alert(`保存文章失败：${message}`)
     } finally {
       setIsPublishing(false)
     }

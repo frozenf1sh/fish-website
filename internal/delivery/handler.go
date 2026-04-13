@@ -9,6 +9,7 @@ import (
 	homev1 "github.com/frozenfish/fish-website/gen/go/home/v1"
 	"github.com/frozenfish/fish-website/gen/go/home/v1/homev1connect"
 	"github.com/frozenfish/fish-website/internal/domain"
+	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/usecase"
 	"github.com/frozenfish/fish-website/pkg/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -291,7 +292,10 @@ func (h *Handler) ListAlbums(ctx context.Context, req *connect.Request[homev1.Li
 		logger.String("page_token", req.Msg.PageToken),
 		logger.Bool("only_public", req.Msg.OnlyPublic))
 
-	albums, nextPageToken, hasMore, err := h.albumUsecase.ListAlbums(ctx, int(req.Msg.PageSize), req.Msg.PageToken, req.Msg.OnlyPublic)
+	_, isAuthed := middleware.GetUserFromContext(ctx)
+	onlyPublic := req.Msg.OnlyPublic || !isAuthed
+
+	albums, nextPageToken, hasMore, err := h.albumUsecase.ListAlbums(ctx, int(req.Msg.PageSize), req.Msg.PageToken, onlyPublic)
 	if err != nil {
 		logger.Error("ListAlbums failed", logger.Err(err))
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -313,8 +317,12 @@ func (h *Handler) ListAlbums(ctx context.Context, req *connect.Request[homev1.Li
 func (h *Handler) GetAlbum(ctx context.Context, req *connect.Request[homev1.GetAlbumRequest]) (*connect.Response[homev1.GetAlbumResponse], error) {
 	logger.Debug("received GetAlbum request", logger.String("album_id", req.Msg.AlbumId))
 
-	album, images, err := h.albumUsecase.GetAlbumWithImages(ctx, req.Msg.AlbumId)
+	_, isAuthed := middleware.GetUserFromContext(ctx)
+	album, images, err := h.albumUsecase.GetAlbumWithImages(ctx, req.Msg.AlbumId, isAuthed)
 	if err != nil {
+		if errors.Is(err, domain.ErrUnauthorized) {
+			return nil, connect.NewError(connect.CodePermissionDenied, err)
+		}
 		logger.Error("GetAlbum failed", logger.Err(err))
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

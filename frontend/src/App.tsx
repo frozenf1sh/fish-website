@@ -28,6 +28,18 @@ function App() {
     fetchSettings()
   }, [fetchSettings])
 
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      useStore.getState().logout()
+      alert('登录已过期，请重新登录')
+    }
+
+    window.addEventListener('auth:expired', handleAuthExpired)
+    return () => {
+      window.removeEventListener('auth:expired', handleAuthExpired)
+    }
+  }, [])
+
   const themeStr = settings?.themeColor || '220,64,90,0.45,24,0'
   const parsed = themeStr.includes('|') ? themeStr.split('|') : themeStr.split(',')
   const h = parsed[0] || '220'
@@ -71,7 +83,7 @@ function App() {
       <SakuraParticles enabled={sakuraEnabled} />
 
       {/* 操作按钮 */}
-      <div className="fixed top-3 right-3 sm:top-6 sm:right-6 z-50 flex gap-2 sm:gap-3">
+      <div className="fixed top-3 right-3 sm:top-6 sm:right-6 z-50 flex gap-2 sm:gap-3 lg:hidden">
         {isLoggedIn && (
           <motion.button
             initial={{ opacity: 0, y: -20 }}

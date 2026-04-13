@@ -50,7 +50,7 @@ export function AlbumsPage() {
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [isPublic, setIsPublic] = useState(true)
+  const [isPublic, setIsPublic] = useState(false)
 
   const [isLoadingAlbums, setIsLoadingAlbums] = useState(true)
   const [isLoadingAlbumDetail, setIsLoadingAlbumDetail] = useState(false)
@@ -84,7 +84,7 @@ export function AlbumsPage() {
     const loadAlbums = async () => {
       setIsLoadingAlbums(true)
       try {
-        const response = await clients.album.listAlbums({ pageSize: 100, onlyPublic: false })
+        const response = await clients.album.listAlbums({ pageSize: 100, onlyPublic: !isLoggedIn })
         const loadedAlbums = response.albums || []
         setAlbums(loadedAlbums)
         if (loadedAlbums.length > 0) {
@@ -98,7 +98,7 @@ export function AlbumsPage() {
     }
 
     loadAlbums()
-  }, [])
+  }, [isLoggedIn])
 
   useEffect(() => {
     if (!selectedAlbumId) {
@@ -151,7 +151,7 @@ export function AlbumsPage() {
   const refreshAlbums = async (preferAlbumId?: string) => {
     setIsLoadingAlbums(true)
     try {
-      const response = await clients.album.listAlbums({ pageSize: 100, onlyPublic: false })
+      const response = await clients.album.listAlbums({ pageSize: 100, onlyPublic: !isLoggedIn })
       const loadedAlbums = (response.albums as Album[] | undefined) || []
       setAlbums(loadedAlbums)
       if (loadedAlbums.length === 0) {
@@ -185,7 +185,7 @@ export function AlbumsPage() {
       await refreshAlbums(response.album.id)
       setName('')
       setDescription('')
-      setIsPublic(true)
+      setIsPublic(false)
     } catch (err) {
       console.error('Failed to create album:', err)
       alert('创建相册失败，请稍后重试')
@@ -306,12 +306,14 @@ export function AlbumsPage() {
         </p>
       </motion.div>
 
-      {!isLoggedIn ? (
+      {!isLoggedIn && (
         <div className="glass-card rounded-4xl p-8 text-center text-white/75">
-          <p className="text-5xl mb-3">🔐</p>
-          <p>登录后可创建相册并上传图片</p>
+          <p className="text-5xl mb-3">🌐</p>
+          <p>当前为访客模式，仅可查看公开相册</p>
         </div>
-      ) : (
+      )}
+
+      {isLoggedIn && (
         <>
           <motion.form
             initial={{ opacity: 0, y: 16 }}
@@ -340,7 +342,7 @@ export function AlbumsPage() {
                 onChange={(e) => setIsPublic(e.target.checked)}
                 className="w-4 h-4"
               />
-              公开相册
+              公开相册（默认私密）
             </label>
             <div className="flex justify-end">
               <button type="submit" disabled={isCreating || !name.trim()} className="btn-primary px-5 py-2 rounded-2xl text-white disabled:opacity-50">
@@ -349,7 +351,10 @@ export function AlbumsPage() {
             </div>
           </motion.form>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-4xl p-6">
+        </>
+      )}
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-4xl p-6">
             <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
               <div className="flex gap-2 flex-wrap">
                 {isLoadingAlbums && albums.length === 0 && (
@@ -370,6 +375,7 @@ export function AlbumsPage() {
                 ))}
               </div>
 
+              {isLoggedIn && (
               <div>
                 <input
                   ref={fileInputRef}
@@ -388,6 +394,7 @@ export function AlbumsPage() {
                   {isUploading ? '上传中...' : '上传图片'}
                 </button>
               </div>
+              )}
             </div>
 
             {!selectedAlbum ? (
@@ -403,6 +410,7 @@ export function AlbumsPage() {
                     <h3 className="text-xl font-semibold text-white">{selectedAlbum.name}</h3>
                     <p className="text-sm text-white/60 mt-1">{selectedAlbum.description || '暂无描述'}</p>
                     </div>
+                    {isLoggedIn && (
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
@@ -427,6 +435,7 @@ export function AlbumsPage() {
                         </button>
                       )}
                     </div>
+                    )}
                   </div>
 
                   {(isUploading || isLoadingAlbumDetail) && (
@@ -458,7 +467,7 @@ export function AlbumsPage() {
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
 
-                          {selectionMode ? (
+                          {isLoggedIn && selectionMode ? (
                             <button
                               onClick={() => toggleImageSelection(image.id)}
                               className={`absolute top-2 left-2 w-7 h-7 rounded-full border flex items-center justify-center text-sm ${
@@ -469,7 +478,7 @@ export function AlbumsPage() {
                             >
                               {selectedImageIds.includes(image.id) ? '✓' : ''}
                             </button>
-                          ) : (
+                          ) : isLoggedIn ? (
                             <button
                               onClick={() => handleDeleteImages([image.id])}
                               disabled={isDeleting}
@@ -477,7 +486,7 @@ export function AlbumsPage() {
                             >
                               删除
                             </button>
-                          )}
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -516,9 +525,7 @@ export function AlbumsPage() {
                 </div>
               </div>
             )}
-          </motion.div>
-        </>
-      )}
+      </motion.div>
 
       {createPortal(
         <AnimatePresence>

@@ -13,6 +13,9 @@ export function LeftSidebar() {
   const {
     settings,
     isLoggedIn,
+    setShowSettingsDrawer,
+    setShowLoginModal,
+    logout,
     incrementAvatarClickCount,
     resetAvatarClickCount,
     avatarClickCount,
@@ -102,6 +105,29 @@ export function LeftSidebar() {
                 <span className="text-lg">{link.icon}</span>
               </motion.a>
             ))}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-white/15 flex gap-2">
+            {isLoggedIn && (
+              <button
+                onClick={() => setShowSettingsDrawer(true)}
+                className="flex-1 px-3 py-2 rounded-2xl bg-white/15 text-white/90 hover:bg-white/25 transition-all"
+              >
+                ⚙️ 设置
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (isLoggedIn) {
+                  logout()
+                } else {
+                  setShowLoginModal(true)
+                }
+              }}
+              className="flex-1 px-3 py-2 rounded-2xl bg-white/10 text-white/85 hover:bg-white/20 transition-all"
+            >
+              {isLoggedIn ? '🚪 退出' : '🔐 登录'}
+            </button>
           </div>
         </motion.div>
 
