@@ -14,6 +14,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const login = useStore(state => state.login)
+  const avatarUrl = useStore(state => state.settings?.avatarUrl)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,14 +66,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 <motion.div
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="text-5xl mb-4"
+                  className="mb-4 flex justify-center"
                 >
-                  🌸
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="avatar" className="w-16 h-16 rounded-full object-cover border-2 border-white/35" />
+                  ) : (
+                    <span className="text-5xl">🐟</span>
+                  )}
                 </motion.div>
                 <h2 className="text-2xl font-bold text-white mb-2">管理员登录</h2>
-                <p className="text-white/60 text-sm">
-                  点击头像5次才发现这里呢 ✨
-                </p>
               </div>
 
               {/* 表单 */}

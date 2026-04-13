@@ -3,10 +3,10 @@ import { useStore } from '../store/useStore'
 import { BlogFolderTree } from './BlogFolderTree'
 
 const socialLinks = [
-  { name: 'Twitter', icon: '𝕏', url: '', color: 'from-blue-400 to-cyan-400' },
-  { name: 'GitHub', icon: '🐱', url: '', color: 'from-gray-400 to-gray-600' },
-  { name: 'Bilibili', icon: '📺', url: '', color: 'from-pink-400 to-rose-400' },
-  { name: 'Discord', icon: '💬', url: '', color: 'from-indigo-400 to-purple-500' },
+  { name: 'GitHub', icon: '🐱', key: 'githubUrl', color: 'from-gray-400 to-gray-600' },
+  { name: '小红书', icon: '📕', key: 'twitterUrl', color: 'from-rose-400 to-red-500' },
+  { name: '抖音', icon: '🎵', key: 'douyinUrl', color: 'from-cyan-400 to-indigo-500' },
+  { name: 'Bilibili', icon: '📺', key: 'bilibiliUrl', color: 'from-pink-400 to-rose-400' },
 ]
 
 export function LeftSidebar() {
@@ -16,10 +16,14 @@ export function LeftSidebar() {
     setShowSettingsDrawer,
     setShowLoginModal,
     logout,
-    incrementAvatarClickCount,
-    resetAvatarClickCount,
-    avatarClickCount,
   } = useStore()
+
+  let customLinks: Record<string, string> = {}
+  try {
+    customLinks = settings?.customLinks ? JSON.parse(settings.customLinks) : {}
+  } catch {
+    customLinks = {}
+  }
 
   return (
     <motion.div
@@ -37,8 +41,11 @@ export function LeftSidebar() {
           <div className="relative inline-block mb-6">
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 blur-xl opacity-50 avatar-glow"></div>
             <button
-              onClick={incrementAvatarClickCount}
-              onMouseLeave={resetAvatarClickCount}
+              onClick={() => {
+                if (!isLoggedIn) {
+                  setShowLoginModal(true)
+                }
+              }}
               className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white/50 shadow-2xl hover:scale-105 transition-transform"
             >
               {settings?.avatarUrl ? (
@@ -49,19 +56,10 @@ export function LeftSidebar() {
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-300 via-purple-300 to-pink-300 flex items-center justify-center">
-                  <span className="text-5xl">🌸</span>
+                  <span className="text-5xl">🐟</span>
                 </div>
               )}
             </button>
-            {!isLoggedIn && avatarClickCount > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white/80 text-xs"
-              >
-                {5 - avatarClickCount} 次解锁
-              </motion.div>
-            )}
           </div>
 
           <h1 className="text-2xl font-bold text-white mb-2 text-gradient">
@@ -87,9 +85,12 @@ export function LeftSidebar() {
           {/* 社交链接 */}
           <div className="flex justify-center gap-3">
             {socialLinks.map((link, index) => (
+              (() => {
+                const href = link.key === 'douyinUrl' ? (customLinks.douyinUrl || '') : ((settings as any)?.[link.key] || '')
+                return (
               <motion.a
                 key={link.name}
-                href={(settings as any)?.[link.name.toLowerCase() + 'Url'] || undefined}
+                href={href || undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 initial={{ scale: 0, rotate: -10 }}
@@ -98,12 +99,14 @@ export function LeftSidebar() {
                 whileHover={{ scale: 1.2, rotate: 10, y: -5 }}
                 whileTap={{ scale: 0.95 }}
                 className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${link.color} flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all ${
-                  !(settings as any)?.[link.name.toLowerCase() + 'Url'] ? 'opacity-30' : ''
+                  !href ? 'opacity-30' : ''
                 }`}
                 title={link.name}
               >
                 <span className="text-lg">{link.icon}</span>
               </motion.a>
+                )
+              })()
             ))}
           </div>
 

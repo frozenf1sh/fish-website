@@ -23,6 +23,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
   const [focusTitle, setFocusTitle] = useState('欢迎回来！')
   const [faviconUrl, setFaviconUrl] = useState('')
   const [baseTextMode, setBaseTextMode] = useState<'white' | 'black'>('white')
+  const [douyinUrl, setDouyinUrl] = useState('')
 
   useEffect(() => {
     if (settings) {
@@ -33,6 +34,12 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
       setFocusTitle(config.focusTitle)
       setFaviconUrl(config.faviconUrl)
       setBaseTextMode(config.baseTextMode)
+      try {
+        const custom = settings.customLinks ? JSON.parse(settings.customLinks) : {}
+        setDouyinUrl(typeof custom.douyinUrl === 'string' ? custom.douyinUrl : '')
+      } catch {
+        setDouyinUrl('')
+      }
     }
   }, [settings])
 
@@ -139,9 +146,17 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
         faviconUrl,
         baseTextMode,
       })
+      let nextCustomLinks = mergedCustomLinks
+      try {
+        const parsed = mergedCustomLinks ? JSON.parse(mergedCustomLinks) : {}
+        parsed.douyinUrl = douyinUrl.trim()
+        nextCustomLinks = JSON.stringify(parsed)
+      } catch {
+        nextCustomLinks = mergedCustomLinks
+      }
       await updateSettings({
         ...localSettings,
-        customLinks: mergedCustomLinks,
+        customLinks: nextCustomLinks,
       })
       onClose()
     } catch (error) {
@@ -306,17 +321,6 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                       </h3>
 
                       <div>
-                        <label className="block text-white/60 text-sm mb-2">Twitter</label>
-                        <input
-                          type="url"
-                          value={localSettings.twitterUrl}
-                          onChange={(e) => setLocalSettings({ ...localSettings, twitterUrl: e.target.value })}
-                          className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-white/40 focus:outline-none transition-all"
-                          placeholder="https://twitter.com/..."
-                        />
-                      </div>
-
-                      <div>
                         <label className="block text-white/60 text-sm mb-2">GitHub</label>
                         <input
                           type="url"
@@ -324,6 +328,28 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                           onChange={(e) => setLocalSettings({ ...localSettings, githubUrl: e.target.value })}
                           className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-white/40 focus:outline-none transition-all"
                           placeholder="https://github.com/..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-white/60 text-sm mb-2">小红书</label>
+                        <input
+                          type="url"
+                          value={localSettings.twitterUrl}
+                          onChange={(e) => setLocalSettings({ ...localSettings, twitterUrl: e.target.value })}
+                          className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-white/40 focus:outline-none transition-all"
+                          placeholder="https://www.xiaohongshu.com/..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-white/60 text-sm mb-2">抖音</label>
+                        <input
+                          type="url"
+                          value={douyinUrl}
+                          onChange={(e) => setDouyinUrl(e.target.value)}
+                          className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-white/40 focus:outline-none transition-all"
+                          placeholder="https://www.douyin.com/user/..."
                         />
                       </div>
 
