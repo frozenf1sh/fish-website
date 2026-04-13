@@ -27,6 +27,7 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
   const { settings, isLoggedIn } = useStore()
   const navigate = useNavigate()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [imageRatios, setImageRatios] = useState<Record<string, number>>({})
   
   const displayName = settings?.displayName || 'FrozenFish'
   const avatarUrl = settings?.avatarUrl
@@ -51,6 +52,22 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
     } catch {
       showToast({ type: 'error', message: '复制失败，请手动复制地址栏链接' })
     }
+  }
+
+  const imageCount = item.images?.length || 0
+  const isSingleImage = imageCount === 1
+  const visibleImages = imageCount > 9 ? item.images!.slice(0, 9) : (item.images || [])
+
+  const singleImageUrl = isSingleImage ? item.images?.[0] || '' : ''
+  const singleImageRatio = imageRatios[singleImageUrl] || 1
+  const singleImageClampedRatio = Math.max(0.5, Math.min(2, singleImageRatio))
+  const singleImageNeedsCrop = singleImageRatio < 0.5 || singleImageRatio > 2
+
+  const getGridColsClass = () => {
+    if (imageCount === 2) return 'grid-cols-2'
+    if (imageCount === 3) return 'grid-cols-3'
+    if (imageCount === 4) return 'grid-cols-2'
+    return 'grid-cols-3'
   }
 
   return (
@@ -99,33 +116,84 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
           </div>
 
           {item.images && item.images.length > 0 && (
-            <div className={`grid gap-2 mb-4 ${item.images.length === 1 ? 'grid-cols-1' : item.images.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-              {item.images.slice(0, 9).map((url, i) => (
-                <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-white/20">
-                  {url ? (
-                    <img
-                      src={url}
-                      alt={`Image ${i + 1}`}
-                      className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedImage(url)
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-200/30 via-purple-200/30 to-pink-200/30 flex items-center justify-center">
-                      <span className="text-4xl opacity-60">🖼️</span>
-                    </div>
-                  )}
+            <div className="mb-4">
+              {isSingleImage ? (
+                <div
+                  className="w-full sm:max-w-[34rem] max-h-[22rem] sm:max-h-[26rem] rounded-2xl overflow-hidden border border-white/20 bg-black/20"
+                  style={{ aspectRatio: `${singleImageClampedRatio}` }}
+                >
+                  <img
+                    src={singleImageUrl}
+                    alt="Image 1"
+                    className={`w-full h-full cursor-pointer hover:scale-[1.02] transition-transform duration-300 ${singleImageNeedsCrop ? 'object-cover' : 'object-contain'}`}
+                    onLoad={(e) => {
+                      const target = e.currentTarget
+                      if (!target.naturalWidth || !target.naturalHeight) return
+                      const ratio = target.naturalWidth / target.naturalHeight
+                      setImageRatios((prev) => ({ ...prev, [singleImageUrl]: ratio }))
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedImage(singleImageUrl)
+                    }}
+                  />
                 </div>
-              ))}
-              {item.images.length > 9 && (
-                <div className="aspect-square rounded-2xl bg-black/40 flex items-center justify-center">
-                  <span className="text-white text-2xl font-bold">+{item.images.length - 9}</span>
+              ) : (
+                <div className={`grid gap-2 ${getGridColsClass()}`}>
+                  {visibleImages.map((url, i) => {
+                    const isOverflowTile = imageCount > 9 && i === 8
+                    return (
+                      <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-white/20 relative">
+                        <img
+                          src={url}
+                          alt={`Image ${i + 1}`}
+                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (isOverflowTile) {
+                              navigate(`/post/${item.id}`)
+                              return
+                            }
+                            setSelectedImage(url)
+                          }}
+                        />
+                        {isOverflowTile && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/post/${item.id}`)
+                            }}
+                            className="absolute inset-0 bg-black/45 text-white text-2xl font-bold flex items-center justify-center"
+                          >
+                            +{imageCount - 9}
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
           )}
+
+          <div className="mt-2 flex justify-end">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                copyShareUrl()
+              }}
+              className="w-10 h-10 rounded-full bg-white/12 border border-white/25 text-white hover:bg-white/20 flex items-center justify-center"
+              title="分享"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <path d="M8.59 13.51 15.42 17.49" />
+                <path d="M15.41 6.51 8.59 10.49" />
+              </svg>
+            </button>
+          </div>
 
           {/* 暂时隐藏点赞等功能
           <div className="flex items-center gap-6 text-white/60">
@@ -148,23 +216,6 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
           */}
         </div>
       </div>
-
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          copyShareUrl()
-        }}
-        className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 w-10 h-10 rounded-full bg-white/12 border border-white/25 text-white hover:bg-white/20 flex items-center justify-center"
-        title="分享"
-      >
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <path d="M8.59 13.51 15.42 17.49" />
-          <path d="M15.41 6.51 8.59 10.49" />
-        </svg>
-      </button>
 
       {createPortal(
         <AnimatePresence>

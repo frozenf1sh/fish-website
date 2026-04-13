@@ -300,26 +300,28 @@ export function PostPage() {
           </>
         )}
 
-        <button
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(shareUrl)
-              showToast({ type: 'success', message: '分享链接已复制' })
-            } catch {
-              showToast({ type: 'error', message: '复制失败' })
-            }
-          }}
-          className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/12 border border-white/25 text-white hover:bg-white/20 flex items-center justify-center"
-          title="分享"
-        >
-          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="18" cy="5" r="3" />
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="19" r="3" />
-            <path d="M8.59 13.51 15.42 17.49" />
-            <path d="M15.41 6.51 8.59 10.49" />
-          </svg>
-        </button>
+        <div className="mt-1 flex justify-end">
+          <button
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(shareUrl)
+                showToast({ type: 'success', message: '分享链接已复制' })
+              } catch {
+                showToast({ type: 'error', message: '复制失败' })
+              }
+            }}
+            className="w-10 h-10 rounded-full bg-white/12 border border-white/25 text-white hover:bg-white/20 flex items-center justify-center"
+            title="分享"
+          >
+            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <path d="M8.59 13.51 15.42 17.49" />
+              <path d="M15.41 6.51 8.59 10.49" />
+            </svg>
+          </button>
+        </div>
       </motion.div>
     </div>
   )

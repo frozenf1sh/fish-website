@@ -51,7 +51,7 @@ export function Layout() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="flex-1 min-w-0 w-full lg:basis-[80%] lg:max-w-[80%] xl:basis-[72%] xl:max-w-[72%] 2xl:basis-[56%] 2xl:max-w-[56%] border-x border-white/10"
+            className="flex-1 min-w-0 w-full lg:basis-[68%] lg:max-w-[68%] xl:basis-[61%] xl:max-w-[61%] 2xl:basis-[48%] 2xl:max-w-[48%] border-x border-white/10"
           >
             <Outlet />
           </motion.main>
