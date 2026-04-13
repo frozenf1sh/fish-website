@@ -76,11 +76,17 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
           h3({ children }: any) {
             return <h3 className={theme === 'dark' ? 'text-xl font-semibold text-white mt-4 mb-2' : 'text-xl font-semibold mt-4 mb-2'}>{children}</h3>
           },
+          h4({ children }: any) {
+            return <h4 className={theme === 'dark' ? 'text-lg font-semibold text-white mt-3 mb-2' : 'text-lg font-semibold mt-3 mb-2'}>{children}</h4>
+          },
+          h5({ children }: any) {
+            return <h5 className={theme === 'dark' ? 'text-base font-semibold text-white mt-2 mb-1' : 'text-base font-semibold mt-2 mb-1'}>{children}</h5>
+          },
           ul({ children }: any) {
             return <ul className="list-disc pl-6 my-3 space-y-1">{children}</ul>
           },
-          ol({ children }: any) {
-            return <ol className="list-decimal pl-6 my-3 space-y-1">{children}</ol>
+          ol({ children, start, ...props }: any) {
+            return <ol start={start} className="list-decimal pl-6 my-3 space-y-1" {...props}>{children}</ol>
           },
           li({ children }: any) {
             return <li className={theme === 'dark' ? 'text-white/90 marker:text-white/70' : 'text-slate-800'}>{children}</li>
@@ -93,7 +99,9 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
             )
           },
           code({ node, inline, className, children, ...props }: any) {
-            if (!inline) {
+            const text = String(children || '')
+            const isInlineCode = Boolean(inline) || (!className && !text.includes('\n'))
+            if (!isInlineCode) {
               return <CodeBlock theme={theme} className={className}>{children}</CodeBlock>
             }
             return (

@@ -28,6 +28,19 @@ interface FolderNode {
 }
 
 type PreviewMode = 'split' | 'edit' | 'preview'
+type ToolbarAction =
+  | 'h1'
+  | 'h2'
+  | 'bold'
+  | 'italic'
+  | 'inlineCode'
+  | 'link'
+  | 'image'
+  | 'ul'
+  | 'ol'
+  | 'codeBlock'
+  | 'table'
+  | 'quote'
 
 const ROOT_FOLDER_ID = 'root'
 const BLOG_LIST_TIMEOUT_MS = 15000
@@ -77,6 +90,7 @@ export function BlogPage() {
   const [previewMode, setPreviewMode] = useState<PreviewMode>('split')
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const imageUploadInputRef = useRef<HTMLInputElement | null>(null)
+  const [editHistory, setEditHistory] = useState<{ items: string[]; index: number }>({ items: [''], index: 0 })
 
   const [manageMode, setManageMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -160,6 +174,7 @@ export function BlogPage() {
     setContent('')
     setTagsInput('')
     setPreviewMode('split')
+    setEditHistory({ items: [''], index: 0 })
   }
 
   const loadArticles = async (options?: { reset?: boolean; pageToken?: string }) => {
@@ -238,6 +253,7 @@ export function BlogPage() {
         setTitle(article.title || '')
         setContent(article.content || '')
         setTagsInput((article.tags || []).join(', '))
+        setEditHistory({ items: [article.content || ''], index: 0 })
       } catch (err) {
         console.error('Failed to load editing article:', err)
         showToast({ type: 'error', message: '加载待编辑文章失败' })
@@ -272,22 +288,258 @@ export function BlogPage() {
     load()
   }, [articleId])
 
-  const insertSnippet = (snippet: string) => {
+  const applyEditorChange = (next: string, selection?: { start: number; end: number }) => {
+    setContent(next)
+    setEditHistory((prev) => {
+      const base = prev.items.slice(0, prev.index + 1)
+      if (base[base.length - 1] === next) {
+        return prev
+      }
+      const nextItems = [...base, next]
+      const limit = 120
+      if (nextItems.length > limit) {
+        const trimmed = nextItems.slice(nextItems.length - limit)
+        return { items: trimmed, index: trimmed.length - 1 }
+      }
+      return { items: nextItems, index: nextItems.length - 1 }
+    })
+
+    const el = textareaRef.current
+    if (el && selection) {
+      requestAnimationFrame(() => {
+        el.focus()
+        el.setSelectionRange(selection.start, selection.end)
+      })
+    }
+  }
+
+  const wrapSelection = (marker: string) => {
     const el = textareaRef.current
     if (!el) {
-      setContent((prev) => `${prev}\n${snippet}`)
+      const fallback = `${content}${marker}${marker}`
+      applyEditorChange(fallback)
+      return
+    }
+
+    const start = el.selectionStart
+    const end = el.selectionEnd
+    const selected = content.slice(start, end)
+    const beforeChar = content[start - 1] || ''
+    const afterChar = content[end] || ''
+    const needLeadingSpace = start > 0 && !/\s/.test(beforeChar)
+    const needTrailingSpace = end < content.length && !/\s/.test(afterChar)
+
+    const leading = needLeadingSpace ? ' ' : ''
+    const trailing = needTrailingSpace ? ' ' : ''
+
+    const wrapped = `${leading}${marker}${selected}${marker}${trailing}`
+    const next = `${content.slice(0, start)}${wrapped}${content.slice(end)}`
+
+    if (selected.length > 0) {
+      const selectionStart = start + leading.length + marker.length
+      const selectionEnd = selectionStart + selected.length
+      applyEditorChange(next, { start: selectionStart, end: selectionEnd })
+      return
+    }
+
+    const cursor = start + leading.length + marker.length
+    applyEditorChange(next, { start: cursor, end: cursor })
+  }
+
+  const insertSnippet = (snippet: string, cursorOffset?: number) => {
+    const el = textareaRef.current
+    if (!el) {
+      const fallback = `${content}\n${snippet}`
+      applyEditorChange(fallback)
       return
     }
 
     const start = el.selectionStart
     const end = el.selectionEnd
     const next = `${content.slice(0, start)}${snippet}${content.slice(end)}`
-    setContent(next)
-    requestAnimationFrame(() => {
-      el.focus()
-      const cursor = start + snippet.length
-      el.setSelectionRange(cursor, cursor)
+    const cursor = start + (cursorOffset ?? snippet.length)
+    applyEditorChange(next, { start: cursor, end: cursor })
+  }
+
+  const applyToolbarAction = (action: ToolbarAction) => {
+    switch (action) {
+      case 'h1':
+        insertSnippet('# ')
+        return
+      case 'h2':
+        insertSnippet('## ')
+        return
+      case 'bold':
+        wrapSelection('**')
+        return
+      case 'italic':
+        wrapSelection('*')
+        return
+      case 'inlineCode':
+        wrapSelection('`')
+        return
+      case 'link':
+        insertSnippet('[]()', 1)
+        return
+      case 'image':
+        insertSnippet('![]()', 2)
+        return
+      case 'ul':
+        insertSnippet('- ')
+        return
+      case 'ol':
+        insertSnippet('1. ')
+        return
+      case 'codeBlock':
+        insertSnippet('```\n\n```', 4)
+        return
+      case 'table':
+        insertSnippet('|  |  |\n| --- | --- |\n|  |  |\n', 2)
+        return
+      case 'quote':
+        insertSnippet('> ')
+        return
+      default:
+        return
+    }
+  }
+
+  const handleUndo = () => {
+    setEditHistory((prev) => {
+      if (prev.index <= 0) return prev
+      const nextIndex = prev.index - 1
+      setContent(prev.items[nextIndex])
+      return { ...prev, index: nextIndex }
     })
+  }
+
+  const handleRedo = () => {
+    setEditHistory((prev) => {
+      if (prev.index >= prev.items.length - 1) return prev
+      const nextIndex = prev.index + 1
+      setContent(prev.items[nextIndex])
+      return { ...prev, index: nextIndex }
+    })
+  }
+
+  const smartWrapSelectedWithMarker = (marker: '*' | '`') => {
+    const el = textareaRef.current
+    if (!el) return
+
+    const start = el.selectionStart
+    const end = el.selectionEnd
+    if (start === end) return
+
+    const selected = content.slice(start, end)
+
+    const countMarkerLeft = () => {
+      let count = 0
+      for (let i = start - 1; i >= 0 && count < 3; i -= 1) {
+        if (content[i] !== marker) break
+        count += 1
+      }
+      return count
+    }
+
+    const countMarkerRight = () => {
+      let count = 0
+      for (let i = end; i < content.length && count < 3; i += 1) {
+        if (content[i] !== marker) break
+        count += 1
+      }
+      return count
+    }
+
+    const leftCount = countMarkerLeft()
+    const rightCount = countMarkerRight()
+    const surroundCount = Math.min(leftCount, rightCount)
+
+    if (marker === '`' && surroundCount >= 2) {
+      const replaceStart = start - surroundCount
+      const replaceEnd = end + surroundCount
+      const block = `\`\`\`\n${selected}\n\`\`\``
+      const next = `${content.slice(0, replaceStart)}${block}${content.slice(replaceEnd)}`
+      const selectionStart = replaceStart + 4
+      const selectionEnd = selectionStart + selected.length
+      applyEditorChange(next, { start: selectionStart, end: selectionEnd })
+      return
+    }
+
+    if (surroundCount > 0) {
+      const next = `${content.slice(0, start)}${marker}${selected}${marker}${content.slice(end)}`
+      const selectionStart = start + 1
+      const selectionEnd = selectionStart + selected.length
+      applyEditorChange(next, { start: selectionStart, end: selectionEnd })
+      return
+    }
+
+    const beforeChar = content[start - 1] || ''
+    const afterChar = content[end] || ''
+    const needLeadingSpace = start > 0 && !/\s/.test(beforeChar)
+    const needTrailingSpace = end < content.length && !/\s/.test(afterChar)
+
+    const leading = needLeadingSpace ? ' ' : ''
+    const trailing = needTrailingSpace ? ' ' : ''
+    const wrapped = `${leading}${marker}${selected}${marker}${trailing}`
+    const next = `${content.slice(0, start)}${wrapped}${content.slice(end)}`
+    const selectionStart = start + leading.length + 1
+    const selectionEnd = selectionStart + selected.length
+    applyEditorChange(next, { start: selectionStart, end: selectionEnd })
+  }
+
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
+    if (!isDesktop) return
+
+    const el = e.currentTarget
+    const hasSelection = el.selectionStart !== el.selectionEnd
+    const key = e.key.toLowerCase()
+
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        handleUndo()
+        return
+      }
+      if (key === 'y' || (key === 'z' && e.shiftKey)) {
+        e.preventDefault()
+        handleRedo()
+        return
+      }
+
+      if ((key === 'c' || key === 'x') && !hasSelection) {
+        const cursor = el.selectionStart
+        const lineStart = content.lastIndexOf('\n', Math.max(0, cursor - 1)) + 1
+        const lineEndRaw = content.indexOf('\n', cursor)
+        const lineEnd = lineEndRaw === -1 ? content.length : lineEndRaw
+        const lineText = content.slice(lineStart, lineEnd)
+        const withNewline = lineEndRaw === -1 ? lineText : `${lineText}\n`
+
+        e.preventDefault()
+        void navigator.clipboard.writeText(withNewline)
+
+        if (key === 'x') {
+          const removeStart = lineEndRaw === -1 && lineStart > 0 ? lineStart - 1 : lineStart
+          const removeEnd = lineEndRaw === -1 ? lineEnd : lineEnd + 1
+          const next = `${content.slice(0, removeStart)}${content.slice(removeEnd)}`
+          applyEditorChange(next, { start: removeStart, end: removeStart })
+        }
+        return
+      }
+    }
+
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && hasSelection) {
+      if (e.key === '*') {
+        e.preventDefault()
+        smartWrapSelectedWithMarker('*')
+        return
+      }
+      if (e.key === '`') {
+        e.preventDefault()
+        smartWrapSelectedWithMarker('`')
+        return
+      }
+    }
   }
 
   const uploadWithRetry = async (url: string, file: File, headers: Record<string, string>, retries = 2) => {
@@ -521,16 +773,18 @@ export function BlogPage() {
 
   if (isLoggedIn && composeOpen) {
     const toolbar = [
-      { label: 'H1', action: '# 标题\n' },
-      { label: 'H2', action: '## 小标题\n' },
-      { label: '粗体', action: '**粗体**' },
-      { label: '斜体', action: '*斜体*' },
-      { label: '链接', action: '[链接文本](https://example.com)' },
-      { label: '图片', action: '![图片描述](https://example.com/image.png)' },
-      { label: '列表', action: '- 列表项1\n- 列表项2\n' },
-      { label: '代码块', action: '```ts\nconsole.log("hello")\n```\n' },
-      { label: '表格', action: '| 列1 | 列2 |\n| --- | --- |\n| 值1 | 值2 |\n' },
-      { label: '引用', action: '> 引用内容\n' },
+      { label: 'H1', action: 'h1' as ToolbarAction },
+      { label: 'H2', action: 'h2' as ToolbarAction },
+      { label: '粗体', action: 'bold' as ToolbarAction },
+      { label: '斜体', action: 'italic' as ToolbarAction },
+      { label: '行内代码', action: 'inlineCode' as ToolbarAction },
+      { label: '链接', action: 'link' as ToolbarAction },
+      { label: '图片', action: 'image' as ToolbarAction },
+      { label: '无序列表', action: 'ul' as ToolbarAction },
+      { label: '有序列表', action: 'ol' as ToolbarAction },
+      { label: '代码块', action: 'codeBlock' as ToolbarAction },
+      { label: '表格', action: 'table' as ToolbarAction },
+      { label: '引用', action: 'quote' as ToolbarAction },
     ]
 
     return (
@@ -543,6 +797,22 @@ export function BlogPage() {
                 <span className="text-xs px-2 py-1 rounded-full bg-slate-200 text-slate-700">实时预览</span>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleUndo}
+                  disabled={editHistory.index <= 0}
+                  className="px-2.5 py-1.5 text-sm rounded-xl bg-slate-200 text-slate-700 disabled:opacity-40"
+                >
+                  撤回
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRedo}
+                  disabled={editHistory.index >= editHistory.items.length - 1}
+                  className="px-2.5 py-1.5 text-sm rounded-xl bg-slate-200 text-slate-700 disabled:opacity-40"
+                >
+                  重做
+                </button>
                 <button type="button" onClick={() => setPreviewMode('edit')} className={`px-2.5 py-1.5 text-sm rounded-xl ${previewMode === 'edit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'}`}>编辑</button>
                 <button type="button" onClick={() => setPreviewMode('preview')} className={`px-2.5 py-1.5 text-sm rounded-xl ${previewMode === 'preview' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'}`}>预览</button>
                 <button type="button" onClick={() => setPreviewMode('split')} className={`px-2.5 py-1.5 text-sm rounded-xl ${previewMode === 'split' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'}`}>分栏</button>
@@ -563,7 +833,7 @@ export function BlogPage() {
                 上传图片
               </button>
               {toolbar.map((item) => (
-                <button key={item.label} type="button" onClick={() => insertSnippet(item.action)} className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-100">
+                <button key={item.label} type="button" onClick={() => applyToolbarAction(item.action)} className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-100">
                   {item.label}
                 </button>
               ))}
@@ -577,13 +847,14 @@ export function BlogPage() {
             />
           </div>
 
-          <div className="grid lg:grid-cols-2 min-h-[56vh]">
+          <div className={`min-h-[56vh] ${previewMode === 'split' ? 'grid lg:grid-cols-2' : 'grid grid-cols-1'}`}>
             {(previewMode === 'edit' || previewMode === 'split') && (
-              <div className="border-r border-slate-200">
+              <div className={previewMode === 'split' ? 'border-r border-slate-200' : ''}>
                 <textarea
                   ref={textareaRef}
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={(e) => applyEditorChange(e.target.value)}
+                  onKeyDown={handleEditorKeyDown}
                   placeholder="在这里编写 Markdown..."
                   className="w-full h-full min-h-[56vh] p-4 sm:p-5 resize-none focus:outline-none font-mono text-[14px] leading-6"
                 />
