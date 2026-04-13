@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS folders (
 
 CREATE INDEX IF NOT EXISTS idx_folders_parent_id ON folders(parent_folder_id);
 
+INSERT INTO folders (id, name, parent_folder_id)
+VALUES ('root', '根目录', NULL)
+ON CONFLICT (id) DO NOTHING;
+
 -- Articles table
 CREATE TABLE IF NOT EXISTS articles (
     id VARCHAR(64) PRIMARY KEY,

@@ -116,7 +116,30 @@ func (r *postgresPostRepository) Delete(ctx context.Context, id string) error {
 // postgresBlogRepository implements BlogRepository
 type postgresBlogRepository PostgresRepository
 
+const (
+	rootFolderID   = "root"
+	rootFolderName = "根目录"
+)
+
+func (r *postgresBlogRepository) ensureRootFolder(ctx context.Context) error {
+	_, err := r.pool.Exec(ctx,
+		"INSERT INTO folders (id, name, parent_folder_id) VALUES ($1, $2, NULL) ON CONFLICT (id) DO NOTHING",
+		rootFolderID,
+		rootFolderName,
+	)
+	if err != nil {
+		return fmt.Errorf("ensure root folder: %w", err)
+	}
+	return nil
+}
+
 func (r *postgresBlogRepository) CreateArticle(ctx context.Context, article *domain.Article) (*domain.Article, error) {
+	if err := r.ensureRootFolder(ctx); err != nil {
+		return nil, err
+	}
+	if article.FolderID == "" {
+		article.FolderID = rootFolderID
+	}
 	if article.ID == "" {
 		id, err := uuid.NewV7()
 		if err != nil {
@@ -170,17 +193,24 @@ func (r *postgresBlogRepository) DeleteArticle(ctx context.Context, articleID st
 }
 
 func (r *postgresBlogRepository) ListArticles(ctx context.Context, pageSize int, pageToken string, folderID string, tag string, status string) ([]*domain.Article, string, bool, error) {
+	if err := r.ensureRootFolder(ctx); err != nil {
+		return nil, "", false, err
+	}
 	query := `
 		SELECT id, title, content, folder_id, tags, status, created_at, updated_at
 		FROM articles
 		WHERE ($1 = '' OR id < $1)
-		AND ($2 = '' OR folder_id = $2)
+		AND (
+			$2 = ''
+			OR ($2 = 'root' AND (folder_id = 'root' OR folder_id IS NULL))
+			OR ($2 <> 'root' AND folder_id = $2)
+		)
 		AND ($3 = '' OR tags @> to_jsonb($3::text))
 		AND ($4 = '' OR status = $4)
 		ORDER BY created_at DESC
 		LIMIT $5
 	`
-	rows, err := r.pool.Query(ctx, query, pageToken, nullString(folderID), tag, status, pageSize+1)
+	rows, err := r.pool.Query(ctx, query, pageToken, folderID, tag, status, pageSize+1)
 	if err != nil {
 		return nil, "", false, fmt.Errorf("query articles: %w", err)
 	}
@@ -239,8 +269,14 @@ func (r *postgresBlogRepository) GetArticle(ctx context.Context, articleID strin
 }
 
 func (r *postgresBlogRepository) CreateFolder(ctx context.Context, folder *domain.Folder) (*domain.Folder, error) {
+	if err := r.ensureRootFolder(ctx); err != nil {
+		return nil, err
+	}
 	if folder.ID == "" {
 		folder.ID = xid.New().String()
+	}
+	if folder.ParentFolderID == "" && folder.ID != rootFolderID {
+		folder.ParentFolderID = rootFolderID
 	}
 
 	_, err := r.pool.Exec(ctx,
@@ -255,6 +291,9 @@ func (r *postgresBlogRepository) CreateFolder(ctx context.Context, folder *domai
 }
 
 func (r *postgresBlogRepository) UpdateFolder(ctx context.Context, folder *domain.Folder) (*domain.Folder, error) {
+	if folder.ID == rootFolderID {
+		return folder, nil
+	}
 	_, err := r.pool.Exec(ctx,
 		"UPDATE folders SET name = $1, parent_folder_id = $2 WHERE id = $3",
 		folder.Name, nullString(folder.ParentFolderID), folder.ID,
@@ -266,7 +305,11 @@ func (r *postgresBlogRepository) UpdateFolder(ctx context.Context, folder *domai
 }
 
 func (r *postgresBlogRepository) GetFolders(ctx context.Context) ([]*domain.Folder, error) {
-	rows, err := r.pool.Query(ctx, "SELECT id, name, parent_folder_id FROM folders ORDER BY name")
+	if err := r.ensureRootFolder(ctx); err != nil {
+		return nil, err
+	}
+
+	rows, err := r.pool.Query(ctx, "SELECT id, name, parent_folder_id FROM folders ORDER BY CASE WHEN id = 'root' THEN 0 ELSE 1 END, name")
 	if err != nil {
 		return nil, fmt.Errorf("query folders: %w", err)
 	}
