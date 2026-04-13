@@ -5,6 +5,7 @@ import { LoadingSpinner } from './LoadingSpinner'
 import { compressImage, validateImageFile } from '../utils/imageCompressor'
 import { clients } from '../lib/connect'
 import { showToast } from '../lib/toast'
+import { readSiteBehaviorConfig, writeSiteBehaviorConfig } from '../utils/siteConfig'
 
 interface SettingsDrawerProps {
   isOpen: boolean
@@ -16,17 +17,59 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
   const [localSettings, setLocalSettings] = useState(settings)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
-  const [uploadingImage, setUploadingImage] = useState<'avatar' | 'background' | null>(null)
+  const [uploadingImage, setUploadingImage] = useState<'avatar' | 'background' | 'favicon' | null>(null)
+  const [defaultTitle, setDefaultTitle] = useState('冻鱼的小站')
+  const [hiddenTitle, setHiddenTitle] = useState('快回来看看！')
+  const [focusTitle, setFocusTitle] = useState('欢迎回来！')
+  const [faviconUrl, setFaviconUrl] = useState('')
 
   useEffect(() => {
     if (settings) {
       setLocalSettings(settings)
+      const config = readSiteBehaviorConfig(settings.customLinks)
+      setDefaultTitle(config.defaultTitle)
+      setHiddenTitle(config.hiddenTitle)
+      setFocusTitle(config.focusTitle)
+      setFaviconUrl(config.faviconUrl)
     }
   }, [settings])
 
+  const createFaviconFile = async (file: File) => {
+    const sourceUrl = URL.createObjectURL(file)
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new Image()
+        element.onload = () => resolve(element)
+        element.onerror = () => reject(new Error('读取图片失败'))
+        element.src = sourceUrl
+      })
+
+      const canvas = document.createElement('canvas')
+      canvas.width = 32
+      canvas.height = 32
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('浏览器不支持 Canvas 上下文')
+
+      const sourceSize = Math.min(img.width, img.height)
+      const sx = Math.floor((img.width - sourceSize) / 2)
+      const sy = Math.floor((img.height - sourceSize) / 2)
+      ctx.clearRect(0, 0, 32, 32)
+      ctx.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, 32, 32)
+
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((result) => resolve(result), 'image/png')
+      })
+      if (!blob) throw new Error('生成 favicon 失败')
+
+      return new File([blob], 'site-favicon-32.png', { type: 'image/png', lastModified: Date.now() })
+    } finally {
+      URL.revokeObjectURL(sourceUrl)
+    }
+  }
+
   const handleImageUpload = async (
     file: File,
-    type: 'avatar' | 'background'
+    type: 'avatar' | 'background' | 'favicon'
   ) => {
     const validation = validateImageFile(file)
     if (!validation.valid) {
@@ -36,22 +79,21 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
 
     setUploadingImage(type)
     try {
-      const compressedFile = await compressImage(file)
+      const uploadFile = type === 'favicon'
+        ? await createFaviconFile(file)
+        : await compressImage(file)
 
       const uploadResponse = await clients.album.uploadImageRequest({
         albumId: 'default',
-        fileName: compressedFile.name,
-        mimeType: compressedFile.type,
-        fileSize: BigInt(compressedFile.size),
+        fileName: uploadFile.name,
+        mimeType: uploadFile.type,
+        fileSize: BigInt(uploadFile.size),
       })
-
-      const formData = new FormData()
-      formData.append('file', compressedFile)
 
       const uploadResult = await fetch(uploadResponse.uploadUrl, {
         method: 'PUT',
         headers: Object.fromEntries(Object.entries(uploadResponse.headers)),
-        body: compressedFile,
+        body: uploadFile,
       })
 
       if (!uploadResult.ok) {
@@ -64,11 +106,15 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
       })
 
       if (confirmResponse.image?.url) {
-        const updateKey = type === 'avatar' ? 'avatarUrl' : 'backgroundImageUrl'
-        setLocalSettings(prev => ({
-          ...prev!,
-          [updateKey]: confirmResponse.image!.url!,
-        }))
+        if (type === 'favicon') {
+          setFaviconUrl(confirmResponse.image.url)
+        } else {
+          const updateKey = type === 'avatar' ? 'avatarUrl' : 'backgroundImageUrl'
+          setLocalSettings(prev => ({
+            ...prev!,
+            [updateKey]: confirmResponse.image!.url!,
+          }))
+        }
       }
     } catch (error) {
       console.error('Image upload failed:', error)
@@ -84,7 +130,16 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
     setSaveError('')
 
     try {
-      await updateSettings(localSettings)
+      const mergedCustomLinks = writeSiteBehaviorConfig(localSettings.customLinks, {
+        defaultTitle,
+        hiddenTitle,
+        focusTitle,
+        faviconUrl,
+      })
+      await updateSettings({
+        ...localSettings,
+        customLinks: mergedCustomLinks,
+      })
       onClose()
     } catch (error) {
       console.error('Failed to save settings:', error)
@@ -289,6 +344,32 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                       </h3>
 
                       <div>
+                        <label className="block text-white/60 text-sm mb-2">网站图标（favicon）</label>
+                        {faviconUrl && (
+                          <div className="mb-3 inline-flex items-center gap-3 px-3 py-2 rounded-xl bg-white/10 border border-white/15">
+                            <img src={faviconUrl} alt="favicon preview" className="w-8 h-8 rounded-md border border-white/20" />
+                            <span className="text-white/70 text-xs">将以 32x32 PNG 形式保存</span>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          id="favicon-upload"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) handleImageUpload(file, 'favicon')
+                          }}
+                        />
+                        <label
+                          htmlFor="favicon-upload"
+                          className="block w-full px-4 py-3 rounded-2xl text-white text-center cursor-pointer bg-white/10 hover:bg-white/20 border border-white/20"
+                        >
+                          {uploadingImage === 'favicon' ? '上传图标中...' : (faviconUrl ? '更换网站图标' : '上传网站图标')}
+                        </label>
+                      </div>
+
+                      <div>
                         <label className="block text-white/60 text-sm mb-2">背景图片</label>
                         {localSettings.backgroundImageUrl && (
                           <div className="mb-4 h-32 w-full rounded-2xl overflow-hidden relative border border-white/20">
@@ -458,6 +539,47 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                             </div>
                           );
                         })()}
+                      </div>
+                    </div>
+
+                    <div className="glass-card rounded-3xl p-6 space-y-4">
+                      <h3 className="text-white/90 font-semibold flex items-center gap-2">
+                        <span>🏷️</span>
+                        网站标题行为（Page Visibility）
+                      </h3>
+
+                      <div>
+                        <label className="block text-white/60 text-sm mb-2">默认网站名</label>
+                        <input
+                          type="text"
+                          value={defaultTitle}
+                          onChange={(e) => setDefaultTitle(e.target.value)}
+                          className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-white/40 focus:outline-none transition-all"
+                          placeholder="例如：冻鱼的小站"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-white/60 text-sm mb-2">失去焦点网站名</label>
+                        <input
+                          type="text"
+                          value={hiddenTitle}
+                          onChange={(e) => setHiddenTitle(e.target.value)}
+                          className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-white/40 focus:outline-none transition-all"
+                          placeholder="例如：快回来看看！"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-white/60 text-sm mb-2">重新聚焦网站名</label>
+                        <input
+                          type="text"
+                          value={focusTitle}
+                          onChange={(e) => setFocusTitle(e.target.value)}
+                          className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-white/40 focus:outline-none transition-all"
+                          placeholder="例如：欢迎回来！"
+                        />
+                        <p className="text-white/45 text-xs mt-2">留空则回到页面时直接显示默认网站名。</p>
                       </div>
                     </div>
 

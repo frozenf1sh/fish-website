@@ -13,6 +13,7 @@ import { MePage } from './pages/MePage'
 import { ToastCenter } from './components/ToastCenter'
 import { showToast } from './lib/toast'
 import { useStore } from './store/useStore'
+import { readSiteBehaviorConfig } from './utils/siteConfig'
 
 function App() {
   const {
@@ -41,6 +42,56 @@ function App() {
       window.removeEventListener('auth:expired', handleAuthExpired)
     }
   }, [])
+
+  useEffect(() => {
+    const config = readSiteBehaviorConfig(settings?.customLinks)
+    const { defaultTitle, hiddenTitle, focusTitle } = config
+    let focusTimer: number | undefined
+
+    const applyTitleByVisibility = () => {
+      if (focusTimer) {
+        window.clearTimeout(focusTimer)
+        focusTimer = undefined
+      }
+
+      if (document.hidden) {
+        document.title = hiddenTitle
+        return
+      }
+
+      if (focusTitle) {
+        document.title = focusTitle
+        focusTimer = window.setTimeout(() => {
+          document.title = defaultTitle
+        }, 1200)
+      } else {
+        document.title = defaultTitle
+      }
+    }
+
+    applyTitleByVisibility()
+    document.addEventListener('visibilitychange', applyTitleByVisibility)
+
+    return () => {
+      if (focusTimer) {
+        window.clearTimeout(focusTimer)
+      }
+      document.removeEventListener('visibilitychange', applyTitleByVisibility)
+    }
+  }, [settings?.customLinks])
+
+  useEffect(() => {
+    const config = readSiteBehaviorConfig(settings?.customLinks)
+    const iconHref = config.faviconUrl || '/favicon.ico'
+    let link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.head.appendChild(link)
+    }
+    link.type = 'image/png'
+    link.href = iconHref
+  }, [settings?.customLinks])
 
   const themeStr = settings?.themeColor || '220,64,90,0.45,24,0'
   const parsed = themeStr.includes('|') ? themeStr.split('|') : themeStr.split(',')
