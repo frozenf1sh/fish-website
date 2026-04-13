@@ -2591,6 +2591,7 @@ type ImageReference struct {
 	AvatarReferenceCount     int32                  `protobuf:"varint,7,opt,name=avatar_reference_count,json=avatarReferenceCount,proto3" json:"avatar_reference_count,omitempty"`
 	BackgroundReferenceCount int32                  `protobuf:"varint,8,opt,name=background_reference_count,json=backgroundReferenceCount,proto3" json:"background_reference_count,omitempty"`
 	SafeToDelete             bool                   `protobuf:"varint,9,opt,name=safe_to_delete,json=safeToDelete,proto3" json:"safe_to_delete,omitempty"`
+	FaviconReferenceCount    int32                  `protobuf:"varint,10,opt,name=favicon_reference_count,json=faviconReferenceCount,proto3" json:"favicon_reference_count,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -2686,6 +2687,13 @@ func (x *ImageReference) GetSafeToDelete() bool {
 		return x.SafeToDelete
 	}
 	return false
+}
+
+func (x *ImageReference) GetFaviconReferenceCount() int32 {
+	if x != nil {
+		return x.FaviconReferenceCount
+	}
+	return 0
 }
 
 type AnalyzeImageReferencesRequest struct {
@@ -3479,7 +3487,7 @@ const file_home_v1_homepage_proto_rawDesc = "" +
 	"\timage_ids\x18\x03 \x03(\tR\bimageIds\"5\n" +
 	"\x12MoveImagesResponse\x12\x1f\n" +
 	"\vmoved_count\x18\x01 \x01(\x05R\n" +
-	"movedCount\"\x81\x03\n" +
+	"movedCount\"\xb9\x03\n" +
 	"\x0eImageReference\x12\x19\n" +
 	"\bimage_id\x18\x01 \x01(\tR\aimageId\x12\x10\n" +
 	"\x03url\x18\x02 \x01(\tR\x03url\x12\x1b\n" +
@@ -3489,7 +3497,9 @@ const file_home_v1_homepage_proto_rawDesc = "" +
 	"\x14blog_reference_count\x18\x06 \x01(\x05R\x12blogReferenceCount\x124\n" +
 	"\x16avatar_reference_count\x18\a \x01(\x05R\x14avatarReferenceCount\x12<\n" +
 	"\x1abackground_reference_count\x18\b \x01(\x05R\x18backgroundReferenceCount\x12$\n" +
-	"\x0esafe_to_delete\x18\t \x01(\bR\fsafeToDelete\":\n" +
+	"\x0esafe_to_delete\x18\t \x01(\bR\fsafeToDelete\x126\n" +
+	"\x17favicon_reference_count\x18\n" +
+	" \x01(\x05R\x15faviconReferenceCount\":\n" +
 	"\x1dAnalyzeImageReferencesRequest\x12\x19\n" +
 	"\balbum_id\x18\x01 \x01(\tR\aalbumId\"\x88\x02\n" +
 	"\x1eAnalyzeImageReferencesResponse\x127\n" +

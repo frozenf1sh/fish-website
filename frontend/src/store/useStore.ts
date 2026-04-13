@@ -64,11 +64,17 @@ export const useStore = create<AppState>((set, get) => ({
     const token = response.token
     setAuthToken(token)
     set({ isLoggedIn: true, token, showLoginModal: false })
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
   },
 
   logout: () => {
     setAuthToken(null)
     set({ isLoggedIn: false, token: null, settings: null })
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
   },
 
   checkAuth: () => {

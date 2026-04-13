@@ -475,6 +475,7 @@ func (h *Handler) AnalyzeImageReferences(ctx context.Context, req *connect.Reque
 			BlogReferenceCount:       int32(rec.BlogReferenceCount),
 			AvatarReferenceCount:     int32(rec.AvatarRefCount),
 			BackgroundReferenceCount: int32(rec.BackgroundRefCount),
+			FaviconReferenceCount:    int32(rec.FaviconRefCount),
 			SafeToDelete:             rec.ReferenceCount == 0,
 		}
 	}

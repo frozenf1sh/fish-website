@@ -802,6 +802,17 @@ func (r *postgresImageReferenceRepository) AdjustByURLs(ctx context.Context, url
 				background_ref_count = GREATEST(0, image_references.background_ref_count + EXCLUDED.background_ref_count),
 				updated_at = NOW()
 		`
+	case "favicon":
+		query = `
+			INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, favicon_ref_count, updated_at)
+			SELECT i.id, $2, 0, 0, 0, 0, $2, NOW()
+			FROM images i
+			WHERE i.url = ANY($1)
+			ON CONFLICT (image_id) DO UPDATE SET
+				ref_count = GREATEST(0, image_references.ref_count + EXCLUDED.ref_count),
+				favicon_ref_count = GREATEST(0, image_references.favicon_ref_count + EXCLUDED.favicon_ref_count),
+				updated_at = NOW()
+		`
 	default:
 		return fmt.Errorf("unsupported reference source: %s", source)
 	}
@@ -811,7 +822,7 @@ func (r *postgresImageReferenceRepository) AdjustByURLs(ctx context.Context, url
 		return fmt.Errorf("adjust references by urls: %w", err)
 	}
 
-	_, err = r.pool.Exec(ctx, `DELETE FROM image_references WHERE ref_count = 0 AND post_ref_count = 0 AND blog_ref_count = 0 AND avatar_ref_count = 0 AND background_ref_count = 0`)
+	_, err = r.pool.Exec(ctx, `DELETE FROM image_references WHERE ref_count = 0 AND post_ref_count = 0 AND blog_ref_count = 0 AND avatar_ref_count = 0 AND background_ref_count = 0 AND COALESCE(favicon_ref_count, 0) = 0`)
 	if err != nil {
 		return fmt.Errorf("cleanup zero references: %w", err)
 	}
@@ -823,7 +834,7 @@ func (r *postgresImageReferenceRepository) AnalyzeByAlbum(ctx context.Context, a
 	rows, err := r.pool.Query(ctx, `
 		SELECT i.id, COALESCE(i.url, ''), i.file_name,
 			COALESCE(ref.ref_count, 0), COALESCE(ref.post_ref_count, 0), COALESCE(ref.blog_ref_count, 0),
-			COALESCE(ref.avatar_ref_count, 0), COALESCE(ref.background_ref_count, 0)
+			COALESCE(ref.avatar_ref_count, 0), COALESCE(ref.background_ref_count, 0), COALESCE(ref.favicon_ref_count, 0)
 		FROM images i
 		LEFT JOIN image_references ref ON ref.image_id = i.id
 		WHERE i.album_id = $1
@@ -837,7 +848,7 @@ func (r *postgresImageReferenceRepository) AnalyzeByAlbum(ctx context.Context, a
 	records := make([]*domain.ImageReferenceRecord, 0)
 	for rows.Next() {
 		var rec domain.ImageReferenceRecord
-		if err := rows.Scan(&rec.ImageID, &rec.URL, &rec.FileName, &rec.ReferenceCount, &rec.PostReferenceCount, &rec.BlogReferenceCount, &rec.AvatarRefCount, &rec.BackgroundRefCount); err != nil {
+		if err := rows.Scan(&rec.ImageID, &rec.URL, &rec.FileName, &rec.ReferenceCount, &rec.PostReferenceCount, &rec.BlogReferenceCount, &rec.AvatarRefCount, &rec.BackgroundRefCount, &rec.FaviconRefCount); err != nil {
 			return nil, fmt.Errorf("scan reference record: %w", err)
 		}
 		records = append(records, &rec)
@@ -912,6 +923,20 @@ func (r *postgresImageReferenceRepository) RepairConsistency(ctx context.Context
 			updated_at = NOW()
 	`); err != nil {
 		return nil, fmt.Errorf("rebuild background references: %w", err)
+	}
+
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, favicon_ref_count, updated_at)
+		SELECT i.id, 1, 0, 0, 0, 0, 1, NOW()
+		FROM settings s
+		INNER JOIN images i ON i.url = (s.custom_links::jsonb ->> 'siteFaviconUrl')
+		WHERE s.id = 1 AND COALESCE(s.custom_links, '') <> '' AND COALESCE((s.custom_links::jsonb ->> 'siteFaviconUrl'), '') <> ''
+		ON CONFLICT (image_id) DO UPDATE SET
+			ref_count = image_references.ref_count + 1,
+			favicon_ref_count = COALESCE(image_references.favicon_ref_count, 0) + 1,
+			updated_at = NOW()
+	`); err != nil {
+		return nil, fmt.Errorf("rebuild favicon references: %w", err)
 	}
 
 	var result domain.ImageReferenceRepairResult

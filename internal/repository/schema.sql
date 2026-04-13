@@ -78,8 +78,11 @@ CREATE TABLE IF NOT EXISTS image_references (
     blog_ref_count INTEGER NOT NULL DEFAULT 0,
     avatar_ref_count INTEGER NOT NULL DEFAULT 0,
     background_ref_count INTEGER NOT NULL DEFAULT 0,
+    favicon_ref_count INTEGER NOT NULL DEFAULT 0,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE image_references ADD COLUMN IF NOT EXISTS favicon_ref_count INTEGER NOT NULL DEFAULT 0;
 
 CREATE INDEX IF NOT EXISTS idx_image_references_ref_count ON image_references(ref_count);
 

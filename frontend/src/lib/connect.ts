@@ -423,6 +423,7 @@ export const clients = {
           blogReferenceCount: Number(r.blogReferenceCount || 0),
           avatarReferenceCount: Number(r.avatarReferenceCount || 0),
           backgroundReferenceCount: Number(r.backgroundReferenceCount || 0),
+          faviconReferenceCount: Number((r as any).faviconReferenceCount || 0),
           safeToDelete: !!r.safeToDelete,
         })),
         totalImages: Number(response.totalImages || 0),

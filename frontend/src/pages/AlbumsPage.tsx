@@ -41,6 +41,7 @@ interface ImageReferenceItem {
   blogReferenceCount: number
   avatarReferenceCount: number
   backgroundReferenceCount: number
+  faviconReferenceCount: number
   safeToDelete: boolean
 }
 
@@ -1053,6 +1054,7 @@ export function AlbumsPage() {
                         <th className="text-left px-3 py-2">博客</th>
                         <th className="text-left px-3 py-2">头像</th>
                         <th className="text-left px-3 py-2">背景</th>
+                        <th className="text-left px-3 py-2">网站图标</th>
                         <th className="text-left px-3 py-2">删除安全性</th>
                       </tr>
                     </thead>
@@ -1065,6 +1067,7 @@ export function AlbumsPage() {
                           <td className="px-3 py-2">{item.blogReferenceCount}</td>
                           <td className="px-3 py-2">{item.avatarReferenceCount}</td>
                           <td className="px-3 py-2">{item.backgroundReferenceCount}</td>
+                          <td className="px-3 py-2">{item.faviconReferenceCount}</td>
                           <td className={`px-3 py-2 ${item.safeToDelete ? 'text-emerald-300' : 'text-amber-200'}`}>
                             {item.safeToDelete ? '可删除' : '有引用'}
                           </td>

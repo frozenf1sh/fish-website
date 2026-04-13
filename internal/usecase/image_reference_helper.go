@@ -1,6 +1,9 @@
 package usecase
 
-import "regexp"
+import (
+	"encoding/json"
+	"regexp"
+)
 
 var markdownImageURLRegex = regexp.MustCompile(`!\[[^\]]*\]\(([^)]+)\)`)
 
@@ -51,4 +54,23 @@ func diffURLCounts(oldURLs, newURLs []string) (added []string, removed []string)
 	}
 
 	return added, removed
+}
+
+func extractCustomLinkURL(raw, key string) string {
+	if raw == "" || key == "" {
+		return ""
+	}
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+		return ""
+	}
+	v, ok := payload[key]
+	if !ok {
+		return ""
+	}
+	s, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return s
 }

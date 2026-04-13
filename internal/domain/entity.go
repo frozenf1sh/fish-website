@@ -79,6 +79,7 @@ type ImageReferenceRecord struct {
 	BlogReferenceCount int
 	AvatarRefCount     int
 	BackgroundRefCount int
+	FaviconRefCount    int
 }
 
 // ImageReferenceSummary summarizes analysis for an album.

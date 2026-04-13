@@ -2143,6 +2143,11 @@ export class ImageReference extends Message<ImageReference> {
    */
   safeToDelete = false;
 
+  /**
+   * @generated from field: int32 favicon_reference_count = 10;
+   */
+  faviconReferenceCount = 0;
+
   constructor(data?: PartialMessage<ImageReference>) {
     super();
     proto3.util.initPartial(data, this);
@@ -2160,6 +2165,7 @@ export class ImageReference extends Message<ImageReference> {
     { no: 7, name: "avatar_reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 8, name: "background_reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 9, name: "safe_to_delete", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 10, name: "favicon_reference_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ImageReference {

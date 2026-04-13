@@ -348,6 +348,7 @@ message ImageReference {
   int32 avatar_reference_count = 7;
   int32 background_reference_count = 8;
   bool safe_to_delete = 9;
+  int32 favicon_reference_count = 10;
 }
 
 message AnalyzeImageReferencesRequest {
