@@ -26,16 +26,21 @@ interface AlbumImage {
   createdAt: { toDate?: () => Date }
 }
 
-interface AlbumTimelineEvent {
-  id: string
-  type: 'album_created' | 'image_uploaded'
-  timestamp: Date
-  imageUrl?: string
-}
+const RECYCLE_BIN_ALBUM_ID = 'recycle-bin'
 
 const toDate = (value?: { toDate?: () => Date }) => {
   if (!value?.toDate) return new Date()
   return value.toDate()
+}
+
+const formatDayLabel = (d: Date) => {
+  const today = new Date()
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+  const startOfTarget = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  const diff = Math.floor((startOfToday - startOfTarget) / (24 * 60 * 60 * 1000))
+  if (diff === 0) return '今天'
+  if (diff === 1) return '昨天'
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
 }
 
 export function AlbumsPage() {
@@ -127,27 +132,18 @@ export function AlbumsPage() {
     loadAlbumDetail()
   }, [selectedAlbumId])
 
-  const timelineEvents = useMemo(() => {
-    const events: AlbumTimelineEvent[] = []
-    if (selectedAlbum) {
-      events.push({
-        id: `album-${selectedAlbum.id}`,
-        type: 'album_created',
-        timestamp: toDate(selectedAlbum.createdAt),
-      })
-    }
-
+  const groupedImages = useMemo(() => {
+    const groups = new Map<string, { label: string; images: AlbumImage[]; time: number }>()
     for (const image of albumImages) {
-      events.push({
-        id: `image-${image.id}`,
-        type: 'image_uploaded',
-        timestamp: toDate(image.createdAt),
-        imageUrl: image.thumbnailUrl || image.url,
-      })
+      const date = toDate(image.createdAt)
+      const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+      if (!groups.has(key)) {
+        groups.set(key, { label: formatDayLabel(date), images: [], time: new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() })
+      }
+      groups.get(key)!.images.push(image)
     }
-
-    return events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-  }, [selectedAlbum, albumImages])
+    return Array.from(groups.values()).sort((a, b) => b.time - a.time)
+  }, [albumImages])
 
   const refreshAlbums = async (preferAlbumId?: string) => {
     setIsLoadingAlbums(true)
@@ -284,12 +280,29 @@ export function AlbumsPage() {
       setSelectedImageIds([])
 
       const scheduledAt = response.scheduledDeleteAt?.toDate?.() || new Date()
-      showToast({ type: 'success', message: `已删除 ${response.deletedCount} 张照片，OSS 文件将在 ${formatTime(scheduledAt)} 后清理。` })
+      if (selectedAlbumId === RECYCLE_BIN_ALBUM_ID) {
+        showToast({ type: 'success', message: `已永久删除 ${response.deletedCount} 张照片` })
+      } else {
+        showToast({ type: 'success', message: `已移入回收站 ${response.deletedCount} 张照片，将于 ${formatTime(scheduledAt)} 自动清空` })
+      }
     } catch (err) {
       console.error('Failed to delete images:', err)
       showToast({ type: 'error', message: '删除失败，请稍后重试' })
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleDeleteRecycleBinAlbum = async () => {
+    if (selectedAlbumId !== RECYCLE_BIN_ALBUM_ID) return
+    try {
+      await clients.album.deleteAlbum({ albumId: RECYCLE_BIN_ALBUM_ID })
+      showToast({ type: 'success', message: '回收站已永久删除' })
+      await refreshAlbums()
+      setSelectedAlbumId('')
+    } catch (err) {
+      console.error('Failed to delete recycle bin album:', err)
+      showToast({ type: 'error', message: '删除回收站失败，请重试' })
     }
   }
 
@@ -302,7 +315,7 @@ export function AlbumsPage() {
       >
         <h2 className="text-2xl text-white font-bold text-gradient">相册空间</h2>
         <p className="text-white/65 mt-2 text-sm">
-          全后端数据模式：相册列表、相册详情、图片清单全部来自后端接口，并记录为可回放的相册时间线。
+          全后端数据模式：相册列表、相册详情、图片清单全部来自后端接口；删除图片将进入回收站并在每日零点清空。
         </p>
       </motion.div>
 
@@ -376,7 +389,7 @@ export function AlbumsPage() {
               </div>
 
               {isLoggedIn && (
-              <div>
+              <div className="flex gap-2">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -393,6 +406,14 @@ export function AlbumsPage() {
                 >
                   {isUploading ? '上传中...' : '上传图片'}
                 </button>
+                {selectedAlbumId === RECYCLE_BIN_ALBUM_ID && (
+                  <button
+                    onClick={handleDeleteRecycleBinAlbum}
+                    className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35"
+                  >
+                    永久删除回收站
+                  </button>
+                )}
               </div>
               )}
             </div>
@@ -447,81 +468,57 @@ export function AlbumsPage() {
                   {albumImages.length === 0 ? (
                     <div className="text-center py-14 text-white/55 glass-light rounded-3xl">这个相册还没有图片</div>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {albumImages.map((image) => (
-                        <div key={image.id} className="relative h-52 rounded-3xl overflow-hidden border border-white/15 bg-black/10 group">
-                          <motion.img
-                            whileHover={{ scale: 1.03 }}
-                            src={image.thumbnailUrl || image.url}
-                            alt="Album"
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover cursor-pointer"
-                            onClick={() => {
-                              if (selectionMode) {
-                                toggleImageSelection(image.id)
-                                return
-                              }
-                              setSelectedImage(image.url)
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
+                    <div className="space-y-6">
+                      {groupedImages.map((group) => (
+                        <div key={group.time} className="space-y-3">
+                          <h4 className="text-white/85 font-semibold">{group.label}</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {group.images.map((image) => (
+                              <div key={image.id} className="relative h-52 rounded-3xl overflow-hidden border border-white/15 bg-black/10 group">
+                                <motion.img
+                                  whileHover={{ scale: 1.03 }}
+                                  src={image.thumbnailUrl || image.url}
+                                  alt="Album"
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="w-full h-full object-cover cursor-pointer"
+                                  onClick={() => {
+                                    if (selectionMode) {
+                                      toggleImageSelection(image.id)
+                                      return
+                                    }
+                                    setSelectedImage(image.url)
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
 
-                          {isLoggedIn && selectionMode ? (
-                            <button
-                              onClick={() => toggleImageSelection(image.id)}
-                              className={`absolute top-2 left-2 w-7 h-7 rounded-full border flex items-center justify-center text-sm ${
-                                selectedImageIds.includes(image.id)
-                                  ? 'bg-white text-black border-white'
-                                  : 'bg-black/45 text-white border-white/40'
-                              }`}
-                            >
-                              {selectedImageIds.includes(image.id) ? '✓' : ''}
-                            </button>
-                          ) : isLoggedIn ? (
-                            <button
-                              onClick={() => handleDeleteImages([image.id])}
-                              disabled={isDeleting}
-                              className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-red-500/75 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
-                            >
-                              删除
-                            </button>
-                          ) : null}
+                                {isLoggedIn && selectionMode ? (
+                                  <button
+                                    onClick={() => toggleImageSelection(image.id)}
+                                    className={`absolute top-2 left-2 w-7 h-7 rounded-full border flex items-center justify-center text-sm ${
+                                      selectedImageIds.includes(image.id)
+                                        ? 'bg-white text-black border-white'
+                                        : 'bg-black/45 text-white border-white/40'
+                                    }`}
+                                  >
+                                    {selectedImageIds.includes(image.id) ? '✓' : ''}
+                                  </button>
+                                ) : isLoggedIn ? (
+                                  <button
+                                    onClick={() => handleDeleteImages([image.id])}
+                                    disabled={isDeleting}
+                                    className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-red-500/75 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                                  >
+                                    删除
+                                  </button>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
-                </div>
-
-                <div className="glass-light rounded-3xl p-5">
-                  <h4 className="text-white font-semibold mb-4">相册时间线</h4>
-                  <div className="relative pl-10 space-y-4 max-h-[360px] overflow-y-auto scrollbar-hide">
-                    <div className="absolute left-4 top-1 bottom-1 w-0.5 bg-gradient-to-b from-pink-300/70 via-rose-300/40 to-transparent" />
-                    {timelineEvents.length === 0 ? (
-                      <p className="text-white/50 text-sm">暂无事件</p>
-                    ) : (
-                      timelineEvents.map((event) => (
-                        <div key={event.id} className="relative">
-                          <span className="absolute -left-8 top-2.5 w-4 h-4 rounded-full bg-white/85 border-2 border-pink-300/70" />
-                          <div className="rounded-2xl bg-white/10 border border-white/15 p-2">
-                            {event.type === 'image_uploaded' && event.imageUrl ? (
-                              <button
-                                onClick={() => setSelectedImage(event.imageUrl!)}
-                                className="w-full h-24 rounded-xl overflow-hidden"
-                              >
-                                <img src={event.imageUrl} alt="timeline" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                              </button>
-                            ) : (
-                              <div className="h-24 rounded-xl bg-gradient-to-br from-pink-300/20 to-rose-300/20 border border-white/10 flex items-center justify-center text-white/80 text-sm">
-                                📸 相册创建
-                              </div>
-                            )}
-                            <p className="text-white/45 text-xs mt-2 px-1">{formatTime(event.timestamp)}</p>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
                 </div>
               </div>
             )}

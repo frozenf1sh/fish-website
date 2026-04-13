@@ -107,9 +107,42 @@ export const clients = {
           content: p.content,
           imageUrls: p.imageUrls,
           createdAt: { toDate: () => p.createdAt?.toDate() || new Date() },
+          updatedAt: { toDate: () => p.updatedAt?.toDate() || p.createdAt?.toDate() || new Date() },
         })),
         nextPageToken: response.nextPageToken,
         hasMore: response.hasMore,
+      }
+    },
+    getPost: async (req) => {
+      const response = await postClient.getPost({ id: req.id })
+      return {
+        post: response.post
+          ? {
+              id: response.post.id,
+              content: response.post.content,
+              imageUrls: response.post.imageUrls,
+              createdAt: { toDate: () => response.post?.createdAt?.toDate() || new Date() },
+              updatedAt: { toDate: () => response.post?.updatedAt?.toDate() || response.post?.createdAt?.toDate() || new Date() },
+            }
+          : null,
+      }
+    },
+    updatePost: async (req) => {
+      const response = await postClient.updatePost({
+        id: req.id,
+        content: req.content,
+        imageUrls: req.imageUrls || [],
+      })
+      return {
+        post: response.post
+          ? {
+              id: response.post.id,
+              content: response.post.content,
+              imageUrls: response.post.imageUrls,
+              createdAt: { toDate: () => response.post?.createdAt?.toDate() || new Date() },
+              updatedAt: { toDate: () => response.post?.updatedAt?.toDate() || response.post?.createdAt?.toDate() || new Date() },
+            }
+          : null,
       }
     },
     deletePost: async (req) => {
@@ -358,6 +391,10 @@ export const clients = {
           toDate: () => response.scheduledDeleteAt?.toDate() || new Date(),
         },
       }
+    },
+    deleteAlbum: async (req) => {
+      await albumClient.deleteAlbum({ albumId: req.albumId })
+      return {}
     },
   },
   settings: {

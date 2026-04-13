@@ -48,6 +48,10 @@ const (
 	PostServiceCreatePostProcedure = "/home.v1.PostService/CreatePost"
 	// PostServiceListPostsProcedure is the fully-qualified name of the PostService's ListPosts RPC.
 	PostServiceListPostsProcedure = "/home.v1.PostService/ListPosts"
+	// PostServiceGetPostProcedure is the fully-qualified name of the PostService's GetPost RPC.
+	PostServiceGetPostProcedure = "/home.v1.PostService/GetPost"
+	// PostServiceUpdatePostProcedure is the fully-qualified name of the PostService's UpdatePost RPC.
+	PostServiceUpdatePostProcedure = "/home.v1.PostService/UpdatePost"
 	// PostServiceDeletePostProcedure is the fully-qualified name of the PostService's DeletePost RPC.
 	PostServiceDeletePostProcedure = "/home.v1.PostService/DeletePost"
 	// BlogServiceCreateArticleProcedure is the fully-qualified name of the BlogService's CreateArticle
@@ -89,6 +93,9 @@ const (
 	// AlbumServiceDeleteImagesProcedure is the fully-qualified name of the AlbumService's DeleteImages
 	// RPC.
 	AlbumServiceDeleteImagesProcedure = "/home.v1.AlbumService/DeleteImages"
+	// AlbumServiceDeleteAlbumProcedure is the fully-qualified name of the AlbumService's DeleteAlbum
+	// RPC.
+	AlbumServiceDeleteAlbumProcedure = "/home.v1.AlbumService/DeleteAlbum"
 	// SettingsServiceGetSettingsProcedure is the fully-qualified name of the SettingsService's
 	// GetSettings RPC.
 	SettingsServiceGetSettingsProcedure = "/home.v1.SettingsService/GetSettings"
@@ -175,6 +182,10 @@ type PostServiceClient interface {
 	CreatePost(context.Context, *connect.Request[v1.CreatePostRequest]) (*connect.Response[v1.CreatePostResponse], error)
 	// ListPosts returns paginated timeline posts
 	ListPosts(context.Context, *connect.Request[v1.ListPostsRequest]) (*connect.Response[v1.ListPostsResponse], error)
+	// GetPost returns one post detail by id
+	GetPost(context.Context, *connect.Request[v1.GetPostRequest]) (*connect.Response[v1.GetPostResponse], error)
+	// UpdatePost updates post content and image urls
+	UpdatePost(context.Context, *connect.Request[v1.UpdatePostRequest]) (*connect.Response[v1.UpdatePostResponse], error)
 	// DeletePost deletes a post by ID
 	DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error)
 }
@@ -202,6 +213,18 @@ func NewPostServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(postServiceMethods.ByName("ListPosts")),
 			connect.WithClientOptions(opts...),
 		),
+		getPost: connect.NewClient[v1.GetPostRequest, v1.GetPostResponse](
+			httpClient,
+			baseURL+PostServiceGetPostProcedure,
+			connect.WithSchema(postServiceMethods.ByName("GetPost")),
+			connect.WithClientOptions(opts...),
+		),
+		updatePost: connect.NewClient[v1.UpdatePostRequest, v1.UpdatePostResponse](
+			httpClient,
+			baseURL+PostServiceUpdatePostProcedure,
+			connect.WithSchema(postServiceMethods.ByName("UpdatePost")),
+			connect.WithClientOptions(opts...),
+		),
 		deletePost: connect.NewClient[v1.DeletePostRequest, emptypb.Empty](
 			httpClient,
 			baseURL+PostServiceDeletePostProcedure,
@@ -215,6 +238,8 @@ func NewPostServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 type postServiceClient struct {
 	createPost *connect.Client[v1.CreatePostRequest, v1.CreatePostResponse]
 	listPosts  *connect.Client[v1.ListPostsRequest, v1.ListPostsResponse]
+	getPost    *connect.Client[v1.GetPostRequest, v1.GetPostResponse]
+	updatePost *connect.Client[v1.UpdatePostRequest, v1.UpdatePostResponse]
 	deletePost *connect.Client[v1.DeletePostRequest, emptypb.Empty]
 }
 
@@ -228,6 +253,16 @@ func (c *postServiceClient) ListPosts(ctx context.Context, req *connect.Request[
 	return c.listPosts.CallUnary(ctx, req)
 }
 
+// GetPost calls home.v1.PostService.GetPost.
+func (c *postServiceClient) GetPost(ctx context.Context, req *connect.Request[v1.GetPostRequest]) (*connect.Response[v1.GetPostResponse], error) {
+	return c.getPost.CallUnary(ctx, req)
+}
+
+// UpdatePost calls home.v1.PostService.UpdatePost.
+func (c *postServiceClient) UpdatePost(ctx context.Context, req *connect.Request[v1.UpdatePostRequest]) (*connect.Response[v1.UpdatePostResponse], error) {
+	return c.updatePost.CallUnary(ctx, req)
+}
+
 // DeletePost calls home.v1.PostService.DeletePost.
 func (c *postServiceClient) DeletePost(ctx context.Context, req *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error) {
 	return c.deletePost.CallUnary(ctx, req)
@@ -239,6 +274,10 @@ type PostServiceHandler interface {
 	CreatePost(context.Context, *connect.Request[v1.CreatePostRequest]) (*connect.Response[v1.CreatePostResponse], error)
 	// ListPosts returns paginated timeline posts
 	ListPosts(context.Context, *connect.Request[v1.ListPostsRequest]) (*connect.Response[v1.ListPostsResponse], error)
+	// GetPost returns one post detail by id
+	GetPost(context.Context, *connect.Request[v1.GetPostRequest]) (*connect.Response[v1.GetPostResponse], error)
+	// UpdatePost updates post content and image urls
+	UpdatePost(context.Context, *connect.Request[v1.UpdatePostRequest]) (*connect.Response[v1.UpdatePostResponse], error)
 	// DeletePost deletes a post by ID
 	DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error)
 }
@@ -262,6 +301,18 @@ func NewPostServiceHandler(svc PostServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(postServiceMethods.ByName("ListPosts")),
 		connect.WithHandlerOptions(opts...),
 	)
+	postServiceGetPostHandler := connect.NewUnaryHandler(
+		PostServiceGetPostProcedure,
+		svc.GetPost,
+		connect.WithSchema(postServiceMethods.ByName("GetPost")),
+		connect.WithHandlerOptions(opts...),
+	)
+	postServiceUpdatePostHandler := connect.NewUnaryHandler(
+		PostServiceUpdatePostProcedure,
+		svc.UpdatePost,
+		connect.WithSchema(postServiceMethods.ByName("UpdatePost")),
+		connect.WithHandlerOptions(opts...),
+	)
 	postServiceDeletePostHandler := connect.NewUnaryHandler(
 		PostServiceDeletePostProcedure,
 		svc.DeletePost,
@@ -274,6 +325,10 @@ func NewPostServiceHandler(svc PostServiceHandler, opts ...connect.HandlerOption
 			postServiceCreatePostHandler.ServeHTTP(w, r)
 		case PostServiceListPostsProcedure:
 			postServiceListPostsHandler.ServeHTTP(w, r)
+		case PostServiceGetPostProcedure:
+			postServiceGetPostHandler.ServeHTTP(w, r)
+		case PostServiceUpdatePostProcedure:
+			postServiceUpdatePostHandler.ServeHTTP(w, r)
 		case PostServiceDeletePostProcedure:
 			postServiceDeletePostHandler.ServeHTTP(w, r)
 		default:
@@ -291,6 +346,14 @@ func (UnimplementedPostServiceHandler) CreatePost(context.Context, *connect.Requ
 
 func (UnimplementedPostServiceHandler) ListPosts(context.Context, *connect.Request[v1.ListPostsRequest]) (*connect.Response[v1.ListPostsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.PostService.ListPosts is not implemented"))
+}
+
+func (UnimplementedPostServiceHandler) GetPost(context.Context, *connect.Request[v1.GetPostRequest]) (*connect.Response[v1.GetPostResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.PostService.GetPost is not implemented"))
+}
+
+func (UnimplementedPostServiceHandler) UpdatePost(context.Context, *connect.Request[v1.UpdatePostRequest]) (*connect.Response[v1.UpdatePostResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.PostService.UpdatePost is not implemented"))
 }
 
 func (UnimplementedPostServiceHandler) DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error) {
@@ -579,6 +642,8 @@ type AlbumServiceClient interface {
 	ConfirmImageUpload(context.Context, *connect.Request[v1.ConfirmImageUploadRequest]) (*connect.Response[v1.ConfirmImageUploadResponse], error)
 	// DeleteImages deletes images from album and schedules delayed object deletion
 	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
+	// DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
+	DeleteAlbum(context.Context, *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewAlbumServiceClient constructs a client for the home.v1.AlbumService service. By default, it
@@ -628,6 +693,12 @@ func NewAlbumServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(albumServiceMethods.ByName("DeleteImages")),
 			connect.WithClientOptions(opts...),
 		),
+		deleteAlbum: connect.NewClient[v1.DeleteAlbumRequest, emptypb.Empty](
+			httpClient,
+			baseURL+AlbumServiceDeleteAlbumProcedure,
+			connect.WithSchema(albumServiceMethods.ByName("DeleteAlbum")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -639,6 +710,7 @@ type albumServiceClient struct {
 	uploadImageRequest *connect.Client[v1.UploadImageRequestRequest, v1.UploadImageRequestResponse]
 	confirmImageUpload *connect.Client[v1.ConfirmImageUploadRequest, v1.ConfirmImageUploadResponse]
 	deleteImages       *connect.Client[v1.DeleteImagesRequest, v1.DeleteImagesResponse]
+	deleteAlbum        *connect.Client[v1.DeleteAlbumRequest, emptypb.Empty]
 }
 
 // CreateAlbum calls home.v1.AlbumService.CreateAlbum.
@@ -671,6 +743,11 @@ func (c *albumServiceClient) DeleteImages(ctx context.Context, req *connect.Requ
 	return c.deleteImages.CallUnary(ctx, req)
 }
 
+// DeleteAlbum calls home.v1.AlbumService.DeleteAlbum.
+func (c *albumServiceClient) DeleteAlbum(ctx context.Context, req *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.deleteAlbum.CallUnary(ctx, req)
+}
+
 // AlbumServiceHandler is an implementation of the home.v1.AlbumService service.
 type AlbumServiceHandler interface {
 	// CreateAlbum creates a new photo album
@@ -685,6 +762,8 @@ type AlbumServiceHandler interface {
 	ConfirmImageUpload(context.Context, *connect.Request[v1.ConfirmImageUploadRequest]) (*connect.Response[v1.ConfirmImageUploadResponse], error)
 	// DeleteImages deletes images from album and schedules delayed object deletion
 	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
+	// DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
+	DeleteAlbum(context.Context, *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewAlbumServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -730,6 +809,12 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(albumServiceMethods.ByName("DeleteImages")),
 		connect.WithHandlerOptions(opts...),
 	)
+	albumServiceDeleteAlbumHandler := connect.NewUnaryHandler(
+		AlbumServiceDeleteAlbumProcedure,
+		svc.DeleteAlbum,
+		connect.WithSchema(albumServiceMethods.ByName("DeleteAlbum")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/home.v1.AlbumService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AlbumServiceCreateAlbumProcedure:
@@ -744,6 +829,8 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 			albumServiceConfirmImageUploadHandler.ServeHTTP(w, r)
 		case AlbumServiceDeleteImagesProcedure:
 			albumServiceDeleteImagesHandler.ServeHTTP(w, r)
+		case AlbumServiceDeleteAlbumProcedure:
+			albumServiceDeleteAlbumHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -775,6 +862,10 @@ func (UnimplementedAlbumServiceHandler) ConfirmImageUpload(context.Context, *con
 
 func (UnimplementedAlbumServiceHandler) DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.DeleteImages is not implemented"))
+}
+
+func (UnimplementedAlbumServiceHandler) DeleteAlbum(context.Context, *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.DeleteAlbum is not implemented"))
 }
 
 // SettingsServiceClient is a client for the home.v1.SettingsService service.

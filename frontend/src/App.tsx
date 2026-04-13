@@ -7,6 +7,7 @@ import { LoginModal } from './components/LoginModal'
 import { SettingsDrawer } from './components/SettingsDrawer'
 import { HomePage } from './pages/HomePage'
 import { BlogPage } from './pages/BlogPage'
+import { PostPage } from './pages/PostPage'
 import { AlbumsPage } from './pages/AlbumsPage'
 import { SearchPage } from './pages/SearchPage'
 import { ToastCenter } from './components/ToastCenter'
@@ -127,6 +128,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/blog/:articleId" element={<BlogPage />} />
+            <Route path="/post/:postId" element={<PostPage />} />
             <Route path="/albums" element={<AlbumsPage />} />
             <Route path="/search" element={<SearchPage />} />
           </Route>

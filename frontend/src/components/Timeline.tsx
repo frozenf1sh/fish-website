@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { MarkdownViewer } from './MarkdownViewer'
 import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
@@ -24,12 +25,14 @@ interface TimelineItem {
 
 const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number; onDelete?: (id: string) => void }) => {
   const { settings, isLoggedIn } = useStore()
+  const navigate = useNavigate()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   
   const displayName = settings?.displayName || 'FrozenFish'
   const avatarUrl = settings?.avatarUrl
 
   const handleDelete = async () => {
+    if (!window.confirm('确定要删除这条动态吗？')) return
     try {
       await clients.post.deletePost({ id: item.id })
       onDelete?.(item.id)
@@ -40,25 +43,47 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
     }
   }
 
+  const copyShareUrl = async () => {
+    const url = typeof window === 'undefined' ? `/post/${item.id}` : `${window.location.origin}/post/${item.id}`
+    try {
+      await navigator.clipboard.writeText(url)
+      showToast({ type: 'success', message: '动态链接已复制' })
+    } catch {
+      showToast({ type: 'error', message: '复制失败，请手动复制地址栏链接' })
+    }
+  }
+
   return (
     <motion.div
-      initial={{ x: 50, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ delay: 0.2 + index * 0.1 }}
-      whileHover={{ scale: 1.01, y: -2 }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      whileHover={{ scale: 1.005, y: -1 }}
       className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 transition-all cursor-pointer relative group"
     >
       {isLoggedIn && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            handleDelete()
-          }}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-xl bg-red-500/20 text-red-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-500/40 hover:text-white transition-all"
-          title="删除"
-        >
-          🗑️
-        </button>
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate(`/post/${item.id}`)
+            }}
+            className="p-2 rounded-xl bg-white/15 text-white/85 hover:bg-white/25"
+            title="编辑"
+          >
+            ✏️
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleDelete()
+            }}
+            className="p-2 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/40 hover:text-white"
+            title="删除"
+          >
+            🗑️
+          </button>
+        </div>
       )}
       <div className="flex gap-3 sm:gap-4">
         <div className="flex-shrink-0">
@@ -80,6 +105,18 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
 
           <div className="mb-3 sm:mb-4">
             <MarkdownViewer content={item.content} />
+          </div>
+
+          <div className="mb-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                copyShareUrl()
+              }}
+              className="px-3 py-1.5 rounded-xl border border-white/25 text-white/85 hover:bg-white/10 text-sm"
+            >
+              复制链接
+            </button>
           </div>
 
           {item.images && item.images.length > 0 && (
@@ -172,10 +209,10 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
 const SystemCard = ({ item, index }: { item: TimelineItem; index: number }) => {
   return (
     <motion.div
-      initial={{ x: 50, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ delay: 0.2 + index * 0.1 }}
-      whileHover={{ scale: 1.01 }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      whileHover={{ scale: 1.005, y: -1 }}
       className="glass-light rounded-3xl sm:rounded-4xl p-4 sm:p-5 transition-all cursor-pointer"
     >
       <div className="flex items-start gap-4">
@@ -200,10 +237,10 @@ const SystemCard = ({ item, index }: { item: TimelineItem; index: number }) => {
 const BlogCard = ({ item, index }: { item: TimelineItem; index: number }) => {
   return (
     <motion.div
-      initial={{ x: 50, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ delay: 0.2 + index * 0.1 }}
-      whileHover={{ scale: 1.01, y: -2 }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      whileHover={{ scale: 1.005, y: -1 }}
       className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 transition-all cursor-pointer overflow-hidden relative"
     >
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 z-10"></div>
@@ -234,10 +271,10 @@ const BlogCard = ({ item, index }: { item: TimelineItem; index: number }) => {
 const AlbumCard = ({ item, index }: { item: TimelineItem; index: number }) => {
   return (
     <motion.div
-      initial={{ x: 50, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ delay: 0.2 + index * 0.1 }}
-      whileHover={{ scale: 1.01, y: -2 }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      whileHover={{ scale: 1.005, y: -1 }}
       className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 transition-all cursor-pointer overflow-hidden relative"
     >
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-400 via-rose-400 to-red-400 z-10"></div>
@@ -328,7 +365,7 @@ export function Timeline() {
 
   return (
     <div className="px-3 sm:px-0">
-      <div className="space-y-4 pb-8 max-w-3xl mx-auto">
+      <div className="space-y-3 sm:space-y-4 pb-8">
         {isLoading ? (
           <div className="text-center py-12 text-white/50">
             <p>加载中...</p>

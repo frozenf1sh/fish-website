@@ -129,6 +129,32 @@ func (h *Handler) ListPosts(ctx context.Context, req *connect.Request[homev1.Lis
 	}), nil
 }
 
+// GetPost gets one post
+func (h *Handler) GetPost(ctx context.Context, req *connect.Request[homev1.GetPostRequest]) (*connect.Response[homev1.GetPostResponse], error) {
+	logger.Debug("received GetPost request", logger.String("post_id", req.Msg.Id))
+
+	post, err := h.postUsecase.GetPost(ctx, req.Msg.Id)
+	if err != nil {
+		logger.Error("GetPost failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&homev1.GetPostResponse{Post: toProtoPost(post)}), nil
+}
+
+// UpdatePost updates one post
+func (h *Handler) UpdatePost(ctx context.Context, req *connect.Request[homev1.UpdatePostRequest]) (*connect.Response[homev1.UpdatePostResponse], error) {
+	logger.Info("received UpdatePost request", logger.String("post_id", req.Msg.Id), logger.Int("image_count", len(req.Msg.ImageUrls)))
+
+	post, err := h.postUsecase.UpdatePost(ctx, req.Msg.Id, req.Msg.Content, req.Msg.ImageUrls)
+	if err != nil {
+		logger.Error("UpdatePost failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&homev1.UpdatePostResponse{Post: toProtoPost(post)}), nil
+}
+
 // DeletePost deletes a post
 func (h *Handler) DeletePost(ctx context.Context, req *connect.Request[homev1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error) {
 	logger.Info("received DeletePost request", logger.String("post_id", req.Msg.Id))
@@ -399,7 +425,7 @@ func (h *Handler) ConfirmImageUpload(ctx context.Context, req *connect.Request[h
 	}), nil
 }
 
-// DeleteImages deletes image records and schedules delayed object cleanup.
+// DeleteImages moves images to recycle bin (or permanently deletes when in recycle bin).
 func (h *Handler) DeleteImages(ctx context.Context, req *connect.Request[homev1.DeleteImagesRequest]) (*connect.Response[homev1.DeleteImagesResponse], error) {
 	logger.Info("received DeleteImages request",
 		logger.String("album_id", req.Msg.AlbumId),
@@ -415,6 +441,18 @@ func (h *Handler) DeleteImages(ctx context.Context, req *connect.Request[homev1.
 		DeletedCount:      int32(deletedCount),
 		ScheduledDeleteAt: timestamppb.New(scheduledAt),
 	}), nil
+}
+
+// DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
+func (h *Handler) DeleteAlbum(ctx context.Context, req *connect.Request[homev1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error) {
+	logger.Info("received DeleteAlbum request", logger.String("album_id", req.Msg.AlbumId))
+
+	if err := h.albumUsecase.DeleteAlbum(ctx, req.Msg.AlbumId); err != nil {
+		logger.Error("DeleteAlbum failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&emptypb.Empty{}), nil
 }
 
 // GetSettings gets settings
@@ -457,6 +495,7 @@ func toProtoPost(p *domain.Post) *homev1.Post {
 		Content:   p.Content,
 		ImageUrls: p.ImageURLs,
 		CreatedAt: timestamppb.New(p.CreatedAt),
+		UpdatedAt: timestamppb.New(p.UpdatedAt),
 	}
 }
 

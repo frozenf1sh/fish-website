@@ -146,6 +146,11 @@ export class Post extends Message<Post> {
    */
   createdAt?: Timestamp;
 
+  /**
+   * @generated from field: google.protobuf.Timestamp updated_at = 5;
+   */
+  updatedAt?: Timestamp;
+
   constructor(data?: PartialMessage<Post>) {
     super();
     proto3.util.initPartial(data, this);
@@ -158,6 +163,7 @@ export class Post extends Message<Post> {
     { no: 2, name: "content", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "image_urls", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 4, name: "created_at", kind: "message", T: Timestamp },
+    { no: 5, name: "updated_at", kind: "message", T: Timestamp },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Post {
@@ -346,6 +352,166 @@ export class ListPostsResponse extends Message<ListPostsResponse> {
 
   static equals(a: ListPostsResponse | PlainMessage<ListPostsResponse> | undefined, b: ListPostsResponse | PlainMessage<ListPostsResponse> | undefined): boolean {
     return proto3.util.equals(ListPostsResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GetPostRequest
+ */
+export class GetPostRequest extends Message<GetPostRequest> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  constructor(data?: PartialMessage<GetPostRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GetPostRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPostRequest {
+    return new GetPostRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetPostRequest {
+    return new GetPostRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetPostRequest {
+    return new GetPostRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetPostRequest | PlainMessage<GetPostRequest> | undefined, b: GetPostRequest | PlainMessage<GetPostRequest> | undefined): boolean {
+    return proto3.util.equals(GetPostRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GetPostResponse
+ */
+export class GetPostResponse extends Message<GetPostResponse> {
+  /**
+   * @generated from field: home.v1.Post post = 1;
+   */
+  post?: Post;
+
+  constructor(data?: PartialMessage<GetPostResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GetPostResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "post", kind: "message", T: Post },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPostResponse {
+    return new GetPostResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetPostResponse {
+    return new GetPostResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetPostResponse {
+    return new GetPostResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetPostResponse | PlainMessage<GetPostResponse> | undefined, b: GetPostResponse | PlainMessage<GetPostResponse> | undefined): boolean {
+    return proto3.util.equals(GetPostResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdatePostRequest
+ */
+export class UpdatePostRequest extends Message<UpdatePostRequest> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  /**
+   * @generated from field: string content = 2;
+   */
+  content = "";
+
+  /**
+   * @generated from field: repeated string image_urls = 3;
+   */
+  imageUrls: string[] = [];
+
+  constructor(data?: PartialMessage<UpdatePostRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdatePostRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "content", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "image_urls", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdatePostRequest {
+    return new UpdatePostRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdatePostRequest {
+    return new UpdatePostRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdatePostRequest {
+    return new UpdatePostRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdatePostRequest | PlainMessage<UpdatePostRequest> | undefined, b: UpdatePostRequest | PlainMessage<UpdatePostRequest> | undefined): boolean {
+    return proto3.util.equals(UpdatePostRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdatePostResponse
+ */
+export class UpdatePostResponse extends Message<UpdatePostResponse> {
+  /**
+   * @generated from field: home.v1.Post post = 1;
+   */
+  post?: Post;
+
+  constructor(data?: PartialMessage<UpdatePostResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdatePostResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "post", kind: "message", T: Post },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdatePostResponse {
+    return new UpdatePostResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdatePostResponse {
+    return new UpdatePostResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdatePostResponse {
+    return new UpdatePostResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdatePostResponse | PlainMessage<UpdatePostResponse> | undefined, b: UpdatePostResponse | PlainMessage<UpdatePostResponse> | undefined): boolean {
+    return proto3.util.equals(UpdatePostResponse, a, b);
   }
 }
 
@@ -1833,6 +1999,43 @@ export class DeleteImagesResponse extends Message<DeleteImagesResponse> {
 
   static equals(a: DeleteImagesResponse | PlainMessage<DeleteImagesResponse> | undefined, b: DeleteImagesResponse | PlainMessage<DeleteImagesResponse> | undefined): boolean {
     return proto3.util.equals(DeleteImagesResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.DeleteAlbumRequest
+ */
+export class DeleteAlbumRequest extends Message<DeleteAlbumRequest> {
+  /**
+   * @generated from field: string album_id = 1;
+   */
+  albumId = "";
+
+  constructor(data?: PartialMessage<DeleteAlbumRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.DeleteAlbumRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "album_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteAlbumRequest {
+    return new DeleteAlbumRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DeleteAlbumRequest {
+    return new DeleteAlbumRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DeleteAlbumRequest {
+    return new DeleteAlbumRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DeleteAlbumRequest | PlainMessage<DeleteAlbumRequest> | undefined, b: DeleteAlbumRequest | PlainMessage<DeleteAlbumRequest> | undefined): boolean {
+    return proto3.util.equals(DeleteAlbumRequest, a, b);
   }
 }
 

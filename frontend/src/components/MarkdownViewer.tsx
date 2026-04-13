@@ -1,5 +1,7 @@
 import { memo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
+import { AnimatePresence, motion } from 'framer-motion'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import remarkMath from 'remark-math'
@@ -56,12 +58,15 @@ function CodeBlock({ children, className, theme }: { children: React.ReactNode; 
 }
 
 export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'dark' }: MarkdownViewerProps) {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+
   return (
-    <div className={theme === 'dark' ? 'prose prose-invert max-w-none text-white prose-p:text-white prose-headings:text-white prose-strong:text-white prose-li:text-white prose-blockquote:text-white/85 prose-code:text-pink-200' : 'prose prose-slate max-w-none'}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
-        rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex, rehypeSlug]}
-        components={{
+    <>
+      <div className={theme === 'dark' ? 'prose prose-invert max-w-none text-white prose-p:text-white prose-headings:text-white prose-strong:text-white prose-li:text-white prose-blockquote:text-white/85 prose-code:text-pink-200' : 'prose prose-slate max-w-none'}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+          rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex, rehypeSlug]}
+          components={{
           h1({ children }: any) {
             return <h1 className={theme === 'dark' ? 'text-3xl font-bold text-white mt-6 mb-3' : 'text-3xl font-bold mt-6 mb-3'}>{children}</h1>
           },
@@ -118,8 +123,11 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
                 <img
                   src={src}
                   alt={alt}
-                  className="rounded-3xl shadow-2xl max-w-full h-auto border-2 border-white/20"
+                  className="rounded-3xl shadow-2xl max-w-full h-auto border-2 border-white/20 cursor-zoom-in"
                   loading="lazy"
+                  onClick={() => {
+                    if (src) setSelectedImage(src)
+                  }}
                   {...props}
                 />
                 {alt && (
@@ -143,10 +151,40 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
               </a>
             )
           },
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {selectedImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm cursor-zoom-out"
+              onClick={() => setSelectedImage(null)}
+            >
+              <motion.img
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                src={selectedImage}
+                alt="Enlarged"
+                className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSelectedImage(null)
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
+    </>
   )
 })

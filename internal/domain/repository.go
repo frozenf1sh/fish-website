@@ -9,6 +9,8 @@ import (
 type PostRepository interface {
 	Create(ctx context.Context, post *Post) (*Post, error)
 	List(ctx context.Context, pageSize int, pageToken string) ([]*Post, string, bool, error)
+	Get(ctx context.Context, id string) (*Post, error)
+	Update(ctx context.Context, post *Post) (*Post, error)
 	Delete(ctx context.Context, id string) error
 }
 
@@ -34,7 +36,9 @@ type AlbumRepository interface {
 	ListImagesByAlbum(ctx context.Context, albumID string, pageSize int, pageToken string) ([]*Image, string, bool, error)
 	GetImage(ctx context.Context, imageID string) (*Image, error)
 	UpdateImage(ctx context.Context, image *Image) (*Image, error)
+	MoveImagesToAlbum(ctx context.Context, fromAlbumID string, imageIDs []string, targetAlbumID string) ([]*Image, error)
 	DeleteImages(ctx context.Context, albumID string, imageIDs []string) ([]*Image, error)
+	DeleteAlbum(ctx context.Context, albumID string) error
 }
 
 // SettingsRepository defines the interface for settings data access

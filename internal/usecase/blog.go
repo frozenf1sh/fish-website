@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/frozenfish/fish-website/internal/domain"
@@ -79,6 +80,16 @@ func (u *BlogUsecase) UpdateArticle(ctx context.Context, articleID, title, conte
 		status = "published"
 	}
 
+	existing, err := u.blogRepo.GetArticle(ctx, articleID)
+	if err != nil {
+		return nil, fmt.Errorf("get existing article: %w", err)
+	}
+
+	updatedAt := time.Now()
+	if existing.Title == title && existing.Content == content && existing.Status == status && slices.Equal(existing.Tags, tags) {
+		updatedAt = existing.UpdatedAt
+	}
+
 	article := &domain.Article{
 		ID:        articleID,
 		Title:     title,
@@ -86,7 +97,7 @@ func (u *BlogUsecase) UpdateArticle(ctx context.Context, articleID, title, conte
 		FolderID:  folderID,
 		Tags:      tags,
 		Status:    status,
-		UpdatedAt: time.Now(),
+		UpdatedAt: updatedAt,
 	}
 
 	updatedArticle, err := u.blogRepo.UpdateArticle(ctx, article)

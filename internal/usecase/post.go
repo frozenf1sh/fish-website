@@ -40,6 +40,7 @@ func (u *PostUsecase) CreatePost(ctx context.Context, content string, imageIDs [
 		Content:   content,
 		ImageURLs: imageURLs,
 		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	createdPost, err := u.postRepo.Create(ctx, post)
@@ -65,6 +66,38 @@ func (u *PostUsecase) ListPosts(ctx context.Context, pageSize int, pageToken str
 	}
 
 	return posts, nextPageToken, hasMore, nil
+}
+
+// GetPost gets one post by id
+func (u *PostUsecase) GetPost(ctx context.Context, id string) (*domain.Post, error) {
+	post, err := u.postRepo.Get(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get post: %w", err)
+	}
+	return post, nil
+}
+
+// UpdatePost updates post content and image urls
+func (u *PostUsecase) UpdatePost(ctx context.Context, id, content string, imageURLs []string) (*domain.Post, error) {
+	existing, err := u.postRepo.Get(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get existing post: %w", err)
+	}
+
+	post := &domain.Post{
+		ID:        id,
+		Content:   content,
+		ImageURLs: imageURLs,
+		CreatedAt: existing.CreatedAt,
+		UpdatedAt: time.Now(),
+	}
+
+	updated, err := u.postRepo.Update(ctx, post)
+	if err != nil {
+		return nil, fmt.Errorf("update post: %w", err)
+	}
+
+	return updated, nil
 }
 
 // DeletePost deletes a post by ID

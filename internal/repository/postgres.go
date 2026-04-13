@@ -47,15 +47,23 @@ type postgresPostRepository PostgresRepository
 
 func (r *postgresPostRepository) Create(ctx context.Context, post *domain.Post) (*domain.Post, error) {
 	if post.ID == "" {
-		post.ID = xid.New().String()
+		id, err := uuid.NewV7()
+		if err != nil {
+			post.ID = xid.New().String()
+		} else {
+			post.ID = id.String()
+		}
+	}
+	if post.UpdatedAt.IsZero() {
+		post.UpdatedAt = post.CreatedAt
 	}
 	imageURLsJSON, err := json.Marshal(post.ImageURLs)
 	if err != nil {
 		return nil, fmt.Errorf("marshal image urls: %w", err)
 	}
 	_, err = r.pool.Exec(ctx,
-		"INSERT INTO posts (id, content, image_urls, created_at) VALUES ($1, $2, $3, $4)",
-		post.ID, post.Content, imageURLsJSON, post.CreatedAt,
+		"INSERT INTO posts (id, content, image_urls, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)",
+		post.ID, post.Content, imageURLsJSON, post.CreatedAt, post.UpdatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("insert post: %w", err)
@@ -65,7 +73,7 @@ func (r *postgresPostRepository) Create(ctx context.Context, post *domain.Post) 
 
 func (r *postgresPostRepository) List(ctx context.Context, pageSize int, pageToken string) ([]*domain.Post, string, bool, error) {
 	query := `
-		SELECT id, content, image_urls, created_at
+		SELECT id, content, image_urls, created_at, updated_at
 		FROM posts
 		WHERE ($1 = '' OR id < $1)
 		ORDER BY created_at DESC
@@ -81,7 +89,7 @@ func (r *postgresPostRepository) List(ctx context.Context, pageSize int, pageTok
 	for rows.Next() {
 		var post domain.Post
 		var imageURLsJSON []byte
-		err := rows.Scan(&post.ID, &post.Content, &imageURLsJSON, &post.CreatedAt)
+		err := rows.Scan(&post.ID, &post.Content, &imageURLsJSON, &post.CreatedAt, &post.UpdatedAt)
 		if err != nil {
 			return nil, "", false, fmt.Errorf("scan post: %w", err)
 		}
@@ -103,6 +111,37 @@ func (r *postgresPostRepository) List(ctx context.Context, pageSize int, pageTok
 	}
 
 	return posts, nextPageToken, hasMore, nil
+}
+
+func (r *postgresPostRepository) Get(ctx context.Context, id string) (*domain.Post, error) {
+	var post domain.Post
+	var imageURLsJSON []byte
+	err := r.pool.QueryRow(ctx,
+		"SELECT id, content, image_urls, created_at, updated_at FROM posts WHERE id = $1",
+		id,
+	).Scan(&post.ID, &post.Content, &imageURLsJSON, &post.CreatedAt, &post.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("query post: %w", err)
+	}
+	if err := json.Unmarshal(imageURLsJSON, &post.ImageURLs); err != nil {
+		return nil, fmt.Errorf("unmarshal image urls: %w", err)
+	}
+	return &post, nil
+}
+
+func (r *postgresPostRepository) Update(ctx context.Context, post *domain.Post) (*domain.Post, error) {
+	imageURLsJSON, err := json.Marshal(post.ImageURLs)
+	if err != nil {
+		return nil, fmt.Errorf("marshal image urls: %w", err)
+	}
+	_, err = r.pool.Exec(ctx,
+		"UPDATE posts SET content = $1, image_urls = $2, updated_at = $3 WHERE id = $4",
+		post.Content, imageURLsJSON, post.UpdatedAt, post.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update post: %w", err)
+	}
+	return post, nil
 }
 
 func (r *postgresPostRepository) Delete(ctx context.Context, id string) error {
@@ -594,6 +633,48 @@ func (r *postgresAlbumRepository) UpdateImage(ctx context.Context, image *domain
 	return image, nil
 }
 
+func (r *postgresAlbumRepository) MoveImagesToAlbum(ctx context.Context, fromAlbumID string, imageIDs []string, targetAlbumID string) ([]*domain.Image, error) {
+	if len(imageIDs) == 0 {
+		return []*domain.Image{}, nil
+	}
+
+	rows, err := r.pool.Query(ctx,
+		`UPDATE images
+		 SET album_id = $3
+		 WHERE album_id = $1 AND id = ANY($2)
+		 RETURNING id, album_id, url, thumbnail_url, file_name, file_size, mime_type, created_at`,
+		fromAlbumID,
+		imageIDs,
+		targetAlbumID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("move images to album: %w", err)
+	}
+	defer rows.Close()
+
+	moved := make([]*domain.Image, 0, len(imageIDs))
+	for rows.Next() {
+		var image domain.Image
+		var url, thumbnailURL sql.NullString
+		if err := rows.Scan(&image.ID, &image.AlbumID, &url, &thumbnailURL, &image.FileName, &image.FileSize, &image.MimeType, &image.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan moved image: %w", err)
+		}
+		if url.Valid {
+			image.URL = url.String
+		}
+		if thumbnailURL.Valid {
+			image.ThumbnailURL = thumbnailURL.String
+		}
+		moved = append(moved, &image)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return moved, nil
+}
+
 func (r *postgresAlbumRepository) DeleteImages(ctx context.Context, albumID string, imageIDs []string) ([]*domain.Image, error) {
 	if len(imageIDs) == 0 {
 		return []*domain.Image{}, nil
@@ -632,6 +713,14 @@ func (r *postgresAlbumRepository) DeleteImages(ctx context.Context, albumID stri
 	}
 
 	return deleted, nil
+}
+
+func (r *postgresAlbumRepository) DeleteAlbum(ctx context.Context, albumID string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM albums WHERE id = $1`, albumID)
+	if err != nil {
+		return fmt.Errorf("delete album: %w", err)
+	}
+	return nil
 }
 
 // postgresSettingsRepository implements SettingsRepository

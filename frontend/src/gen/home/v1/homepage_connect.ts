@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteArticleRequest, DeleteFolderRequest, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteAlbumRequest, DeleteArticleRequest, DeleteFolderRequest, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -56,6 +56,28 @@ export const PostService = {
       name: "ListPosts",
       I: ListPostsRequest,
       O: ListPostsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * GetPost returns one post detail by id
+     *
+     * @generated from rpc home.v1.PostService.GetPost
+     */
+    getPost: {
+      name: "GetPost",
+      I: GetPostRequest,
+      O: GetPostResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * UpdatePost updates post content and image urls
+     *
+     * @generated from rpc home.v1.PostService.UpdatePost
+     */
+    updatePost: {
+      name: "UpdatePost",
+      I: UpdatePostRequest,
+      O: UpdatePostResponse,
       kind: MethodKind.Unary,
     },
     /**
@@ -243,6 +265,17 @@ export const AlbumService = {
       name: "DeleteImages",
       I: DeleteImagesRequest,
       O: DeleteImagesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
+     *
+     * @generated from rpc home.v1.AlbumService.DeleteAlbum
+     */
+    deleteAlbum: {
+      name: "DeleteAlbum",
+      I: DeleteAlbumRequest,
+      O: Empty,
       kind: MethodKind.Unary,
     },
   }

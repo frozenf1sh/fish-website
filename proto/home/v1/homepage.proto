@@ -19,6 +19,10 @@ service PostService {
   rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
   // ListPosts returns paginated timeline posts
   rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
+  // GetPost returns one post detail by id
+  rpc GetPost(GetPostRequest) returns (GetPostResponse);
+  // UpdatePost updates post content and image urls
+  rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse);
   // DeletePost deletes a post by ID
   rpc DeletePost(DeletePostRequest) returns (google.protobuf.Empty);
 }
@@ -57,6 +61,8 @@ service AlbumService {
   rpc ConfirmImageUpload(ConfirmImageUploadRequest) returns (ConfirmImageUploadResponse);
   // DeleteImages deletes images from album and schedules delayed object deletion
   rpc DeleteImages(DeleteImagesRequest) returns (DeleteImagesResponse);
+  // DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
+  rpc DeleteAlbum(DeleteAlbumRequest) returns (google.protobuf.Empty);
 }
 
 // SettingsService handles user settings and preferences
@@ -84,6 +90,7 @@ message Post {
   string content = 2;
   repeated string image_urls = 3;
   google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
 }
 
 message CreatePostRequest {
@@ -104,6 +111,24 @@ message ListPostsResponse {
   repeated Post posts = 1;
   string next_page_token = 2;
   bool has_more = 3;
+}
+
+message GetPostRequest {
+  string id = 1;
+}
+
+message GetPostResponse {
+  Post post = 1;
+}
+
+message UpdatePostRequest {
+  string id = 1;
+  string content = 2;
+  repeated string image_urls = 3;
+}
+
+message UpdatePostResponse {
+  Post post = 1;
 }
 
 message DeletePostRequest {
@@ -292,6 +317,10 @@ message DeleteImagesRequest {
 message DeleteImagesResponse {
   int32 deleted_count = 1;
   google.protobuf.Timestamp scheduled_delete_at = 2;
+}
+
+message DeleteAlbumRequest {
+  string album_id = 1;
 }
 
 // Settings messages

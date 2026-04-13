@@ -6,6 +6,7 @@ import { useStore } from '../store/useStore'
 import { MarkdownViewer } from '../components/MarkdownViewer'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { showToast } from '../lib/toast'
+import { compressImage } from '../utils/imageCompressor'
 
 interface BlogArticle {
   id: string
@@ -73,6 +74,7 @@ export function BlogPage() {
   const [isPublishing, setIsPublishing] = useState(false)
   const [previewMode, setPreviewMode] = useState<PreviewMode>('split')
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const imageUploadInputRef = useRef<HTMLInputElement | null>(null)
 
   const [manageMode, setManageMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -285,6 +287,84 @@ export function BlogPage() {
     })
   }
 
+  const uploadWithRetry = async (url: string, file: File, headers: Record<string, string>, retries = 2) => {
+    let lastError: unknown
+    for (let i = 0; i <= retries; i += 1) {
+      try {
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers,
+          body: file,
+        })
+        if (!response.ok) {
+          throw new Error(`upload failed with status ${response.status}`)
+        }
+        return
+      } catch (err) {
+        lastError = err
+      }
+    }
+    throw lastError
+  }
+
+  const ensureDefaultAlbumId = async () => {
+    const albums = await clients.album.listAlbums({ pageSize: 100, onlyPublic: false })
+    const matched = (albums.albums || []).find((item: any) => item.name === '默认相册' || item.id === 'default')
+    if (matched?.id) return matched.id
+
+    const created = await clients.album.createAlbum({
+      name: '默认相册',
+      description: '博客图片自动上传',
+      isPublic: false,
+    })
+    if (!created.album?.id) {
+      throw new Error('default album create failed')
+    }
+    return created.album.id
+  }
+
+  const handleInsertUploadedImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (imageUploadInputRef.current) {
+      imageUploadInputRef.current.value = ''
+    }
+
+    try {
+      showToast({ type: 'info', message: '图片上传中...' })
+      const compressed = await compressImage(file)
+      const albumId = await ensureDefaultAlbumId()
+      const uploadReq = await clients.album.uploadImageRequest({
+        albumId,
+        fileName: compressed.name,
+        mimeType: compressed.type,
+        fileSize: compressed.size,
+      })
+
+      const headers: Record<string, string> = typeof uploadReq.headers === 'object' ? { ...uploadReq.headers } : {}
+      if (compressed.type && !headers['Content-Type']) {
+        headers['Content-Type'] = compressed.type
+      }
+      await uploadWithRetry(uploadReq.uploadUrl, compressed, headers)
+
+      const confirmed = await clients.album.confirmImageUpload({
+        imageId: uploadReq.imageId,
+        uploadUrl: uploadReq.uploadUrl,
+      })
+      const imageUrl = confirmed.image?.url
+      if (!imageUrl) {
+        throw new Error('upload confirm failed')
+      }
+
+      const markdown = `\n![${file.name}](${imageUrl})\n`
+      insertSnippet(markdown)
+      showToast({ type: 'success', message: '图片已上传并插入' })
+    } catch (err) {
+      console.error('insert uploaded image failed', err)
+      showToast({ type: 'error', message: '上传图片失败，请重试' })
+    }
+  }
+
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim() || !content.trim()) {
@@ -467,12 +547,26 @@ export function BlogPage() {
             </div>
 
             <div className="flex flex-wrap gap-2 mt-3">
+              <button
+                type="button"
+                onClick={() => imageUploadInputRef.current?.click()}
+                className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-100"
+              >
+                上传图片
+              </button>
               {toolbar.map((item) => (
                 <button key={item.label} type="button" onClick={() => insertSnippet(item.action)} className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-100">
                   {item.label}
                 </button>
               ))}
             </div>
+            <input
+              ref={imageUploadInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleInsertUploadedImage}
+            />
           </div>
 
           <div className="grid lg:grid-cols-2 min-h-[56vh]">
@@ -632,7 +726,7 @@ export function BlogPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="text-left flex-1">
                   <h3 className="text-white text-lg sm:text-xl font-semibold mb-2">{article.title}</h3>
-                  <p className="text-white/65 text-sm mb-3 line-clamp-2">{article.content.replace(/#+\s?.*\n/g, '').trim()}</p>
+                  <p className="text-white/65 text-sm mb-3 line-clamp-2 break-all [overflow-wrap:anywhere]">{article.content.replace(/#+\s?.*\n/g, '').trim()}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {isLoggedIn && manageMode && (

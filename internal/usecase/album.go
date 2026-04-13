@@ -10,7 +10,10 @@ import (
 	"github.com/rs/xid"
 )
 
-const imageDeleteDelay = 30 * time.Second
+const (
+	recycleBinAlbumID   = "recycle-bin"
+	recycleBinAlbumName = "回收站"
+)
 
 // AlbumUsecase handles album business logic
 type AlbumUsecase struct {
@@ -20,9 +23,87 @@ type AlbumUsecase struct {
 
 // NewAlbumUsecase creates a new AlbumUsecase
 func NewAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage) *AlbumUsecase {
-	return &AlbumUsecase{
+	u := &AlbumUsecase{
 		albumRepo:   albumRepo,
 		fileStorage: fileStorage,
+	}
+	go u.startRecycleBinCleaner()
+	return u
+}
+
+func (u *AlbumUsecase) ensureRecycleBinAlbum(ctx context.Context) error {
+	_, err := u.albumRepo.GetAlbum(ctx, recycleBinAlbumID)
+	if err == nil {
+		return nil
+	}
+	_, err = u.albumRepo.CreateAlbum(ctx, &domain.Album{
+		ID:          recycleBinAlbumID,
+		Name:        recycleBinAlbumName,
+		Description: "系统回收站（每日零点自动清空）",
+		IsPublic:    false,
+		CreatedAt:   time.Now(),
+	})
+	if err != nil {
+		return fmt.Errorf("create recycle bin album: %w", err)
+	}
+	return nil
+}
+
+func nextMidnight(t time.Time) time.Time {
+	y, m, d := t.Date()
+	loc := t.Location()
+	return time.Date(y, m, d+1, 0, 0, 0, 0, loc)
+}
+
+func (u *AlbumUsecase) purgeRecycleBin() {
+	ctx := context.Background()
+	if err := u.ensureRecycleBinAlbum(ctx); err != nil {
+		logger.Error("ensure recycle bin before purge failed", logger.Err(err))
+		return
+	}
+
+	for {
+		images, _, hasMore, err := u.albumRepo.ListImagesByAlbum(ctx, recycleBinAlbumID, 200, "")
+		if err != nil {
+			logger.Error("list recycle bin images failed", logger.Err(err))
+			return
+		}
+		if len(images) == 0 {
+			return
+		}
+
+		imageIDs := make([]string, 0, len(images))
+		for _, image := range images {
+			imageIDs = append(imageIDs, image.ID)
+		}
+
+		deletedImages, err := u.albumRepo.DeleteImages(ctx, recycleBinAlbumID, imageIDs)
+		if err != nil {
+			logger.Error("delete recycle bin images failed", logger.Err(err))
+			return
+		}
+
+		for _, image := range deletedImages {
+			objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
+			if err := u.fileStorage.DeleteObject(ctx, objectName); err != nil {
+				logger.Error("purge recycle object failed", logger.String("image_id", image.ID), logger.Err(err))
+			}
+		}
+
+		if !hasMore {
+			return
+		}
+	}
+}
+
+func (u *AlbumUsecase) startRecycleBinCleaner() {
+	for {
+		now := time.Now()
+		target := nextMidnight(now)
+		timer := time.NewTimer(time.Until(target))
+		<-timer.C
+		timer.Stop()
+		u.purgeRecycleBin()
 	}
 }
 
@@ -50,6 +131,12 @@ func (u *AlbumUsecase) ListAlbums(ctx context.Context, pageSize int, pageToken s
 	}
 	if pageSize > 100 {
 		pageSize = 100
+	}
+
+	if !onlyPublic {
+		if err := u.ensureRecycleBinAlbum(ctx); err != nil {
+			return nil, "", false, err
+		}
 	}
 
 	albums, nextPageToken, hasMore, err := u.albumRepo.ListAlbums(ctx, pageSize, pageToken, onlyPublic)
@@ -165,34 +252,62 @@ func (u *AlbumUsecase) ConfirmImageUpload(ctx context.Context, imageID, uploadUR
 // DeleteImages deletes image records first and removes objects from storage after a delay.
 func (u *AlbumUsecase) DeleteImages(ctx context.Context, albumID string, imageIDs []string) (int, time.Time, error) {
 	if len(imageIDs) == 0 {
-		return 0, time.Now().Add(imageDeleteDelay), nil
+		return 0, nextMidnight(time.Now()), nil
 	}
-
-	deletedImages, err := u.albumRepo.DeleteImages(ctx, albumID, imageIDs)
-	if err != nil {
-		return 0, time.Time{}, fmt.Errorf("delete image records: %w", err)
-	}
-
-	scheduledAt := time.Now().Add(imageDeleteDelay)
-	imagesSnapshot := make([]*domain.Image, len(deletedImages))
-	copy(imagesSnapshot, deletedImages)
-
-	go func(images []*domain.Image, deleteAt time.Time) {
-		timer := time.NewTimer(time.Until(deleteAt))
-		defer timer.Stop()
-		<-timer.C
-
-		for _, image := range images {
+	if albumID == recycleBinAlbumID {
+		deletedImages, err := u.albumRepo.DeleteImages(ctx, albumID, imageIDs)
+		if err != nil {
+			return 0, time.Time{}, fmt.Errorf("delete recycle images: %w", err)
+		}
+		for _, image := range deletedImages {
 			objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
-			if err := u.fileStorage.DeleteObject(context.Background(), objectName); err != nil {
-				logger.Error("delayed image object deletion failed",
-					logger.String("image_id", image.ID),
-					logger.String("object_name", objectName),
-					logger.Err(err),
-				)
+			if err := u.fileStorage.DeleteObject(ctx, objectName); err != nil {
+				logger.Error("delete recycle object failed", logger.String("image_id", image.ID), logger.Err(err))
 			}
 		}
-	}(imagesSnapshot, scheduledAt)
+		return len(deletedImages), time.Now(), nil
+	}
 
-	return len(deletedImages), scheduledAt, nil
+	if err := u.ensureRecycleBinAlbum(ctx); err != nil {
+		return 0, time.Time{}, err
+	}
+
+	movedImages, err := u.albumRepo.MoveImagesToAlbum(ctx, albumID, imageIDs, recycleBinAlbumID)
+	if err != nil {
+		return 0, time.Time{}, fmt.Errorf("move images to recycle bin: %w", err)
+	}
+
+	return len(movedImages), nextMidnight(time.Now()), nil
+}
+
+func (u *AlbumUsecase) DeleteAlbum(ctx context.Context, albumID string) error {
+	if albumID != recycleBinAlbumID {
+		return fmt.Errorf("only recycle bin album can be deleted manually")
+	}
+
+	images, _, _, err := u.albumRepo.ListImagesByAlbum(ctx, recycleBinAlbumID, 2000, "")
+	if err != nil {
+		return fmt.Errorf("list recycle bin images: %w", err)
+	}
+	if len(images) > 0 {
+		imageIDs := make([]string, 0, len(images))
+		for _, image := range images {
+			imageIDs = append(imageIDs, image.ID)
+		}
+		deletedImages, err := u.albumRepo.DeleteImages(ctx, recycleBinAlbumID, imageIDs)
+		if err != nil {
+			return fmt.Errorf("delete recycle images: %w", err)
+		}
+		for _, image := range deletedImages {
+			objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
+			if err := u.fileStorage.DeleteObject(ctx, objectName); err != nil {
+				logger.Error("delete recycle object failed", logger.String("image_id", image.ID), logger.Err(err))
+			}
+		}
+	}
+
+	if err := u.albumRepo.DeleteAlbum(ctx, recycleBinAlbumID); err != nil {
+		return fmt.Errorf("delete recycle album: %w", err)
+	}
+	return nil
 }

@@ -10,6 +10,7 @@ type Post struct {
 	Content   string
 	ImageURLs []string
 	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Folder represents a blog folder category

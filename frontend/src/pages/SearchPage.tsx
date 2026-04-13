@@ -137,9 +137,13 @@ export function SearchPage() {
             {posts.length === 0 ? <p className="text-white/55 text-sm">暂无动态结果</p> : (
               <div className="space-y-2">
                 {posts.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(`/post/${item.id}`)}
+                    className="w-full text-left rounded-2xl border border-white/15 bg-white/5 px-4 py-3 hover:bg-white/10"
+                  >
                     <p className="text-white/85 text-sm line-clamp-3">{item.content}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
