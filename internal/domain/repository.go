@@ -30,6 +30,7 @@ type BlogRepository interface {
 // AlbumRepository defines the interface for album data access
 type AlbumRepository interface {
 	CreateAlbum(ctx context.Context, album *Album) (*Album, error)
+	UpdateAlbum(ctx context.Context, album *Album) (*Album, error)
 	ListAlbums(ctx context.Context, pageSize int, pageToken string, onlyPublic bool) ([]*Album, string, bool, error)
 	GetAlbum(ctx context.Context, albumID string) (*Album, error)
 	CreateImage(ctx context.Context, image *Image) (*Image, error)

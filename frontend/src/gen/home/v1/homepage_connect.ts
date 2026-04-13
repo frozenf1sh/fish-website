@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteAlbumRequest, DeleteArticleRequest, DeleteFolderRequest, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteAlbumRequest, DeleteArticleRequest, DeleteFolderRequest, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, MoveImagesRequest, MoveImagesResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -254,6 +254,28 @@ export const AlbumService = {
       name: "ConfirmImageUpload",
       I: ConfirmImageUploadRequest,
       O: ConfirmImageUploadResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * UpdateAlbum updates album metadata such as name
+     *
+     * @generated from rpc home.v1.AlbumService.UpdateAlbum
+     */
+    updateAlbum: {
+      name: "UpdateAlbum",
+      I: UpdateAlbumRequest,
+      O: UpdateAlbumResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * MoveImages moves selected images to another album while preserving upload time
+     *
+     * @generated from rpc home.v1.AlbumService.MoveImages
+     */
+    moveImages: {
+      name: "MoveImages",
+      I: MoveImagesRequest,
+      O: MoveImagesResponse,
       kind: MethodKind.Unary,
     },
     /**

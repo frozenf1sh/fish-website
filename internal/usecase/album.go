@@ -13,6 +13,7 @@ import (
 const (
 	recycleBinAlbumID   = "recycle-bin"
 	recycleBinAlbumName = "回收站"
+	defaultAlbumID      = "default"
 )
 
 // AlbumUsecase handles album business logic
@@ -122,6 +123,50 @@ func (u *AlbumUsecase) CreateAlbum(ctx context.Context, name, description string
 	}
 
 	return createdAlbum, nil
+}
+
+func (u *AlbumUsecase) UpdateAlbum(ctx context.Context, albumID, name string) (*domain.Album, error) {
+	if albumID == "" {
+		return nil, fmt.Errorf("album id is required")
+	}
+	if albumID == defaultAlbumID || albumID == recycleBinAlbumID {
+		return nil, fmt.Errorf("default album and recycle bin cannot be renamed")
+	}
+	album, err := u.albumRepo.GetAlbum(ctx, albumID)
+	if err != nil {
+		return nil, fmt.Errorf("get album: %w", err)
+	}
+	if name != "" {
+		album.Name = name
+	}
+	updated, err := u.albumRepo.UpdateAlbum(ctx, album)
+	if err != nil {
+		return nil, fmt.Errorf("update album: %w", err)
+	}
+	return updated, nil
+}
+
+func (u *AlbumUsecase) MoveImages(ctx context.Context, fromAlbumID, targetAlbumID string, imageIDs []string) (int, error) {
+	if fromAlbumID == "" || targetAlbumID == "" {
+		return 0, fmt.Errorf("source and target album ids are required")
+	}
+	if fromAlbumID == targetAlbumID {
+		return 0, nil
+	}
+	if len(imageIDs) == 0 {
+		return 0, nil
+	}
+	if _, err := u.albumRepo.GetAlbum(ctx, fromAlbumID); err != nil {
+		return 0, fmt.Errorf("get source album: %w", err)
+	}
+	if _, err := u.albumRepo.GetAlbum(ctx, targetAlbumID); err != nil {
+		return 0, fmt.Errorf("get target album: %w", err)
+	}
+	moved, err := u.albumRepo.MoveImagesToAlbum(ctx, fromAlbumID, imageIDs, targetAlbumID)
+	if err != nil {
+		return 0, fmt.Errorf("move images: %w", err)
+	}
+	return len(moved), nil
 }
 
 // ListAlbums lists albums with pagination
@@ -281,33 +326,42 @@ func (u *AlbumUsecase) DeleteImages(ctx context.Context, albumID string, imageID
 }
 
 func (u *AlbumUsecase) DeleteAlbum(ctx context.Context, albumID string) error {
-	if albumID != recycleBinAlbumID {
-		return fmt.Errorf("only recycle bin album can be deleted manually")
+	if albumID == "" {
+		return fmt.Errorf("album id is required")
+	}
+	if albumID == defaultAlbumID || albumID == recycleBinAlbumID {
+		return fmt.Errorf("default album and recycle bin cannot be deleted")
+	}
+	if _, err := u.albumRepo.GetAlbum(ctx, albumID); err != nil {
+		return fmt.Errorf("get album: %w", err)
+	}
+	if err := u.ensureRecycleBinAlbum(ctx); err != nil {
+		return err
 	}
 
-	images, _, _, err := u.albumRepo.ListImagesByAlbum(ctx, recycleBinAlbumID, 2000, "")
-	if err != nil {
-		return fmt.Errorf("list recycle bin images: %w", err)
-	}
-	if len(images) > 0 {
-		imageIDs := make([]string, 0, len(images))
-		for _, image := range images {
-			imageIDs = append(imageIDs, image.ID)
-		}
-		deletedImages, err := u.albumRepo.DeleteImages(ctx, recycleBinAlbumID, imageIDs)
+	pageToken := ""
+	for {
+		images, nextToken, hasMore, err := u.albumRepo.ListImagesByAlbum(ctx, albumID, 500, pageToken)
 		if err != nil {
-			return fmt.Errorf("delete recycle images: %w", err)
+			return fmt.Errorf("list album images: %w", err)
 		}
-		for _, image := range deletedImages {
-			objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
-			if err := u.fileStorage.DeleteObject(ctx, objectName); err != nil {
-				logger.Error("delete recycle object failed", logger.String("image_id", image.ID), logger.Err(err))
+		if len(images) > 0 {
+			imageIDs := make([]string, 0, len(images))
+			for _, image := range images {
+				imageIDs = append(imageIDs, image.ID)
+			}
+			if _, err := u.albumRepo.MoveImagesToAlbum(ctx, albumID, imageIDs, recycleBinAlbumID); err != nil {
+				return fmt.Errorf("move album images to recycle bin: %w", err)
 			}
 		}
+		if !hasMore {
+			break
+		}
+		pageToken = nextToken
 	}
 
-	if err := u.albumRepo.DeleteAlbum(ctx, recycleBinAlbumID); err != nil {
-		return fmt.Errorf("delete recycle album: %w", err)
+	if err := u.albumRepo.DeleteAlbum(ctx, albumID); err != nil {
+		return fmt.Errorf("delete album: %w", err)
 	}
 	return nil
 }

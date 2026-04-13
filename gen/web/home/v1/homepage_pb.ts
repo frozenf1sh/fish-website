@@ -1917,6 +1917,172 @@ export class ConfirmImageUploadResponse extends Message<ConfirmImageUploadRespon
 }
 
 /**
+ * @generated from message home.v1.UpdateAlbumRequest
+ */
+export class UpdateAlbumRequest extends Message<UpdateAlbumRequest> {
+  /**
+   * @generated from field: string album_id = 1;
+   */
+  albumId = "";
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name = "";
+
+  constructor(data?: PartialMessage<UpdateAlbumRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateAlbumRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "album_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateAlbumRequest {
+    return new UpdateAlbumRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateAlbumRequest {
+    return new UpdateAlbumRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateAlbumRequest {
+    return new UpdateAlbumRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateAlbumRequest | PlainMessage<UpdateAlbumRequest> | undefined, b: UpdateAlbumRequest | PlainMessage<UpdateAlbumRequest> | undefined): boolean {
+    return proto3.util.equals(UpdateAlbumRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdateAlbumResponse
+ */
+export class UpdateAlbumResponse extends Message<UpdateAlbumResponse> {
+  /**
+   * @generated from field: home.v1.Album album = 1;
+   */
+  album?: Album;
+
+  constructor(data?: PartialMessage<UpdateAlbumResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateAlbumResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "album", kind: "message", T: Album },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateAlbumResponse {
+    return new UpdateAlbumResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateAlbumResponse {
+    return new UpdateAlbumResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateAlbumResponse {
+    return new UpdateAlbumResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateAlbumResponse | PlainMessage<UpdateAlbumResponse> | undefined, b: UpdateAlbumResponse | PlainMessage<UpdateAlbumResponse> | undefined): boolean {
+    return proto3.util.equals(UpdateAlbumResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.MoveImagesRequest
+ */
+export class MoveImagesRequest extends Message<MoveImagesRequest> {
+  /**
+   * @generated from field: string from_album_id = 1;
+   */
+  fromAlbumId = "";
+
+  /**
+   * @generated from field: string target_album_id = 2;
+   */
+  targetAlbumId = "";
+
+  /**
+   * @generated from field: repeated string image_ids = 3;
+   */
+  imageIds: string[] = [];
+
+  constructor(data?: PartialMessage<MoveImagesRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.MoveImagesRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "from_album_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "target_album_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "image_ids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MoveImagesRequest {
+    return new MoveImagesRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): MoveImagesRequest {
+    return new MoveImagesRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): MoveImagesRequest {
+    return new MoveImagesRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: MoveImagesRequest | PlainMessage<MoveImagesRequest> | undefined, b: MoveImagesRequest | PlainMessage<MoveImagesRequest> | undefined): boolean {
+    return proto3.util.equals(MoveImagesRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.MoveImagesResponse
+ */
+export class MoveImagesResponse extends Message<MoveImagesResponse> {
+  /**
+   * @generated from field: int32 moved_count = 1;
+   */
+  movedCount = 0;
+
+  constructor(data?: PartialMessage<MoveImagesResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.MoveImagesResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "moved_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MoveImagesResponse {
+    return new MoveImagesResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): MoveImagesResponse {
+    return new MoveImagesResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): MoveImagesResponse {
+    return new MoveImagesResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: MoveImagesResponse | PlainMessage<MoveImagesResponse> | undefined, b: MoveImagesResponse | PlainMessage<MoveImagesResponse> | undefined): boolean {
+    return proto3.util.equals(MoveImagesResponse, a, b);
+  }
+}
+
+/**
  * @generated from message home.v1.DeleteImagesRequest
  */
 export class DeleteImagesRequest extends Message<DeleteImagesRequest> {

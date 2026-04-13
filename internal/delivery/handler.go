@@ -425,6 +425,35 @@ func (h *Handler) ConfirmImageUpload(ctx context.Context, req *connect.Request[h
 	}), nil
 }
 
+// UpdateAlbum updates album metadata.
+func (h *Handler) UpdateAlbum(ctx context.Context, req *connect.Request[homev1.UpdateAlbumRequest]) (*connect.Response[homev1.UpdateAlbumResponse], error) {
+	logger.Info("received UpdateAlbum request", logger.String("album_id", req.Msg.AlbumId))
+
+	album, err := h.albumUsecase.UpdateAlbum(ctx, req.Msg.AlbumId, req.Msg.Name)
+	if err != nil {
+		logger.Error("UpdateAlbum failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&homev1.UpdateAlbumResponse{Album: toProtoAlbum(album)}), nil
+}
+
+// MoveImages moves images across albums while preserving upload time.
+func (h *Handler) MoveImages(ctx context.Context, req *connect.Request[homev1.MoveImagesRequest]) (*connect.Response[homev1.MoveImagesResponse], error) {
+	logger.Info("received MoveImages request",
+		logger.String("from_album_id", req.Msg.FromAlbumId),
+		logger.String("target_album_id", req.Msg.TargetAlbumId),
+		logger.Int("image_count", len(req.Msg.ImageIds)))
+
+	movedCount, err := h.albumUsecase.MoveImages(ctx, req.Msg.FromAlbumId, req.Msg.TargetAlbumId, req.Msg.ImageIds)
+	if err != nil {
+		logger.Error("MoveImages failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&homev1.MoveImagesResponse{MovedCount: int32(movedCount)}), nil
+}
+
 // DeleteImages moves images to recycle bin (or permanently deletes when in recycle bin).
 func (h *Handler) DeleteImages(ctx context.Context, req *connect.Request[homev1.DeleteImagesRequest]) (*connect.Response[homev1.DeleteImagesResponse], error) {
 	logger.Info("received DeleteImages request",

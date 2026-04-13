@@ -59,6 +59,10 @@ service AlbumService {
   rpc UploadImageRequest(UploadImageRequestRequest) returns (UploadImageRequestResponse);
   // ConfirmImageUpload notifies backend that image has been uploaded
   rpc ConfirmImageUpload(ConfirmImageUploadRequest) returns (ConfirmImageUploadResponse);
+  // UpdateAlbum updates album metadata such as name
+  rpc UpdateAlbum(UpdateAlbumRequest) returns (UpdateAlbumResponse);
+  // MoveImages moves selected images to another album while preserving upload time
+  rpc MoveImages(MoveImagesRequest) returns (MoveImagesResponse);
   // DeleteImages deletes images from album and schedules delayed object deletion
   rpc DeleteImages(DeleteImagesRequest) returns (DeleteImagesResponse);
   // DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
@@ -307,6 +311,25 @@ message ConfirmImageUploadRequest {
 
 message ConfirmImageUploadResponse {
   Image image = 1;
+}
+
+message UpdateAlbumRequest {
+  string album_id = 1;
+  string name = 2;
+}
+
+message UpdateAlbumResponse {
+  Album album = 1;
+}
+
+message MoveImagesRequest {
+  string from_album_id = 1;
+  string target_album_id = 2;
+  repeated string image_ids = 3;
+}
+
+message MoveImagesResponse {
+  int32 moved_count = 1;
 }
 
 message DeleteImagesRequest {

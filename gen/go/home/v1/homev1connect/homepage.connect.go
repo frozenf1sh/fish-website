@@ -90,6 +90,11 @@ const (
 	// AlbumServiceConfirmImageUploadProcedure is the fully-qualified name of the AlbumService's
 	// ConfirmImageUpload RPC.
 	AlbumServiceConfirmImageUploadProcedure = "/home.v1.AlbumService/ConfirmImageUpload"
+	// AlbumServiceUpdateAlbumProcedure is the fully-qualified name of the AlbumService's UpdateAlbum
+	// RPC.
+	AlbumServiceUpdateAlbumProcedure = "/home.v1.AlbumService/UpdateAlbum"
+	// AlbumServiceMoveImagesProcedure is the fully-qualified name of the AlbumService's MoveImages RPC.
+	AlbumServiceMoveImagesProcedure = "/home.v1.AlbumService/MoveImages"
 	// AlbumServiceDeleteImagesProcedure is the fully-qualified name of the AlbumService's DeleteImages
 	// RPC.
 	AlbumServiceDeleteImagesProcedure = "/home.v1.AlbumService/DeleteImages"
@@ -640,6 +645,10 @@ type AlbumServiceClient interface {
 	UploadImageRequest(context.Context, *connect.Request[v1.UploadImageRequestRequest]) (*connect.Response[v1.UploadImageRequestResponse], error)
 	// ConfirmImageUpload notifies backend that image has been uploaded
 	ConfirmImageUpload(context.Context, *connect.Request[v1.ConfirmImageUploadRequest]) (*connect.Response[v1.ConfirmImageUploadResponse], error)
+	// UpdateAlbum updates album metadata such as name
+	UpdateAlbum(context.Context, *connect.Request[v1.UpdateAlbumRequest]) (*connect.Response[v1.UpdateAlbumResponse], error)
+	// MoveImages moves selected images to another album while preserving upload time
+	MoveImages(context.Context, *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error)
 	// DeleteImages deletes images from album and schedules delayed object deletion
 	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
 	// DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
@@ -687,6 +696,18 @@ func NewAlbumServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(albumServiceMethods.ByName("ConfirmImageUpload")),
 			connect.WithClientOptions(opts...),
 		),
+		updateAlbum: connect.NewClient[v1.UpdateAlbumRequest, v1.UpdateAlbumResponse](
+			httpClient,
+			baseURL+AlbumServiceUpdateAlbumProcedure,
+			connect.WithSchema(albumServiceMethods.ByName("UpdateAlbum")),
+			connect.WithClientOptions(opts...),
+		),
+		moveImages: connect.NewClient[v1.MoveImagesRequest, v1.MoveImagesResponse](
+			httpClient,
+			baseURL+AlbumServiceMoveImagesProcedure,
+			connect.WithSchema(albumServiceMethods.ByName("MoveImages")),
+			connect.WithClientOptions(opts...),
+		),
 		deleteImages: connect.NewClient[v1.DeleteImagesRequest, v1.DeleteImagesResponse](
 			httpClient,
 			baseURL+AlbumServiceDeleteImagesProcedure,
@@ -709,6 +730,8 @@ type albumServiceClient struct {
 	getAlbum           *connect.Client[v1.GetAlbumRequest, v1.GetAlbumResponse]
 	uploadImageRequest *connect.Client[v1.UploadImageRequestRequest, v1.UploadImageRequestResponse]
 	confirmImageUpload *connect.Client[v1.ConfirmImageUploadRequest, v1.ConfirmImageUploadResponse]
+	updateAlbum        *connect.Client[v1.UpdateAlbumRequest, v1.UpdateAlbumResponse]
+	moveImages         *connect.Client[v1.MoveImagesRequest, v1.MoveImagesResponse]
 	deleteImages       *connect.Client[v1.DeleteImagesRequest, v1.DeleteImagesResponse]
 	deleteAlbum        *connect.Client[v1.DeleteAlbumRequest, emptypb.Empty]
 }
@@ -738,6 +761,16 @@ func (c *albumServiceClient) ConfirmImageUpload(ctx context.Context, req *connec
 	return c.confirmImageUpload.CallUnary(ctx, req)
 }
 
+// UpdateAlbum calls home.v1.AlbumService.UpdateAlbum.
+func (c *albumServiceClient) UpdateAlbum(ctx context.Context, req *connect.Request[v1.UpdateAlbumRequest]) (*connect.Response[v1.UpdateAlbumResponse], error) {
+	return c.updateAlbum.CallUnary(ctx, req)
+}
+
+// MoveImages calls home.v1.AlbumService.MoveImages.
+func (c *albumServiceClient) MoveImages(ctx context.Context, req *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error) {
+	return c.moveImages.CallUnary(ctx, req)
+}
+
 // DeleteImages calls home.v1.AlbumService.DeleteImages.
 func (c *albumServiceClient) DeleteImages(ctx context.Context, req *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error) {
 	return c.deleteImages.CallUnary(ctx, req)
@@ -760,6 +793,10 @@ type AlbumServiceHandler interface {
 	UploadImageRequest(context.Context, *connect.Request[v1.UploadImageRequestRequest]) (*connect.Response[v1.UploadImageRequestResponse], error)
 	// ConfirmImageUpload notifies backend that image has been uploaded
 	ConfirmImageUpload(context.Context, *connect.Request[v1.ConfirmImageUploadRequest]) (*connect.Response[v1.ConfirmImageUploadResponse], error)
+	// UpdateAlbum updates album metadata such as name
+	UpdateAlbum(context.Context, *connect.Request[v1.UpdateAlbumRequest]) (*connect.Response[v1.UpdateAlbumResponse], error)
+	// MoveImages moves selected images to another album while preserving upload time
+	MoveImages(context.Context, *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error)
 	// DeleteImages deletes images from album and schedules delayed object deletion
 	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
 	// DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
@@ -803,6 +840,18 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(albumServiceMethods.ByName("ConfirmImageUpload")),
 		connect.WithHandlerOptions(opts...),
 	)
+	albumServiceUpdateAlbumHandler := connect.NewUnaryHandler(
+		AlbumServiceUpdateAlbumProcedure,
+		svc.UpdateAlbum,
+		connect.WithSchema(albumServiceMethods.ByName("UpdateAlbum")),
+		connect.WithHandlerOptions(opts...),
+	)
+	albumServiceMoveImagesHandler := connect.NewUnaryHandler(
+		AlbumServiceMoveImagesProcedure,
+		svc.MoveImages,
+		connect.WithSchema(albumServiceMethods.ByName("MoveImages")),
+		connect.WithHandlerOptions(opts...),
+	)
 	albumServiceDeleteImagesHandler := connect.NewUnaryHandler(
 		AlbumServiceDeleteImagesProcedure,
 		svc.DeleteImages,
@@ -827,6 +876,10 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 			albumServiceUploadImageRequestHandler.ServeHTTP(w, r)
 		case AlbumServiceConfirmImageUploadProcedure:
 			albumServiceConfirmImageUploadHandler.ServeHTTP(w, r)
+		case AlbumServiceUpdateAlbumProcedure:
+			albumServiceUpdateAlbumHandler.ServeHTTP(w, r)
+		case AlbumServiceMoveImagesProcedure:
+			albumServiceMoveImagesHandler.ServeHTTP(w, r)
 		case AlbumServiceDeleteImagesProcedure:
 			albumServiceDeleteImagesHandler.ServeHTTP(w, r)
 		case AlbumServiceDeleteAlbumProcedure:
@@ -858,6 +911,14 @@ func (UnimplementedAlbumServiceHandler) UploadImageRequest(context.Context, *con
 
 func (UnimplementedAlbumServiceHandler) ConfirmImageUpload(context.Context, *connect.Request[v1.ConfirmImageUploadRequest]) (*connect.Response[v1.ConfirmImageUploadResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.ConfirmImageUpload is not implemented"))
+}
+
+func (UnimplementedAlbumServiceHandler) UpdateAlbum(context.Context, *connect.Request[v1.UpdateAlbumRequest]) (*connect.Response[v1.UpdateAlbumResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.UpdateAlbum is not implemented"))
+}
+
+func (UnimplementedAlbumServiceHandler) MoveImages(context.Context, *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.MoveImages is not implemented"))
 }
 
 func (UnimplementedAlbumServiceHandler) DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error) {

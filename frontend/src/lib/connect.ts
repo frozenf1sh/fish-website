@@ -380,6 +380,33 @@ export const clients = {
           : null,
       }
     },
+    updateAlbum: async (req) => {
+      const response = await albumClient.updateAlbum({
+        albumId: req.albumId,
+        name: req.name,
+      })
+      return {
+        album: response.album
+          ? {
+              id: response.album.id,
+              name: response.album.name,
+              description: response.album.description,
+              isPublic: response.album.isPublic,
+              createdAt: { toDate: () => response.album?.createdAt?.toDate() || new Date() },
+            }
+          : null,
+      }
+    },
+    moveImages: async (req) => {
+      const response = await albumClient.moveImages({
+        fromAlbumId: req.fromAlbumId,
+        targetAlbumId: req.targetAlbumId,
+        imageIds: req.imageIds || [],
+      })
+      return {
+        movedCount: Number(response.movedCount || 0),
+      }
+    },
     deleteImages: async (req) => {
       const response = await albumClient.deleteImages({
         albumId: req.albumId,

@@ -473,6 +473,17 @@ func (r *postgresAlbumRepository) CreateAlbum(ctx context.Context, album *domain
 	return album, nil
 }
 
+func (r *postgresAlbumRepository) UpdateAlbum(ctx context.Context, album *domain.Album) (*domain.Album, error) {
+	_, err := r.pool.Exec(ctx,
+		"UPDATE albums SET name = $1, description = $2, is_public = $3 WHERE id = $4",
+		album.Name, nullString(album.Description), album.IsPublic, album.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update album: %w", err)
+	}
+	return album, nil
+}
+
 func (r *postgresAlbumRepository) ListAlbums(ctx context.Context, pageSize int, pageToken string, onlyPublic bool) ([]*domain.Album, string, bool, error) {
 	if pageSize <= 0 {
 		pageSize = 20

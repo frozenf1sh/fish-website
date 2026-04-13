@@ -6,6 +6,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 import { MarkdownViewer } from '../components/MarkdownViewer'
 import { showToast } from '../lib/toast'
 import { compressImage } from '../utils/imageCompressor'
+import { useStore } from '../store/useStore'
 
 interface PostDetail {
   id: string
@@ -28,6 +29,7 @@ const formatDate = (d?: { toDate?: () => Date }) => {
 export function PostPage() {
   const { postId } = useParams()
   const navigate = useNavigate()
+  const isLoggedIn = useStore((state) => state.isLoggedIn)
 
   const [post, setPost] = useState<PostDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -149,26 +151,16 @@ export function PostPage() {
 
   return (
     <div className="pb-8 px-3 sm:px-0">
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="glass-panel rounded-3xl sm:rounded-4xl p-4 sm:p-6 space-y-4">
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="glass-panel rounded-3xl sm:rounded-4xl p-4 sm:p-6 space-y-4 relative">
         <div className="flex items-center justify-between gap-3 flex-wrap border-b border-white/15 pb-4">
           <div>
             <h2 className="text-white text-2xl font-bold">动态详情</h2>
             <p className="text-white/55 text-sm mt-1">发布于 {formatDate(post.createdAt)} · 更新于 {formatDate(post.updatedAt || post.createdAt)}</p>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(shareUrl)
-                  showToast({ type: 'success', message: '分享链接已复制' })
-                } catch {
-                  showToast({ type: 'error', message: '复制失败' })
-                }
-              }}
-              className="px-3 py-2 rounded-2xl border border-white/25 text-white/85 hover:bg-white/10"
-            >
-              复制链接
-            </button>
+            {isLoggedIn && !isEditing && (
+              <button onClick={() => setIsEditing(true)} className="px-3 py-2 rounded-2xl border border-white/25 text-white/85 hover:bg-white/10">编辑动态</button>
+            )}
             <button onClick={() => navigate('/')} className="px-3 py-2 rounded-2xl border border-white/25 text-white/85 hover:bg-white/10">返回首页</button>
           </div>
         </div>
@@ -183,9 +175,6 @@ export function PostPage() {
                 ))}
               </div>
             ) : null}
-            <div className="flex justify-end">
-              <button onClick={() => setIsEditing(true)} className="px-4 py-2 rounded-2xl border border-white/25 text-white/85 hover:bg-white/10">编辑动态</button>
-            </div>
           </>
         ) : (
           <>
@@ -255,6 +244,27 @@ export function PostPage() {
             </div>
           </>
         )}
+
+        <button
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(shareUrl)
+              showToast({ type: 'success', message: '分享链接已复制' })
+            } catch {
+              showToast({ type: 'error', message: '复制失败' })
+            }
+          }}
+          className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/12 border border-white/25 text-white hover:bg-white/20 flex items-center justify-center"
+          title="分享"
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <path d="M8.59 13.51 15.42 17.49" />
+            <path d="M15.41 6.51 8.59 10.49" />
+          </svg>
+        </button>
       </motion.div>
     </div>
   )

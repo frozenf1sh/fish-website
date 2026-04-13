@@ -60,19 +60,10 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
       transition={{ delay: index * 0.04 }}
       whileHover={{ scale: 1.005, y: -1 }}
       className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 transition-all cursor-pointer relative group"
+      onClick={() => navigate(`/post/${item.id}`)}
     >
       {isLoggedIn && (
         <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              navigate(`/post/${item.id}`)
-            }}
-            className="p-2 rounded-xl bg-white/15 text-white/85 hover:bg-white/25"
-            title="编辑"
-          >
-            ✏️
-          </button>
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -105,18 +96,6 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
 
           <div className="mb-3 sm:mb-4">
             <MarkdownViewer content={item.content} />
-          </div>
-
-          <div className="mb-3">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                copyShareUrl()
-              }}
-              className="px-3 py-1.5 rounded-xl border border-white/25 text-white/85 hover:bg-white/10 text-sm"
-            >
-              复制链接
-            </button>
           </div>
 
           {item.images && item.images.length > 0 && (
@@ -169,6 +148,23 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
           */}
         </div>
       </div>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          copyShareUrl()
+        }}
+        className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 w-10 h-10 rounded-full bg-white/12 border border-white/25 text-white hover:bg-white/20 flex items-center justify-center"
+        title="分享"
+      >
+        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <path d="M8.59 13.51 15.42 17.49" />
+          <path d="M15.41 6.51 8.59 10.49" />
+        </svg>
+      </button>
 
       {createPortal(
         <AnimatePresence>

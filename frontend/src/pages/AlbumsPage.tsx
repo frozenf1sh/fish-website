@@ -27,6 +27,9 @@ interface AlbumImage {
 }
 
 const RECYCLE_BIN_ALBUM_ID = 'recycle-bin'
+const DEFAULT_ALBUM_ID = 'default'
+
+const isSpecialAlbum = (albumId: string) => albumId === RECYCLE_BIN_ALBUM_ID || albumId === DEFAULT_ALBUM_ID
 
 const toDate = (value?: { toDate?: () => Date }) => {
   if (!value?.toDate) return new Date()
@@ -53,6 +56,9 @@ export function AlbumsPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([])
+  const [moveTargetAlbumId, setMoveTargetAlbumId] = useState('')
+  const [isMoveMode, setIsMoveMode] = useState(false)
+  const [renameInput, setRenameInput] = useState('')
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -63,6 +69,9 @@ export function AlbumsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isMoving, setIsMoving] = useState(false)
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [isDeletingAlbum, setIsDeletingAlbum] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -131,6 +140,14 @@ export function AlbumsPage() {
 
     loadAlbumDetail()
   }, [selectedAlbumId])
+
+  useEffect(() => {
+    setRenameInput(selectedAlbum?.name || '')
+    setIsMoveMode(false)
+    setMoveTargetAlbumId('')
+    setSelectionMode(false)
+    setSelectedImageIds([])
+  }, [selectedAlbum?.id])
 
   const groupedImages = useMemo(() => {
     const groups = new Map<string, { label: string; images: AlbumImage[]; time: number }>()
@@ -293,16 +310,72 @@ export function AlbumsPage() {
     }
   }
 
-  const handleDeleteRecycleBinAlbum = async () => {
-    if (selectedAlbumId !== RECYCLE_BIN_ALBUM_ID) return
+  const handleMoveImages = async () => {
+    if (!selectedAlbumId || !moveTargetAlbumId || selectedImageIds.length === 0) return
+
+    setIsMoving(true)
     try {
-      await clients.album.deleteAlbum({ albumId: RECYCLE_BIN_ALBUM_ID })
-      showToast({ type: 'success', message: '回收站已永久删除' })
-      await refreshAlbums()
-      setSelectedAlbumId('')
+      const response = await clients.album.moveImages({
+        fromAlbumId: selectedAlbumId,
+        targetAlbumId: moveTargetAlbumId,
+        imageIds: selectedImageIds,
+      })
+
+      const refreshed = await clients.album.getAlbum({ albumId: selectedAlbumId })
+      setSelectedAlbum((refreshed.album as Album | null) || null)
+      setAlbumImages((refreshed.images as AlbumImage[]) || [])
+      setSelectedImageIds([])
+      setMoveTargetAlbumId('')
+      setIsMoveMode(false)
+      setSelectionMode(false)
+
+      if (selectedAlbumId === RECYCLE_BIN_ALBUM_ID) {
+        showToast({ type: 'success', message: `已恢复 ${response.movedCount} 张照片到目标相册` })
+      } else {
+        showToast({ type: 'success', message: `已移动 ${response.movedCount} 张照片` })
+      }
     } catch (err) {
-      console.error('Failed to delete recycle bin album:', err)
-      showToast({ type: 'error', message: '删除回收站失败，请重试' })
+      console.error('Failed to move images:', err)
+      showToast({ type: 'error', message: '移动照片失败，请稍后重试' })
+    } finally {
+      setIsMoving(false)
+    }
+  }
+
+  const handleRenameAlbum = async () => {
+    if (!selectedAlbum || !renameInput.trim()) return
+    if (isSpecialAlbum(selectedAlbum.id)) {
+      showToast({ type: 'error', message: '默认相册和回收站不支持改名' })
+      return
+    }
+    setIsRenaming(true)
+    try {
+      await clients.album.updateAlbum({ albumId: selectedAlbum.id, name: renameInput.trim() })
+      showToast({ type: 'success', message: '相册名称已更新' })
+      await refreshAlbums(selectedAlbum.id)
+    } catch (err) {
+      console.error('Failed to rename album:', err)
+      showToast({ type: 'error', message: '相册改名失败，请稍后重试' })
+    } finally {
+      setIsRenaming(false)
+    }
+  }
+
+  const handleDeleteAlbum = async () => {
+    if (!selectedAlbum || isSpecialAlbum(selectedAlbum.id)) return
+    if (!window.confirm(`确定删除相册《${selectedAlbum.name}》吗？其中照片会自动移动到回收站。`)) return
+
+    setIsDeletingAlbum(true)
+    try {
+      await clients.album.deleteAlbum({ albumId: selectedAlbum.id })
+      showToast({ type: 'success', message: '相册已删除，照片已移入回收站' })
+      await refreshAlbums(RECYCLE_BIN_ALBUM_ID)
+      setSelectedAlbumId(RECYCLE_BIN_ALBUM_ID)
+    } catch (err) {
+      console.error('Failed to delete album:', err)
+      showToast({ type: 'error', message: '删除相册失败，请稍后重试' })
+    } finally {
+      setIsDeletingAlbum(false)
     }
   }
 
@@ -383,7 +456,7 @@ export function AlbumsPage() {
                         : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20 hover:text-white'
                     }`}
                   >
-                    {album.name}
+                    {album.name}{album.id === RECYCLE_BIN_ALBUM_ID ? '（回收站）' : ''}
                   </button>
                 ))}
               </div>
@@ -406,12 +479,13 @@ export function AlbumsPage() {
                 >
                   {isUploading ? '上传中...' : '上传图片'}
                 </button>
-                {selectedAlbumId === RECYCLE_BIN_ALBUM_ID && (
+                {selectedAlbum && !isSpecialAlbum(selectedAlbum.id) && (
                   <button
-                    onClick={handleDeleteRecycleBinAlbum}
-                    className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35"
+                    onClick={handleDeleteAlbum}
+                    disabled={isDeletingAlbum}
+                    className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50"
                   >
-                    永久删除回收站
+                    {isDeletingAlbum ? '删除中...' : '删除相册'}
                   </button>
                 )}
               </div>
@@ -430,6 +504,23 @@ export function AlbumsPage() {
                     <div>
                     <h3 className="text-xl font-semibold text-white">{selectedAlbum.name}</h3>
                     <p className="text-sm text-white/60 mt-1">{selectedAlbum.description || '暂无描述'}</p>
+                    {isLoggedIn && !isSpecialAlbum(selectedAlbum.id) && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <input
+                          value={renameInput}
+                          onChange={(e) => setRenameInput(e.target.value)}
+                          placeholder="相册新名称"
+                          className="px-3 py-1.5 rounded-xl bg-white/10 text-white border border-white/20 focus:outline-none focus:border-white/40 text-sm"
+                        />
+                        <button
+                          onClick={handleRenameAlbum}
+                          disabled={isRenaming || !renameInput.trim()}
+                          className="px-3 py-1.5 rounded-xl border border-white/25 text-white/85 hover:bg-white/10 text-sm disabled:opacity-50"
+                        >
+                          {isRenaming ? '保存中...' : '重命名'}
+                        </button>
+                      </div>
+                    )}
                     </div>
                     {isLoggedIn && (
                     <div className="flex items-center gap-2">
@@ -446,10 +537,47 @@ export function AlbumsPage() {
                       >
                         {selectionMode ? '退出多选' : '多选'}
                       </button>
+                      {selectionMode && (
+                        <button
+                          onClick={() => setIsMoveMode((prev) => !prev)}
+                          className={`px-3 py-1.5 rounded-full border text-sm transition-all ${
+                            isMoveMode
+                              ? 'bg-white/25 text-white border-white/40'
+                              : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20 hover:text-white'
+                          }`}
+                        >
+                          {isMoveMode ? '取消移动' : '移动到相册'}
+                        </button>
+                      )}
+                      {selectionMode && isMoveMode && (
+                        <>
+                          <select
+                            value={moveTargetAlbumId}
+                            onChange={(e) => setMoveTargetAlbumId(e.target.value)}
+                            className="px-3 py-1.5 rounded-full border text-sm bg-white/10 text-white border-white/20"
+                          >
+                            <option value="">选择目标相册</option>
+                            {albums
+                              .filter((album) => album.id !== selectedAlbumId)
+                              .map((album) => (
+                                <option key={album.id} value={album.id} className="text-slate-900">
+                                  {album.name}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            onClick={handleMoveImages}
+                            disabled={isMoving || !moveTargetAlbumId || selectedImageIds.length === 0}
+                            className="px-3 py-1.5 rounded-full border text-sm bg-emerald-500/25 text-emerald-100 border-emerald-300/40 hover:bg-emerald-500/35 disabled:opacity-50"
+                          >
+                            {isMoving ? '移动中...' : `移动已选 ${selectedImageIds.length}`}
+                          </button>
+                        </>
+                      )}
                       {selectionMode && selectedImageIds.length > 0 && (
                         <button
                           onClick={() => handleDeleteImages(selectedImageIds)}
-                          disabled={isDeleting}
+                          disabled={isDeleting || isMoving}
                           className="px-3 py-1.5 rounded-full border text-sm bg-red-500/25 text-red-100 border-red-300/40 hover:bg-red-500/35 disabled:opacity-50"
                         >
                           {isDeleting ? '删除中...' : `删除已选 ${selectedImageIds.length}`}
