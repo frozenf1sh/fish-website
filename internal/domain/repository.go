@@ -21,6 +21,7 @@ type BlogRepository interface {
 	GetArticle(ctx context.Context, articleID string) (*Article, error)
 	CreateFolder(ctx context.Context, folder *Folder) (*Folder, error)
 	UpdateFolder(ctx context.Context, folder *Folder) (*Folder, error)
+	DeleteFolder(ctx context.Context, folderID string) error
 	GetFolders(ctx context.Context) ([]*Folder, error)
 }
 

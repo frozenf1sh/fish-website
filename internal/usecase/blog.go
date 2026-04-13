@@ -135,3 +135,11 @@ func (u *BlogUsecase) UpdateFolder(ctx context.Context, folderID, name, parentFo
 
 	return updated, nil
 }
+
+// DeleteFolder deletes a folder and moves nested articles to root
+func (u *BlogUsecase) DeleteFolder(ctx context.Context, folderID string) error {
+	if err := u.blogRepo.DeleteFolder(ctx, folderID); err != nil {
+		return fmt.Errorf("delete folder: %w", err)
+	}
+	return nil
+}

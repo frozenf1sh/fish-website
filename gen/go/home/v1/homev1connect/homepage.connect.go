@@ -70,6 +70,9 @@ const (
 	// BlogServiceUpdateFolderProcedure is the fully-qualified name of the BlogService's UpdateFolder
 	// RPC.
 	BlogServiceUpdateFolderProcedure = "/home.v1.BlogService/UpdateFolder"
+	// BlogServiceDeleteFolderProcedure is the fully-qualified name of the BlogService's DeleteFolder
+	// RPC.
+	BlogServiceDeleteFolderProcedure = "/home.v1.BlogService/DeleteFolder"
 	// AlbumServiceCreateAlbumProcedure is the fully-qualified name of the AlbumService's CreateAlbum
 	// RPC.
 	AlbumServiceCreateAlbumProcedure = "/home.v1.AlbumService/CreateAlbum"
@@ -310,6 +313,8 @@ type BlogServiceClient interface {
 	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
 	// UpdateFolder updates folder name or hierarchy
 	UpdateFolder(context.Context, *connect.Request[v1.UpdateFolderRequest]) (*connect.Response[v1.UpdateFolderResponse], error)
+	// DeleteFolder deletes a folder and moves all nested articles to root
+	DeleteFolder(context.Context, *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewBlogServiceClient constructs a client for the home.v1.BlogService service. By default, it uses
@@ -365,6 +370,12 @@ func NewBlogServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(blogServiceMethods.ByName("UpdateFolder")),
 			connect.WithClientOptions(opts...),
 		),
+		deleteFolder: connect.NewClient[v1.DeleteFolderRequest, emptypb.Empty](
+			httpClient,
+			baseURL+BlogServiceDeleteFolderProcedure,
+			connect.WithSchema(blogServiceMethods.ByName("DeleteFolder")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -377,6 +388,7 @@ type blogServiceClient struct {
 	getArticle    *connect.Client[v1.GetArticleRequest, v1.GetArticleResponse]
 	createFolder  *connect.Client[v1.CreateFolderRequest, v1.CreateFolderResponse]
 	updateFolder  *connect.Client[v1.UpdateFolderRequest, v1.UpdateFolderResponse]
+	deleteFolder  *connect.Client[v1.DeleteFolderRequest, emptypb.Empty]
 }
 
 // CreateArticle calls home.v1.BlogService.CreateArticle.
@@ -414,6 +426,11 @@ func (c *blogServiceClient) UpdateFolder(ctx context.Context, req *connect.Reque
 	return c.updateFolder.CallUnary(ctx, req)
 }
 
+// DeleteFolder calls home.v1.BlogService.DeleteFolder.
+func (c *blogServiceClient) DeleteFolder(ctx context.Context, req *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.deleteFolder.CallUnary(ctx, req)
+}
+
 // BlogServiceHandler is an implementation of the home.v1.BlogService service.
 type BlogServiceHandler interface {
 	// CreateArticle creates a new blog article
@@ -430,6 +447,8 @@ type BlogServiceHandler interface {
 	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
 	// UpdateFolder updates folder name or hierarchy
 	UpdateFolder(context.Context, *connect.Request[v1.UpdateFolderRequest]) (*connect.Response[v1.UpdateFolderResponse], error)
+	// DeleteFolder deletes a folder and moves all nested articles to root
+	DeleteFolder(context.Context, *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewBlogServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -481,6 +500,12 @@ func NewBlogServiceHandler(svc BlogServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(blogServiceMethods.ByName("UpdateFolder")),
 		connect.WithHandlerOptions(opts...),
 	)
+	blogServiceDeleteFolderHandler := connect.NewUnaryHandler(
+		BlogServiceDeleteFolderProcedure,
+		svc.DeleteFolder,
+		connect.WithSchema(blogServiceMethods.ByName("DeleteFolder")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/home.v1.BlogService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case BlogServiceCreateArticleProcedure:
@@ -497,6 +522,8 @@ func NewBlogServiceHandler(svc BlogServiceHandler, opts ...connect.HandlerOption
 			blogServiceCreateFolderHandler.ServeHTTP(w, r)
 		case BlogServiceUpdateFolderProcedure:
 			blogServiceUpdateFolderHandler.ServeHTTP(w, r)
+		case BlogServiceDeleteFolderProcedure:
+			blogServiceDeleteFolderHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -532,6 +559,10 @@ func (UnimplementedBlogServiceHandler) CreateFolder(context.Context, *connect.Re
 
 func (UnimplementedBlogServiceHandler) UpdateFolder(context.Context, *connect.Request[v1.UpdateFolderRequest]) (*connect.Response[v1.UpdateFolderResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.UpdateFolder is not implemented"))
+}
+
+func (UnimplementedBlogServiceHandler) DeleteFolder(context.Context, *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.DeleteFolder is not implemented"))
 }
 
 // AlbumServiceClient is a client for the home.v1.AlbumService service.

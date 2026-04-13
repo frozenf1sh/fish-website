@@ -244,6 +244,12 @@ export const clients = {
           : null,
       }
     },
+    deleteFolder: async (req) => {
+      await blogClient.deleteFolder({
+        folderId: req.folderId,
+      })
+      return {}
+    },
   },
   album: {
     createAlbum: async (req) => {

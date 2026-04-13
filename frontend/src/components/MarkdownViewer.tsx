@@ -80,6 +80,13 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
           li({ children }: any) {
             return <li className={theme === 'dark' ? 'text-white/90 marker:text-white/70' : 'text-slate-800'}>{children}</li>
           },
+          blockquote({ children }: any) {
+            return (
+              <blockquote className={theme === 'dark' ? 'my-4 border-l-4 border-sky-300/70 bg-white/5 px-4 py-3 rounded-r-xl text-white/90' : 'my-4 border-l-4 border-sky-500 bg-sky-50 px-4 py-3 rounded-r-xl text-slate-700'}>
+                {children}
+              </blockquote>
+            )
+          },
           code({ node, inline, className, children, ...props }: any) {
             if (!inline) {
               return <CodeBlock theme={theme} className={className}>{children}</CodeBlock>

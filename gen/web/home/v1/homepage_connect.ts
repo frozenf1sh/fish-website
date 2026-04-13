@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteArticleRequest, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteArticleRequest, DeleteFolderRequest, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -155,6 +155,17 @@ export const BlogService = {
       name: "UpdateFolder",
       I: UpdateFolderRequest,
       O: UpdateFolderResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * DeleteFolder deletes a folder and moves all nested articles to root
+     *
+     * @generated from rpc home.v1.BlogService.DeleteFolder
+     */
+    deleteFolder: {
+      name: "DeleteFolder",
+      I: DeleteFolderRequest,
+      O: Empty,
       kind: MethodKind.Unary,
     },
   }

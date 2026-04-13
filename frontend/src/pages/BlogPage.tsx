@@ -39,6 +39,13 @@ const formatDate = (d?: { toDate?: () => Date }) => {
   })
 }
 
+const isUpdatedAfterCreated = (article: BlogArticle) => {
+  const created = article.createdAt?.toDate?.()
+  const updated = article.updatedAt?.toDate?.()
+  if (!created || !updated) return false
+  return updated.getTime()-created.getTime() > 1000
+}
+
 export function BlogPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { articleId } = useParams()
@@ -47,6 +54,7 @@ export function BlogPage() {
 
   const folderId = searchParams.get('folder') || ROOT_FOLDER_ID
   const composeOpen = searchParams.get('compose') === '1'
+  const editingArticleId = searchParams.get('edit') || ''
 
   const [articles, setArticles] = useState<BlogArticle[]>([])
   const [nextPageToken, setNextPageToken] = useState('')
@@ -112,25 +120,34 @@ export function BlogPage() {
     return null
   }
 
-  const getLevelOptions = (level: number, path: string[]) => {
-    if (level === 0) return folderTree
-    const parentId = path[level - 1]
-    const parent = parentId ? findFolderById(folderTree, parentId) : null
-    return parent?.children || []
-  }
-
   const getMoveLevels = () => {
     const levels: FolderNode[][] = []
     let level = 0
+    let currentOptions = folderTree
     while (true) {
-      const options = getLevelOptions(level, movePath)
+      const options = currentOptions
       if (options.length === 0) break
       levels.push(options)
-      if (!movePath[level]) break
+      const selectedID = movePath[level] && options.some((item) => item.id === movePath[level]) ? movePath[level] : options[0].id
+      const selected = options.find((item) => item.id === selectedID)
+      currentOptions = selected?.children || []
       level += 1
       if (level > 16) break
     }
     return levels
+  }
+
+  const getResolvedMovePath = () => {
+    const resolved: string[] = []
+    let currentOptions = folderTree
+    for (let level = 0; level < 16; level += 1) {
+      if (!currentOptions.length) break
+      const selectedID = movePath[level] && currentOptions.some((item) => item.id === movePath[level]) ? movePath[level] : currentOptions[0].id
+      resolved.push(selectedID)
+      const selected = currentOptions.find((item) => item.id === selectedID)
+      currentOptions = selected?.children || []
+    }
+    return resolved
   }
 
   const resetComposer = () => {
@@ -193,15 +210,40 @@ export function BlogPage() {
       const next = new URLSearchParams(searchParams)
       next.set('folder', ROOT_FOLDER_ID)
       setSearchParams(next, { replace: true })
-      return
     }
     loadArticles({ reset: true, pageToken: '' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articleId, folderId])
 
   useEffect(() => {
-    setMovePath([folderId || ROOT_FOLDER_ID])
+    if (manageMode) {
+      setMovePath([ROOT_FOLDER_ID])
+    }
   }, [folderId, manageMode])
+
+  useEffect(() => {
+    if (!composeOpen || !editingArticleId || !isLoggedIn) return
+
+    let cancelled = false
+    const loadEditingArticle = async () => {
+      try {
+        const response = await clients.blog.getArticle({ articleId: editingArticleId })
+        const article = response.article as BlogArticle | null
+        if (!article || cancelled) return
+        setTitle(article.title || '')
+        setContent(article.content || '')
+        setTagsInput((article.tags || []).join(', '))
+      } catch (err) {
+        console.error('Failed to load editing article:', err)
+        showToast({ type: 'error', message: '加载待编辑文章失败' })
+      }
+    }
+    loadEditingArticle()
+
+    return () => {
+      cancelled = true
+    }
+  }, [composeOpen, editingArticleId, isLoggedIn])
 
   useEffect(() => {
     if (!articleId) {
@@ -253,25 +295,48 @@ export function BlogPage() {
     setIsPublishing(true)
     try {
       const tags = tagsInput.split(',').map((item) => item.trim()).filter(Boolean)
-      const created = await clients.blog.createArticle({
-        title: title.trim(),
-        content: content.trim(),
-        folderId,
-        tags,
-        status: 'published',
-      })
+      let targetID = editingArticleId
+      if (editingArticleId) {
+        await clients.blog.updateArticle({
+          articleId: editingArticleId,
+          title: title.trim(),
+          content: content.trim(),
+          folderId,
+          tags,
+          status: 'published',
+        })
+      } else {
+        const created = await clients.blog.createArticle({
+          title: title.trim(),
+          content: content.trim(),
+          folderId,
+          tags,
+          status: 'published',
+        })
+        targetID = created.article?.id || ''
+        if (targetID) {
+          try {
+            await clients.post.createPost({
+              content: `📝 发布了新博客：**${title.trim()}**\n\n[点击阅读](${getShareUrl(targetID)})`,
+              imageIds: [],
+            })
+          } catch (timelineErr) {
+            console.warn('sync blog publish to timeline failed', timelineErr)
+          }
+        }
+      }
 
       resetComposer()
       window.dispatchEvent(new Event('blog:updated'))
-      if (created.article?.id) {
-        navigate(`/blog/${created.article.id}`)
+      if (targetID) {
+        navigate(`/blog/${targetID}`)
       } else {
         await loadArticles({ reset: true, pageToken: '' })
       }
-      showToast({ type: 'success', message: '文章已创建' })
+      showToast({ type: 'success', message: editingArticleId ? '文章已更新' : '文章已创建' })
     } catch (err) {
-      console.error('Failed to create article:', err)
-      showToast({ type: 'error', message: '创建文章失败，请重试' })
+      console.error('Failed to save article:', err)
+      showToast({ type: 'error', message: editingArticleId ? '更新文章失败，请重试' : '创建文章失败，请重试' })
     } finally {
       setIsPublishing(false)
     }
@@ -301,7 +366,8 @@ export function BlogPage() {
 
   const moveSelectedToFolder = async () => {
     if (selectedIds.length === 0) return
-    const targetFolderId = movePath[movePath.length - 1] || folderId || ROOT_FOLDER_ID
+    const resolvedPath = getResolvedMovePath()
+    const targetFolderId = resolvedPath[resolvedPath.length - 1] || ROOT_FOLDER_ID
 
     setIsManaging(true)
     try {
@@ -346,7 +412,10 @@ export function BlogPage() {
             <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-white/15">
               <div>
                 <h1 className="text-white text-2xl sm:text-3xl font-bold">{sharedArticle.title}</h1>
-                <p className="text-white/55 text-sm mt-1">{formatDate(sharedArticle.updatedAt || sharedArticle.createdAt)}</p>
+                <p className="text-white/55 text-sm mt-1">
+                  创建于 {formatDate(sharedArticle.createdAt)}
+                  {isUpdatedAfterCreated(sharedArticle) ? ` · 修改于 ${formatDate(sharedArticle.updatedAt)}` : ''}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => copyShareUrl(sharedArticle.id)} className="px-3 py-2 rounded-2xl border border-white/25 text-white/85 hover:bg-white/10">复制链接</button>
@@ -382,7 +451,7 @@ export function BlogPage() {
           <div className="px-4 sm:px-6 py-4 border-b border-slate-200 bg-slate-50">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold">新建文章</h2>
+                <h2 className="text-xl font-semibold">{editingArticleId ? '编辑文章' : '新建文章'}</h2>
                 <span className="text-xs px-2 py-1 rounded-full bg-slate-200 text-slate-700">实时预览</span>
               </div>
               <div className="flex items-center gap-2">
@@ -433,6 +502,7 @@ export function BlogPage() {
                 resetComposer()
                 const next = new URLSearchParams(searchParams)
                 next.delete('compose')
+                next.delete('edit')
                 setSearchParams(next)
               }}
               className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-200"
@@ -440,7 +510,7 @@ export function BlogPage() {
               取消
             </button>
             <button type="submit" disabled={isPublishing} className="px-5 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50">
-              {isPublishing ? '创建中...' : '发布文章'}
+              {isPublishing ? (editingArticleId ? '更新中...' : '创建中...') : (editingArticleId ? '保存修改' : '发布文章')}
             </button>
           </div>
         </form>
@@ -473,6 +543,7 @@ export function BlogPage() {
                   resetComposer()
                   const next = new URLSearchParams(searchParams)
                   next.set('compose', '1')
+                  next.delete('edit')
                   setSearchParams(next)
                 }}
                 className="btn-primary px-4 py-2 rounded-2xl text-white"
@@ -490,9 +561,14 @@ export function BlogPage() {
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap gap-2">
               {getMoveLevels().map((options, index) => (
+                (() => {
+                  const safeValue = movePath[index] && options.some((node) => node.id === movePath[index])
+                    ? movePath[index]
+                    : options[0]?.id || ''
+                  return (
                 <select
                   key={`folder-level-${index}`}
-                  value={movePath[index] || ''}
+                  value={safeValue}
                   onChange={(e) => {
                     const selected = e.target.value
                     setMovePath((prev) => [...prev.slice(0, index), selected])
@@ -505,6 +581,8 @@ export function BlogPage() {
                     </option>
                   ))}
                 </select>
+                  )
+                })()
               ))}
             </div>
             <div className="flex flex-wrap gap-3">
@@ -557,6 +635,21 @@ export function BlogPage() {
                   <p className="text-white/65 text-sm mb-3 line-clamp-2">{article.content.replace(/#+\s?.*\n/g, '').trim()}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {isLoggedIn && manageMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const next = new URLSearchParams(searchParams)
+                        next.set('compose', '1')
+                        next.set('edit', article.id)
+                        next.set('folder', article.folderId || ROOT_FOLDER_ID)
+                        setSearchParams(next)
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-white/25 text-white/85 hover:bg-white/10"
+                    >
+                      编辑
+                    </button>
+                  )}
                   {!manageMode && (
                     <button
                       onClick={(e) => {
@@ -577,7 +670,10 @@ export function BlogPage() {
                     <span key={`${article.id}-${tag}`} className="px-2 py-1 rounded-full text-xs bg-white/15 text-white/70">#{tag}</span>
                   ))}
                 </div>
-                <span className="text-white/45 text-sm">{formatDate(article.updatedAt || article.createdAt)}</span>
+                <span className="text-white/45 text-sm">
+                  创建于 {formatDate(article.createdAt)}
+                  {isUpdatedAfterCreated(article) ? ` · 修改于 ${formatDate(article.updatedAt)}` : ''}
+                </span>
               </div>
             </motion.div>
           ))}

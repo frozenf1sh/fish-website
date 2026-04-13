@@ -22,58 +22,7 @@ interface TimelineItem {
   }
 }
 
-const TimelineNode = ({ type, index }: { type: TimelineItemType; index: number }) => {
-  const getIcon = () => {
-    switch (type) {
-      case 'post':
-        return '💬'
-      case 'system':
-        return '🔔'
-      case 'blog':
-        return '📝'
-      case 'album':
-        return '📸'
-      default:
-        return '✨'
-    }
-  }
-
-  const getColor = () => {
-    switch (type) {
-      case 'post':
-        return 'from-blue-400 to-cyan-400'
-      case 'system':
-        return 'from-purple-400 to-pink-400'
-      case 'blog':
-        return 'from-green-400 to-emerald-400'
-      case 'album':
-        return 'from-pink-400 to-rose-400'
-      default:
-        return 'from-gray-400 to-gray-500'
-    }
-  }
-
-  return (
-    <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: 0.1 + index * 0.1, type: 'spring' }}
-      className="relative"
-    >
-      <div className={`absolute left-0 top-0 w-10 h-10 rounded-full bg-gradient-to-br ${getColor()} flex items-center justify-center text-lg shadow-lg z-10`}>
-        {getIcon()}
-      </div>
-      <motion.div
-        animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
-        className={`absolute left-1 top-1 w-8 h-8 rounded-full bg-gradient-to-br ${getColor()} opacity-30 blur-sm`}
-      />
-    </motion.div>
-  )
-}
-
 const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number; onDelete?: (id: string) => void }) => {
-  const isShortContent = item.content.length < 200
   const { settings, isLoggedIn } = useStore()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   
@@ -129,15 +78,9 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
             <span className="text-white/40 text-xs sm:text-sm">· {item.timestamp}</span>
           </div>
 
-          {isShortContent ? (
-            <p className="text-white/90 whitespace-pre-line mb-3 sm:mb-4 leading-relaxed text-sm sm:text-base">
-              {item.content}
-            </p>
-          ) : (
-            <div className="mb-3 sm:mb-4">
-              <MarkdownViewer content={item.content} />
-            </div>
-          )}
+          <div className="mb-3 sm:mb-4">
+            <MarkdownViewer content={item.content} />
+          </div>
 
           {item.images && item.images.length > 0 && (
             <div className={`grid gap-2 mb-4 ${item.images.length === 1 ? 'grid-cols-1' : item.images.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
@@ -320,36 +263,45 @@ const AlbumCard = ({ item, index }: { item: TimelineItem; index: number }) => {
 
 export function Timeline() {
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([])
+  const [nextPageToken, setNextPageToken] = useState('')
+  const [hasMore, setHasMore] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  const mapPosts = (posts: any[]): TimelineItem[] => {
+    return posts.map((post: any) => {
+      let timestampStr = '刚刚'
+      if (post.createdAt) {
+        const date = typeof post.createdAt.toDate === 'function' ? post.createdAt.toDate() : new Date(post.createdAt)
+        timestampStr = date.toLocaleString('zh-CN', {
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      }
+      return {
+        id: post.id,
+        type: 'post',
+        timestamp: timestampStr,
+        content: post.content,
+        images: post.imageUrls || [],
+      }
+    })
+  }
 
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        const response = await clients.post.listPosts()
-        const items: TimelineItem[] = response.posts.map((post: any) => {
-          let timestampStr = '刚刚'
-          if (post.createdAt) {
-            const date = typeof post.createdAt.toDate === 'function' ? post.createdAt.toDate() : new Date(post.createdAt)
-            timestampStr = date.toLocaleString('zh-CN', {
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          }
-          return {
-            id: post.id,
-            type: 'post',
-            timestamp: timestampStr,
-            content: post.content,
-            images: post.imageUrls || [],
-          }
-        })
-        setTimelineItems(items)
+        const response = await clients.post.listPosts({ pageSize: 12, pageToken: '' })
+        setTimelineItems(mapPosts(response.posts || []))
+        setNextPageToken(response.nextPageToken || '')
+        setHasMore(!!response.hasMore)
       } catch (error) {
         console.error('Failed to load posts:', error)
-        // Fallback to empty state
         setTimelineItems([])
+        setNextPageToken('')
+        setHasMore(false)
       } finally {
         setIsLoading(false)
       }
@@ -358,12 +310,25 @@ export function Timeline() {
     loadPosts()
   }, [])
 
-  return (
-    <div className="relative pl-0 sm:pl-14 px-3 sm:px-0">
-      {/* 垂直线条 */}
-      <div className="hidden sm:block absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-400/50 via-purple-400/50 to-pink-400/50 rounded-full"></div>
+  const loadMore = async () => {
+    if (!hasMore || !nextPageToken || isLoadingMore) return
+    setIsLoadingMore(true)
+    try {
+      const response = await clients.post.listPosts({ pageSize: 12, pageToken: nextPageToken })
+      setTimelineItems((prev) => [...prev, ...mapPosts(response.posts || [])])
+      setNextPageToken(response.nextPageToken || '')
+      setHasMore(!!response.hasMore)
+    } catch (error) {
+      console.error('Failed to load more posts:', error)
+      showToast({ type: 'error', message: '加载更多动态失败，请重试' })
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
 
-      <div className="space-y-4 pb-8">
+  return (
+    <div className="px-3 sm:px-0">
+      <div className="space-y-4 pb-8 max-w-3xl mx-auto">
         {isLoading ? (
           <div className="text-center py-12 text-white/50">
             <p>加载中...</p>
@@ -375,30 +340,25 @@ export function Timeline() {
           </div>
         ) : (
           timelineItems.map((item, index) => (
-            <div key={item.id} className="relative">
-              <div className="hidden sm:block">
-                <TimelineNode type={item.type} index={index} />
-              </div>
-              <div className="ml-0 sm:ml-14">
-                {item.type === 'post' && <PostCard item={item} index={index} onDelete={id => setTimelineItems(prev => prev.filter(i => i.id !== id))} />}
-                {item.type === 'system' && <SystemCard item={item} index={index} />}
-                {item.type === 'blog' && <BlogCard item={item} index={index} />}
-                {item.type === 'album' && <AlbumCard item={item} index={index} />}
-              </div>
+            <div key={item.id}>
+              {item.type === 'post' && <PostCard item={item} index={index} onDelete={id => setTimelineItems(prev => prev.filter(i => i.id !== id))} />}
+              {item.type === 'system' && <SystemCard item={item} index={index} />}
+              {item.type === 'blog' && <BlogCard item={item} index={index} />}
+              {item.type === 'album' && <AlbumCard item={item} index={index} />}
             </div>
           ))
         )}
       </div>
 
-      {/* 加载更多指示器 */}
-      {!isLoading && timelineItems.length > 0 && (
-        <div className="text-center py-8 ml-0 sm:ml-14">
-          <div className="inline-flex items-center gap-2 text-white/60 glass-light px-6 py-3 rounded-full">
-            <div className="w-2 h-2 rounded-full bg-white/60 animate-bounce"></div>
-            <div className="w-2 h-2 rounded-full bg-white/60 animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-2 h-2 rounded-full bg-white/60 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            <span className="ml-2">加载更多动态...</span>
-          </div>
+      {!isLoading && hasMore && (
+        <div className="text-center py-2 pb-8">
+          <button
+            onClick={loadMore}
+            disabled={isLoadingMore}
+            className="inline-flex items-center gap-2 text-white/85 glass-light px-6 py-3 rounded-full border border-white/20 hover:bg-white/10 disabled:opacity-50"
+          >
+            {isLoadingMore ? '加载中...' : '加载更多动态'}
+          </button>
         </div>
       )}
     </div>

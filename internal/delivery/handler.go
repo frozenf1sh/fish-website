@@ -269,6 +269,18 @@ func (h *Handler) UpdateFolder(ctx context.Context, req *connect.Request[homev1.
 	return connect.NewResponse(&homev1.UpdateFolderResponse{Folder: toProtoFolder(folder)}), nil
 }
 
+// DeleteFolder deletes a folder and moves nested articles to root
+func (h *Handler) DeleteFolder(ctx context.Context, req *connect.Request[homev1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error) {
+	logger.Info("received DeleteFolder request", logger.String("folder_id", req.Msg.FolderId))
+
+	if err := h.blogUsecase.DeleteFolder(ctx, req.Msg.FolderId); err != nil {
+		logger.Error("DeleteFolder failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&emptypb.Empty{}), nil
+}
+
 // CreateAlbum creates an album
 func (h *Handler) CreateAlbum(ctx context.Context, req *connect.Request[homev1.CreateAlbumRequest]) (*connect.Response[homev1.CreateAlbumResponse], error) {
 	logger.Info("received CreateAlbum request", logger.String("name", req.Msg.Name), logger.Bool("is_public", req.Msg.IsPublic))

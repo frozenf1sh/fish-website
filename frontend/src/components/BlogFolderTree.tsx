@@ -157,6 +157,25 @@ export function BlogFolderTree() {
     }
   }
 
+  const deleteCurrentFolder = async () => {
+    if (activeId === 'root') {
+      showToast({ type: 'warning', message: '根目录不能删除' })
+      return
+    }
+    try {
+      await clients.blog.deleteFolder({ folderId: activeId })
+      showToast({ type: 'success', message: '文件夹已删除，文章已回收到根目录' })
+      const next = new URLSearchParams(searchParams)
+      next.set('folder', 'root')
+      next.delete('compose')
+      navigate({ pathname: '/blog', search: next.toString() })
+      window.dispatchEvent(new Event('blog:updated'))
+    } catch (err) {
+      console.error('delete folder failed', err)
+      showToast({ type: 'error', message: '删除文件夹失败，请重试' })
+    }
+  }
+
   return (
     <div className="glass-card rounded-4xl p-6">
       <div className="flex items-center justify-between mb-3">
@@ -202,6 +221,15 @@ export function BlogFolderTree() {
                 新建
               </button>
             </div>
+
+            {activeId !== 'root' && (
+              <button
+                onClick={deleteCurrentFolder}
+                className="w-full px-3 py-2 rounded-xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35"
+              >
+                删除当前目录（子目录与文章归根）
+              </button>
+            )}
           </div>
         </div>
       )}

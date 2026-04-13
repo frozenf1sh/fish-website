@@ -1118,6 +1118,43 @@ export class UpdateFolderResponse extends Message<UpdateFolderResponse> {
 }
 
 /**
+ * @generated from message home.v1.DeleteFolderRequest
+ */
+export class DeleteFolderRequest extends Message<DeleteFolderRequest> {
+  /**
+   * @generated from field: string folder_id = 1;
+   */
+  folderId = "";
+
+  constructor(data?: PartialMessage<DeleteFolderRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.DeleteFolderRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "folder_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteFolderRequest {
+    return new DeleteFolderRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DeleteFolderRequest {
+    return new DeleteFolderRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DeleteFolderRequest {
+    return new DeleteFolderRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DeleteFolderRequest | PlainMessage<DeleteFolderRequest> | undefined, b: DeleteFolderRequest | PlainMessage<DeleteFolderRequest> | undefined): boolean {
+    return proto3.util.equals(DeleteFolderRequest, a, b);
+  }
+}
+
+/**
  * Album messages
  *
  * @generated from message home.v1.Album

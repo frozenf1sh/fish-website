@@ -39,6 +39,8 @@ service BlogService {
   rpc CreateFolder(CreateFolderRequest) returns (CreateFolderResponse);
   // UpdateFolder updates folder name or hierarchy
   rpc UpdateFolder(UpdateFolderRequest) returns (UpdateFolderResponse);
+  // DeleteFolder deletes a folder and moves all nested articles to root
+  rpc DeleteFolder(DeleteFolderRequest) returns (google.protobuf.Empty);
 }
 
 // AlbumService handles photo albums and image uploads
@@ -202,6 +204,10 @@ message UpdateFolderRequest {
 
 message UpdateFolderResponse {
   Folder folder = 1;
+}
+
+message DeleteFolderRequest {
+  string folder_id = 1;
 }
 
 // Album messages

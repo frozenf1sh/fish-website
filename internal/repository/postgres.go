@@ -197,13 +197,19 @@ func (r *postgresBlogRepository) ListArticles(ctx context.Context, pageSize int,
 		return nil, "", false, err
 	}
 	query := `
+		WITH RECURSIVE selected_folders AS (
+			SELECT id FROM folders WHERE id = $2
+			UNION ALL
+			SELECT f.id FROM folders f
+			INNER JOIN selected_folders sf ON f.parent_folder_id = sf.id
+		)
 		SELECT id, title, content, folder_id, tags, status, created_at, updated_at
 		FROM articles
 		WHERE ($1 = '' OR id < $1)
 		AND (
 			$2 = ''
-			OR ($2 = 'root' AND (folder_id = 'root' OR folder_id IS NULL))
-			OR ($2 <> 'root' AND folder_id = $2)
+			OR ($2 = 'root' AND (folder_id IS NULL OR folder_id IN (SELECT id FROM selected_folders)))
+			OR ($2 <> 'root' AND folder_id IN (SELECT id FROM selected_folders))
 		)
 		AND ($3 = '' OR tags @> to_jsonb($3::text))
 		AND ($4 = '' OR status = $4)
@@ -302,6 +308,72 @@ func (r *postgresBlogRepository) UpdateFolder(ctx context.Context, folder *domai
 		return nil, fmt.Errorf("update folder: %w", err)
 	}
 	return folder, nil
+}
+
+func (r *postgresBlogRepository) DeleteFolder(ctx context.Context, folderID string) error {
+	if folderID == "" || folderID == rootFolderID {
+		return nil
+	}
+	if err := r.ensureRootFolder(ctx); err != nil {
+		return err
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	rows, err := tx.Query(ctx, `
+		WITH RECURSIVE folder_tree AS (
+			SELECT id FROM folders WHERE id = $1
+			UNION ALL
+			SELECT f.id FROM folders f
+			INNER JOIN folder_tree ft ON f.parent_folder_id = ft.id
+		)
+		SELECT id FROM folder_tree
+	`, folderID)
+	if err != nil {
+		return fmt.Errorf("query folder tree: %w", err)
+	}
+	defer rows.Close()
+
+	folderIDs := make([]string, 0, 8)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return fmt.Errorf("scan folder id: %w", err)
+		}
+		if id != rootFolderID {
+			folderIDs = append(folderIDs, id)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("folder tree rows: %w", err)
+	}
+	if len(folderIDs) == 0 {
+		return nil
+	}
+
+	_, err = tx.Exec(ctx, `
+		UPDATE articles
+		SET folder_id = $1, updated_at = NOW()
+		WHERE folder_id = ANY($2)
+	`, rootFolderID, folderIDs)
+	if err != nil {
+		return fmt.Errorf("move articles to root: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, `DELETE FROM folders WHERE id = ANY($1)`, folderIDs)
+	if err != nil {
+		return fmt.Errorf("delete folders: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
+	}
+
+	return nil
 }
 
 func (r *postgresBlogRepository) GetFolders(ctx context.Context) ([]*domain.Folder, error) {
