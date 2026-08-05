@@ -47,6 +47,9 @@ jobs:
           # The registry is reachable only through the k3s node's tailnet route.
           # A container-network builder cannot resolve that private DNS name.
           driver-opts: network=host
+          # The runner installs this private CA at the referenced host path.
+          # setup-buildx copies declared registry certificates into BuildKit.
+          buildkitd-config: .github/buildkitd.toml
 
       - name: Log in to the private registry
         if: github.event_name == 'push'
