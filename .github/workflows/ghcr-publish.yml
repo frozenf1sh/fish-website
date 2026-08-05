@@ -103,18 +103,28 @@ jobs:
         env:
           IMAGE_TAG: sha-${{ github.sha }}
         run: |
-          git pull --rebase origin main
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            deploy_branch=production
             deployment_path=deploy/fish-website/kustomization.yaml
             commit_message="部署：提升生产环境至 ${IMAGE_TAG} [skip ci]"
-            perl -0pi -e 's|(newName: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(newName: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"
           else
+            deploy_branch=main
             deployment_path=deploy/fish-website-dev/kustomization.yaml
             commit_message="部署：更新开发环境至 ${IMAGE_TAG} [skip ci]"
+          fi
+
+          # Production desired state is isolated from ordinary main changes.
+          git fetch origin "$deploy_branch"
+          git checkout -B "$deploy_branch" "origin/$deploy_branch"
+          git pull --rebase origin "$deploy_branch"
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            perl -0pi -e 's|(newName: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(newName: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"
+          else
             perl -0pi -e 's|(name: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(name: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$deployment_path"
           git diff --cached --quiet || git commit -m "$commit_message"
-          git push
+          git push origin "HEAD:$deploy_branch"

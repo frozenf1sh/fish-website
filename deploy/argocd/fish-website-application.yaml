@@ -9,7 +9,9 @@ spec:
   project: fish-website
   source:
     repoURL: https://github.com/frozenf1sh/fish-website.git
-    targetRevision: main
+    # Production desired state is advanced only by the approved v* release
+    # workflow. Development follows main in its own Application.
+    targetRevision: production
     path: deploy/fish-website
   destination:
     server: https://kubernetes.default.svc

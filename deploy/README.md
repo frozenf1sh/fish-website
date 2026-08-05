@@ -6,14 +6,16 @@ on the cluster by `scripts/bootstrap-secrets.sh` and are intentionally excluded
 from Git.
 
 The registry must be synchronized and healthy before applying the fish-website
-Argo application. The CI workflow then publishes immutable `sha-<commit>` image
-tags and commits the desired tag to `deploy/fish-website/kustomization.yaml`.
+Argo application. The CI workflow publishes immutable `sha-<commit>` image
+tags. Production tracks the dedicated `production` GitOps branch, while
+development tracks `main`, so ordinary main-branch manifest changes cannot
+drift into production.
 
-`main` builds immutable images and updates only `deploy/fish-website-dev`; Argo
-CD deploys it to `dev.frozenf1sh.top`. A manually-created `v*` tag builds the
-tagged revision and advances only the production tag in `deploy/fish-website`.
-Protect the GitHub `production` Environment with required reviewers before the
-first promotion. Create development namespace secrets with
+`main` builds immutable images and updates only `deploy/fish-website-dev` on
+`main`; Argo CD deploys it to `dev.frozenf1sh.top`. A manually-created `v*` tag
+builds the tagged revision and, after protected GitHub `production` Environment
+approval, advances only `deploy/fish-website/kustomization.yaml` on the
+`production` branch. Create development namespace secrets with
 `scripts/bootstrap-environment-secrets.sh`; it copies only the existing
 bucket-scoped R2 and registry credentials through the Kubernetes API and creates
 new database and application secrets.
