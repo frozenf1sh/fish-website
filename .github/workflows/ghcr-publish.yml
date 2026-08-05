@@ -43,6 +43,10 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          # The registry is reachable only through the k3s node's tailnet route.
+          # A container-network builder cannot resolve that private DNS name.
+          driver-opts: network=host
 
       - name: Log in to the private registry
         if: github.event_name == 'push'
