@@ -176,11 +176,18 @@ spec:
     metadata: {labels: {app.kubernetes.io/name: frontend}}
     spec:
       serviceAccountName: fish-website
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
       imagePullSecrets: [{name: registry-credentials}]
       containers:
         - name: frontend
           image: frontend
-          ports: [{name: http, containerPort: 80}]
+          ports: [{name: http, containerPort: 8080}]
           resources:
             requests: {cpu: 50m, memory: 64Mi}
             limits: {cpu: 500m, memory: 256Mi}
@@ -190,7 +197,7 @@ spec:
           livenessProbe:
             httpGet: {path: /, port: http}
             periodSeconds: 20
-          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, runAsUser: 101, capabilities: {drop: [ALL]}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, runAsUser: 101, runAsGroup: 101, capabilities: {drop: [ALL]}}
           volumeMounts:
             - {name: cache, mountPath: /var/cache/nginx}
             - {name: run, mountPath: /var/run}
