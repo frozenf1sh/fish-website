@@ -9,5 +9,7 @@ The registry must be synchronized and healthy before applying the fish-website
 Argo application. The CI workflow then publishes immutable `sha-<commit>` image
 tags and commits the desired tag to `deploy/fish-website/kustomization.yaml`.
 
-`registry.frozenf1sh.top` and `fish.frozenf1sh.top` are protected by TLS through
-Traefik and cert-manager. Registry authentication is mandatory.
+`fish.frozenf1sh.top` is protected by Traefik and cert-manager. The Registry is
+tailnet-only, so it uses a private CA rather than publicly-verifiable ACME. Its
+CA must be trusted by every build host and k3s node. Registry authentication is
+mandatory.
