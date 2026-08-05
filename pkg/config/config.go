@@ -215,16 +215,6 @@ func setDefaults(v *viper.Viper) {
 	// Server defaults
 	v.SetDefault("Server.Address", ":8080")
 
-	// Database defaults
-	v.SetDefault("Database.DSN", "postgres://fish:fish123456@postgres:5432/fish_website?sslmode=disable")
-
-	// MinIO defaults
-	v.SetDefault("MinIO.Endpoint", "minio:9000")
-	v.SetDefault("MinIO.AccessKey", "fishminio")
-	v.SetDefault("MinIO.SecretKey", "fishminio123456")
-	v.SetDefault("MinIO.UseSSL", false)
-	v.SetDefault("MinIO.Bucket", "fish-website")
-
 	// Auth defaults
 	v.SetDefault("Auth.OwnerUsername", "admin")
 	v.SetDefault("Auth.TokenTTLSeconds", 900)

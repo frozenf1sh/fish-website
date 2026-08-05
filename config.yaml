@@ -2,20 +2,13 @@
 Server:
   Address: ":8080"
 
-# 数据库配置
-Database:
-  DSN: "postgres://fish:fish123456@postgres:5432/fish_website?sslmode=disable"
-
-# MinIO 配置
-MinIO:
-  Endpoint: "minio:9000"
-  AccessKey: "fishminio"
-  UseSSL: false
-  Bucket: "fish-website"
-
-# 认证配置（密码在 .env 文件中设置）
+# 数据库、对象存储与认证密钥仅通过未跟踪环境变量提供：
+# POSTGRES_DSN、MINIO_ENDPOINT、MINIO_ACCESS_KEY、MINIO_SECRET_KEY、
+# MINIO_BUCKET、ADMIN_PASSWORD_HASH（迁移期允许 ADMIN_PASSWORD）和 JWT_SECRET。
+# 本文件可以安全地挂载到容器，但不得包含任何凭据。
 Auth:
-  JWTSecret: "your-super-secret-jwt-key-change-in-production"
+  OwnerUsername: "admin"
+  TokenTTLSeconds: 900
 
 # 日志配置
 Logger:
