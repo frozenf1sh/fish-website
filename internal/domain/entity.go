@@ -44,14 +44,18 @@ type Album struct {
 
 // Image represents an uploaded image
 type Image struct {
-	ID           string
-	AlbumID      string
-	URL          string
-	ThumbnailURL string
-	FileName     string
-	FileSize     int64
-	MimeType     string
-	CreatedAt    time.Time
+	ID      string
+	AlbumID string
+	// ObjectKey is the immutable object-store identifier. URL is a derived
+	// delivery value retained during the legacy-reference migration.
+	ObjectKey          string
+	ThumbnailObjectKey string
+	URL                string
+	ThumbnailURL       string
+	FileName           string
+	FileSize           int64
+	MimeType           string
+	CreatedAt          time.Time
 }
 
 // Settings represents user settings

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/frozenfish/fish-website/internal/domain"
-	"github.com/frozenfish/fish-website/pkg/logger"
 	"github.com/rs/xid"
 )
 
@@ -109,7 +108,7 @@ func (u *AlbumUsecase) PurgeRecycleBin(ctx context.Context) (int, error) {
 		deletedIDs := make([]string, 0, len(images))
 		var objectErrors []error
 		for _, image := range images {
-			objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
+			objectName := imageObjectKey(image)
 			if err := u.objectStore.DeleteObject(ctx, objectName); err != nil {
 				objectErrors = append(objectErrors, fmt.Errorf("delete object for image %s: %w", image.ID, err))
 				continue
@@ -240,6 +239,11 @@ func (u *AlbumUsecase) GetAlbumWithImages(ctx context.Context, albumID string, i
 	if err != nil {
 		return nil, nil, fmt.Errorf("list album images: %w", err)
 	}
+	for _, image := range images {
+		if err := u.hydrateImageURLs(ctx, image); err != nil {
+			return nil, nil, err
+		}
+	}
 
 	return album, images, nil
 }
@@ -279,6 +283,7 @@ func (u *AlbumUsecase) GetPresignedUploadURL(ctx context.Context, albumID, fileN
 	image := &domain.Image{
 		ID:        imageID,
 		AlbumID:   albumID,
+		ObjectKey: objectName,
 		FileName:  fileName,
 		FileSize:  fileSize,
 		MimeType:  mimeType,
@@ -295,13 +300,17 @@ func (u *AlbumUsecase) GetPresignedUploadURL(ctx context.Context, albumID, fileN
 
 // ConfirmImageUpload confirms that an image has been uploaded
 func (u *AlbumUsecase) ConfirmImageUpload(ctx context.Context, imageID, uploadURL string) (*domain.Image, error) {
+	// uploadURL is retained as a wire-compatible request field while clients
+	// roll forward. Confirmation is bound to the persisted image ID and object
+	// key; accepting a caller-controlled URL would be a confused-deputy risk.
+	_ = uploadURL
 	image, err := u.albumRepo.GetImage(ctx, imageID)
 	if err != nil {
 		return nil, fmt.Errorf("get image: %w", err)
 	}
 
 	// Verify the object exists in storage
-	objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, imageID)
+	objectName := imageObjectKey(image)
 	exists, err := u.objectStore.IsObjectExists(ctx, objectName)
 	if err != nil {
 		return nil, fmt.Errorf("check object exists: %w", err)
@@ -310,15 +319,10 @@ func (u *AlbumUsecase) ConfirmImageUpload(ctx context.Context, imageID, uploadUR
 		return nil, domain.ErrImageNotUploaded
 	}
 
-	// Get the permanent URL
-	fileURL, err := u.objectStore.GetFileURL(ctx, objectName)
-	if err != nil {
-		return nil, fmt.Errorf("get file url: %w", err)
+	image.ObjectKey = objectName
+	if err := u.hydrateImageURLs(ctx, image); err != nil {
+		return nil, err
 	}
-
-	image.URL = fileURL
-	// TODO: Generate thumbnail in a real implementation
-	image.ThumbnailURL = fileURL
 
 	updatedImage, err := u.albumRepo.UpdateImage(ctx, image)
 	if err != nil {
@@ -328,23 +332,44 @@ func (u *AlbumUsecase) ConfirmImageUpload(ctx context.Context, imageID, uploadUR
 	return updatedImage, nil
 }
 
-// DeleteImages deletes image records first and removes objects from storage after a delay.
+// DeleteImages moves images to the recycle bin. A request from the recycle bin
+// itself is a permanent delete, with object deletion ordered before metadata.
 func (u *AlbumUsecase) DeleteImages(ctx context.Context, albumID string, imageIDs []string) (int, time.Time, error) {
 	if len(imageIDs) == 0 {
 		return 0, nextMidnight(time.Now()), nil
 	}
 	if albumID == recycleBinAlbumID {
-		deletedImages, err := u.albumRepo.DeleteImages(ctx, albumID, imageIDs)
-		if err != nil {
-			return 0, time.Time{}, fmt.Errorf("delete recycle images: %w", err)
-		}
-		for _, image := range deletedImages {
-			objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
-			if err := u.objectStore.DeleteObject(ctx, objectName); err != nil {
-				logger.Error("delete recycle object failed", logger.String("image_id", image.ID), logger.Err(err))
+		deletableIDs := make([]string, 0, len(imageIDs))
+		var objectErrors []error
+		for _, imageID := range imageIDs {
+			image, err := u.albumRepo.GetImage(ctx, imageID)
+			if err != nil {
+				return 0, time.Time{}, fmt.Errorf("get recycle image %s: %w", imageID, err)
 			}
+			if image.AlbumID != recycleBinAlbumID {
+				continue
+			}
+			if err := u.objectStore.DeleteObject(ctx, imageObjectKey(image)); err != nil {
+				objectErrors = append(objectErrors, fmt.Errorf("delete object for image %s: %w", image.ID, err))
+				continue
+			}
+			deletableIDs = append(deletableIDs, image.ID)
 		}
-		return len(deletedImages), time.Now(), nil
+
+		if len(deletableIDs) > 0 {
+			deletedImages, err := u.albumRepo.DeleteImages(ctx, albumID, deletableIDs)
+			if err != nil {
+				return 0, time.Time{}, fmt.Errorf("delete recycle image metadata: %w", err)
+			}
+			if len(objectErrors) > 0 {
+				return len(deletedImages), time.Now(), fmt.Errorf("delete recycle image objects: %w", errors.Join(objectErrors...))
+			}
+			return len(deletedImages), time.Now(), nil
+		}
+		if len(objectErrors) > 0 {
+			return 0, time.Time{}, fmt.Errorf("delete recycle image objects: %w", errors.Join(objectErrors...))
+		}
+		return 0, time.Now(), nil
 	}
 
 	if err := u.ensureRecycleBinAlbum(ctx); err != nil {
@@ -357,6 +382,39 @@ func (u *AlbumUsecase) DeleteImages(ctx context.Context, albumID string, imageID
 	}
 
 	return len(movedImages), nextMidnight(time.Now()), nil
+}
+
+func imageObjectKey(image *domain.Image) string {
+	if image.ObjectKey != "" {
+		return image.ObjectKey
+	}
+	// Rows created before 000002 may have no key. Their original object layout
+	// is deterministic, so this fallback enables safe cleanup until the SQL
+	// backfill has completed and been audited.
+	return fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
+}
+
+func (u *AlbumUsecase) hydrateImageURLs(ctx context.Context, image *domain.Image) error {
+	if image.ObjectKey == "" {
+		return nil // Retain the legacy URL as the compatibility read path.
+	}
+	url, err := u.objectStore.GetFileURL(ctx, image.ObjectKey)
+	if err != nil {
+		return fmt.Errorf("resolve image public URL: %w", err)
+	}
+	image.URL = url
+
+	thumbnailKey := image.ThumbnailObjectKey
+	if thumbnailKey == "" {
+		image.ThumbnailURL = url
+		return nil
+	}
+	thumbnailURL, err := u.objectStore.GetFileURL(ctx, thumbnailKey)
+	if err != nil {
+		return fmt.Errorf("resolve thumbnail public URL: %w", err)
+	}
+	image.ThumbnailURL = thumbnailURL
+	return nil
 }
 
 func (u *AlbumUsecase) DeleteAlbum(ctx context.Context, albumID string) error {
