@@ -11,11 +11,11 @@ import (
 
 // Config holds all application configuration
 type Config struct {
-	Server       ServerConfig
-	Database     DatabaseConfig
-	MinIO        MinIOConfig
-	Auth         AuthConfig
-	Logger       LoggerConfig
+	Server   ServerConfig
+	Database DatabaseConfig
+	MinIO    MinIOConfig
+	Auth     AuthConfig
+	Logger   LoggerConfig
 }
 
 // ServerConfig holds server-related configuration
@@ -35,6 +35,9 @@ type MinIOConfig struct {
 	SecretKey string
 	UseSSL    bool
 	Bucket    string
+	// PublicBaseURL is the browser-facing read endpoint. It is intentionally
+	// separate from the S3 API endpoint so storage can stay private to clients.
+	PublicBaseURL string
 }
 
 // AuthConfig holds authentication-related configuration
@@ -120,6 +123,9 @@ func bindLegacyEnvVars(v *viper.Viper) {
 	if val := os.Getenv("MINIO_BUCKET"); val != "" {
 		v.Set("MinIO.Bucket", val)
 	}
+	if val := os.Getenv("MINIO_PUBLIC_BASE_URL"); val != "" {
+		v.Set("MinIO.PublicBaseURL", val)
+	}
 
 	// Auth
 	if val := os.Getenv("ADMIN_PASSWORD"); val != "" {
@@ -168,6 +174,9 @@ func applyLegacyEnvVars(cfg *Config) {
 	}
 	if val := os.Getenv("MINIO_BUCKET"); val != "" && cfg.MinIO.Bucket == "" {
 		cfg.MinIO.Bucket = val
+	}
+	if val := os.Getenv("MINIO_PUBLIC_BASE_URL"); val != "" && cfg.MinIO.PublicBaseURL == "" {
+		cfg.MinIO.PublicBaseURL = val
 	}
 	if val := os.Getenv("ADMIN_PASSWORD"); val != "" && cfg.Auth.AdminPassword == "" {
 		cfg.Auth.AdminPassword = val

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/frozenfish/fish-website/internal/domain"
@@ -15,10 +16,11 @@ import (
 
 // MinIOStorage implements FileStorage interface
 type MinIOStorage struct {
-	client     *minio.Client
-	bucketName string
-	endpoint   string
-	useSSL     bool
+	client        *minio.Client
+	bucketName    string
+	endpoint      string
+	useSSL        bool
+	publicBaseURL string
 }
 
 // NewMinIOStorage creates a new MinIOStorage
@@ -28,7 +30,8 @@ func NewMinIOStorage(cfg *pkgconfig.Config) (*MinIOStorage, error) {
 		logger.String("bucket", cfg.MinIO.Bucket),
 		logger.Bool("use_ssl", cfg.MinIO.UseSSL))
 
-	client, err := minio.New(cfg.MinIO.Endpoint, &minio.Options{
+	endpoint := strings.TrimPrefix(strings.TrimPrefix(cfg.MinIO.Endpoint, "https://"), "http://")
+	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.MinIO.AccessKey, cfg.MinIO.SecretKey, ""),
 		Secure: cfg.MinIO.UseSSL,
 	})
@@ -37,7 +40,18 @@ func NewMinIOStorage(cfg *pkgconfig.Config) (*MinIOStorage, error) {
 		return nil, fmt.Errorf("create minio client: %w", err)
 	}
 
-	// Ensure bucket exists
+	// R2 bucket provisioning and public-read configuration belong to platform
+	// infrastructure, not to an application process. A configured public base
+	// URL identifies that mode; keep legacy MinIO bootstrapping only for local
+	// development until the adapter is renamed in the domain refactor.
+	if cfg.MinIO.PublicBaseURL != "" {
+		return &MinIOStorage{
+			client: client, bucketName: cfg.MinIO.Bucket, endpoint: endpoint,
+			useSSL: cfg.MinIO.UseSSL, publicBaseURL: cfg.MinIO.PublicBaseURL,
+		}, nil
+	}
+
+	// Ensure local-development bucket exists.
 	ctx := context.Background()
 	logger.Debug("checking if bucket exists", logger.String("bucket", cfg.MinIO.Bucket))
 	exists, err := client.BucketExists(ctx, cfg.MinIO.Bucket)
@@ -76,10 +90,11 @@ func NewMinIOStorage(cfg *pkgconfig.Config) (*MinIOStorage, error) {
 
 	logger.Info("MinIO storage initialized successfully", logger.String("bucket", cfg.MinIO.Bucket))
 	return &MinIOStorage{
-		client:     client,
-		bucketName: cfg.MinIO.Bucket,
-		endpoint:   cfg.MinIO.Endpoint,
-		useSSL:     cfg.MinIO.UseSSL,
+		client:        client,
+		bucketName:    cfg.MinIO.Bucket,
+		endpoint:      endpoint,
+		useSSL:        cfg.MinIO.UseSSL,
+		publicBaseURL: cfg.MinIO.PublicBaseURL,
 	}, nil
 }
 
@@ -116,6 +131,9 @@ func (s *minioFileStorage) GetPresignedUploadURL(ctx context.Context, objectName
 }
 
 func (s *minioFileStorage) GetFileURL(ctx context.Context, objectName string) (string, error) {
+	if s.publicBaseURL != "" {
+		return fmt.Sprintf("%s/%s", strings.TrimRight(s.publicBaseURL, "/"), strings.TrimLeft(objectName, "/")), nil
+	}
 	// Return public URL since bucket is publicly readable
 	scheme := "http"
 	if s.useSSL {

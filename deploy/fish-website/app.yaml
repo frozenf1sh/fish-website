@@ -134,10 +134,12 @@ spec:
           ports: [{name: http, containerPort: 8080}]
           env:
             - {name: POSTGRES_DSN, valueFrom: {secretKeyRef: {name: database, key: dsn}}}
-            - {name: MINIO_ENDPOINT, value: minio:9000}
-            - {name: MINIO_ACCESS_KEY, valueFrom: {secretKeyRef: {name: minio, key: username}}}
-            - {name: MINIO_SECRET_KEY, valueFrom: {secretKeyRef: {name: minio, key: password}}}
-            - {name: MINIO_BUCKET, value: fish-website}
+            - {name: MINIO_ENDPOINT, valueFrom: {secretKeyRef: {name: r2, key: endpoint}}}
+            - {name: MINIO_ACCESS_KEY, valueFrom: {secretKeyRef: {name: r2, key: access-key-id}}}
+            - {name: MINIO_SECRET_KEY, valueFrom: {secretKeyRef: {name: r2, key: secret-access-key}}}
+            - {name: MINIO_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
+            - {name: MINIO_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
+            - {name: MINIO_USE_SSL, value: "true"}
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}
             - {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: application, key: jwt-secret}}}
             - {name: LOGGER_JSON, value: "true"}
