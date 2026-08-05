@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
-	"github.com/frozenfish/fish-website/internal/domain"
-	"github.com/frozenfish/fish-website/internal/usecase"
+	identityapplication "github.com/frozenfish/fish-website/internal/identity/application"
+	identitydomain "github.com/frozenfish/fish-website/internal/identity/domain"
 )
 
 type contextKey string
@@ -17,12 +17,12 @@ const userContextKey contextKey = "user"
 
 // AuthInterceptor is a Connect-RPC interceptor for JWT authentication
 type AuthInterceptor struct {
-	authUsecase *usecase.AuthUsecase
+	authenticator *identityapplication.OwnerAuthenticator
 }
 
 // NewAuthInterceptor creates a new AuthInterceptor
-func NewAuthInterceptor(authUsecase *usecase.AuthUsecase) *AuthInterceptor {
-	return &AuthInterceptor{authUsecase: authUsecase}
+func NewAuthInterceptor(authenticator *identityapplication.OwnerAuthenticator) *AuthInterceptor {
+	return &AuthInterceptor{authenticator: authenticator}
 }
 
 // RequireAuth is an interceptor that requires valid JWT authentication
@@ -40,9 +40,9 @@ func (i *AuthInterceptor) RequireAuth() connect.Interceptor {
 				return nil, connect.NewError(connect.CodeUnauthenticated, err)
 			}
 
-			user, err := i.authUsecase.ValidateToken(ctx, token)
+			user, err := i.authenticator.ValidateToken(ctx, token)
 			if err != nil {
-				if errors.Is(err, domain.ErrTokenExpired) {
+				if errors.Is(err, identitydomain.ErrTokenExpired) {
 					return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("token expired"))
 				}
 				return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid token"))
@@ -68,7 +68,7 @@ func (i *AuthInterceptor) attachOptionalUser(ctx context.Context, headers http.H
 		return ctx
 	}
 
-	user, err := i.authUsecase.ValidateToken(ctx, token)
+	user, err := i.authenticator.ValidateToken(ctx, token)
 	if err != nil {
 		return ctx
 	}
@@ -107,8 +107,8 @@ func isPublicProcedure(procedure string) bool {
 }
 
 // NewAuthRequiredInterceptor creates an interceptor that requires auth for all non-public procedures
-func NewAuthRequiredInterceptor(authUsecase *usecase.AuthUsecase) connect.Interceptor {
-	return NewAuthInterceptor(authUsecase).RequireAuth()
+func NewAuthRequiredInterceptor(authenticator *identityapplication.OwnerAuthenticator) connect.Interceptor {
+	return NewAuthInterceptor(authenticator).RequireAuth()
 }
 
 // NewCORSHandler creates a CORS handler for Connect-RPC

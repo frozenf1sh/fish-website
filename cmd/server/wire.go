@@ -5,10 +5,12 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/frozenfish/fish-website/internal/domain"
+	identityapplication "github.com/frozenfish/fish-website/internal/identity/application"
 	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/repository"
 	"github.com/frozenfish/fish-website/internal/usecase"
@@ -28,7 +30,7 @@ func InitializeServer(ctx context.Context, cfg *pkgconfig.Config) (*Server, erro
 		provideSettingsRepository,
 		provideMinIOStorage,
 		provideFileStorage,
-		provideAuthUsecase,
+		provideOwnerAuthenticator,
 		providePostUsecase,
 		provideBlogUsecase,
 		provideAlbumUsecase,
@@ -83,8 +85,14 @@ func provideFileStorage(storage *repository.MinIOStorage) domain.FileStorage {
 	return storage.NewFileStorage()
 }
 
-func provideAuthUsecase(cfg *pkgconfig.Config) *usecase.AuthUsecase {
-	return usecase.NewAuthUsecase(cfg)
+func provideOwnerAuthenticator(cfg *pkgconfig.Config) *identityapplication.OwnerAuthenticator {
+	return identityapplication.NewOwnerAuthenticator(
+		cfg.Auth.OwnerUsername,
+		cfg.Auth.AdminPasswordHash,
+		cfg.Auth.AdminPassword,
+		cfg.Auth.JWTSecret,
+		time.Duration(cfg.Auth.TokenTTLSeconds)*time.Second,
+	)
 }
 
 func providePostUsecase(repo domain.PostRepository, albumRepo domain.AlbumRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.PostUsecase {
@@ -104,15 +112,15 @@ func provideSettingsUsecase(repo domain.SettingsRepository, imageRefRepo domain.
 }
 
 func provideHandler(
-	authUsecase *usecase.AuthUsecase,
+	authenticator *identityapplication.OwnerAuthenticator,
 	postUsecase *usecase.PostUsecase,
 	blogUsecase *usecase.BlogUsecase,
 	albumUsecase *usecase.AlbumUsecase,
 	settingsUsecase *usecase.SettingsUsecase,
 ) *delivery.Handler {
-	return delivery.NewHandler(authUsecase, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
+	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
 }
 
-func provideAuthInterceptor(authUsecase *usecase.AuthUsecase) connect.Interceptor {
-	return middleware.NewAuthRequiredInterceptor(authUsecase)
+func provideAuthInterceptor(authenticator *identityapplication.OwnerAuthenticator) connect.Interceptor {
+	return middleware.NewAuthRequiredInterceptor(authenticator)
 }

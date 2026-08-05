@@ -7,16 +7,17 @@
 package main
 
 import (
-	"context"
-
 	"connectrpc.com/connect"
+	"context"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/frozenfish/fish-website/internal/domain"
+	"github.com/frozenfish/fish-website/internal/identity/application"
 	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/repository"
 	"github.com/frozenfish/fish-website/internal/usecase"
 	"github.com/frozenfish/fish-website/pkg/config"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
 )
 
 // Injectors from wire.go:
@@ -26,7 +27,7 @@ func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) 
 	if err != nil {
 		return nil, err
 	}
-	authUsecase := provideAuthUsecase(cfg)
+	ownerAuthenticator := provideOwnerAuthenticator(cfg)
 	postgresRepository := providePostgresRepository(pool)
 	postRepository := providePostRepository(postgresRepository)
 	albumRepository := provideAlbumRepository(postgresRepository)
@@ -42,8 +43,8 @@ func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) 
 	albumUsecase := provideAlbumUsecase(albumRepository, fileStorage, imageReferenceRepository)
 	settingsRepository := provideSettingsRepository(postgresRepository)
 	settingsUsecase := provideSettingsUsecase(settingsRepository, imageReferenceRepository)
-	handler := provideHandler(authUsecase, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
-	interceptor := provideAuthInterceptor(authUsecase)
+	handler := provideHandler(ownerAuthenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
+	interceptor := provideAuthInterceptor(ownerAuthenticator)
 	server := NewServer(cfg, pool, handler, interceptor)
 	return server, nil
 }
@@ -93,8 +94,13 @@ func provideFileStorage(storage *repository.MinIOStorage) domain.FileStorage {
 	return storage.NewFileStorage()
 }
 
-func provideAuthUsecase(cfg *config.Config) *usecase.AuthUsecase {
-	return usecase.NewAuthUsecase(cfg)
+func provideOwnerAuthenticator(cfg *config.Config) *application.OwnerAuthenticator {
+	return application.NewOwnerAuthenticator(
+		cfg.Auth.OwnerUsername,
+		cfg.Auth.AdminPasswordHash,
+		cfg.Auth.AdminPassword,
+		cfg.Auth.JWTSecret, time.Duration(cfg.Auth.TokenTTLSeconds)*time.Second,
+	)
 }
 
 func providePostUsecase(repo domain.PostRepository, albumRepo domain.AlbumRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.PostUsecase {
@@ -114,15 +120,15 @@ func provideSettingsUsecase(repo domain.SettingsRepository, imageRefRepo domain.
 }
 
 func provideHandler(
-	authUsecase *usecase.AuthUsecase,
+	authenticator *application.OwnerAuthenticator,
 	postUsecase *usecase.PostUsecase,
 	blogUsecase *usecase.BlogUsecase,
 	albumUsecase *usecase.AlbumUsecase,
 	settingsUsecase *usecase.SettingsUsecase,
 ) *delivery.Handler {
-	return delivery.NewHandler(authUsecase, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
+	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
 }
 
-func provideAuthInterceptor(authUsecase *usecase.AuthUsecase) connect.Interceptor {
-	return middleware.NewAuthRequiredInterceptor(authUsecase)
+func provideAuthInterceptor(authenticator *application.OwnerAuthenticator) connect.Interceptor {
+	return middleware.NewAuthRequiredInterceptor(authenticator)
 }

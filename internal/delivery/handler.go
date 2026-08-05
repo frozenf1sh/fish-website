@@ -9,6 +9,8 @@ import (
 	homev1 "github.com/frozenfish/fish-website/gen/go/home/v1"
 	"github.com/frozenfish/fish-website/gen/go/home/v1/homev1connect"
 	"github.com/frozenfish/fish-website/internal/domain"
+	identityapplication "github.com/frozenfish/fish-website/internal/identity/application"
+	identitydomain "github.com/frozenfish/fish-website/internal/identity/domain"
 	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/usecase"
 	"github.com/frozenfish/fish-website/pkg/logger"
@@ -17,7 +19,7 @@ import (
 
 // Handler implements all Connect-RPC handlers
 type Handler struct {
-	authUsecase     *usecase.AuthUsecase
+	authenticator   *identityapplication.OwnerAuthenticator
 	postUsecase     *usecase.PostUsecase
 	blogUsecase     *usecase.BlogUsecase
 	albumUsecase    *usecase.AlbumUsecase
@@ -26,7 +28,7 @@ type Handler struct {
 
 // NewHandler creates a new Handler
 func NewHandler(
-	authUsecase *usecase.AuthUsecase,
+	authenticator *identityapplication.OwnerAuthenticator,
 	postUsecase *usecase.PostUsecase,
 	blogUsecase *usecase.BlogUsecase,
 	albumUsecase *usecase.AlbumUsecase,
@@ -34,7 +36,7 @@ func NewHandler(
 ) *Handler {
 	logger.Info("initializing Connect-RPC handler")
 	return &Handler{
-		authUsecase:     authUsecase,
+		authenticator:   authenticator,
 		postUsecase:     postUsecase,
 		blogUsecase:     blogUsecase,
 		albumUsecase:    albumUsecase,
@@ -71,9 +73,9 @@ func (h *Handler) NewSettingsServiceHandler() (string, http.Handler) {
 func (h *Handler) Login(ctx context.Context, req *connect.Request[homev1.LoginRequest]) (*connect.Response[homev1.LoginResponse], error) {
 	logger.Info("received Login request", logger.String("username", req.Msg.Username))
 
-	token, expiresAt, err := h.authUsecase.Login(ctx, req.Msg.Username, req.Msg.Password)
+	token, expiresAt, err := h.authenticator.Login(ctx, req.Msg.Username, req.Msg.Password)
 	if err != nil {
-		if errors.Is(err, domain.ErrInvalidPassword) {
+		if errors.Is(err, identitydomain.ErrInvalidCredentials) {
 			logger.Warn("login failed: invalid password", logger.String("username", req.Msg.Username))
 			return nil, connect.NewError(connect.CodePermissionDenied, err)
 		}
