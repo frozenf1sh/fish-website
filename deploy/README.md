@@ -27,10 +27,12 @@ namespace equivalent). The script only adds `admin-password-hash`; after both
 environments run the new image, remove the legacy `admin-password` key during a
 separate rotation window.
 
-`fish.frozenf1sh.top` is protected by Traefik and cert-manager. The Registry is
-tailnet-only, so it uses a private CA rather than publicly-verifiable ACME. Its
-CA must be trusted by every build host and k3s node. Registry authentication is
-mandatory.
+The approved production release serves `frozenf1sh.top`; its certificate is
+issued by cert-manager through Traefik. Do not remove the current `it-tools`
+Ingress until the promoted website rollout and certificate are healthy. The
+Registry is tailnet-only, so it uses a private CA rather than publicly-verifiable
+ACME. Its CA must be trusted by every build host and k3s node. Registry
+authentication is mandatory.
 
 The `fish-website-platform` Argo CD Application owns only the CoreDNS override
 needed for public `frozenf1sh.top` lookups from pods. It deliberately does not

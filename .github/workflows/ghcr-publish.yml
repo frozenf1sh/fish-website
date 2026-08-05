@@ -165,6 +165,10 @@ jobs:
           git pull --rebase origin "$deploy_branch"
 
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            # Promote the production manifest from the exact source revision
+            # that built this release image. The production branch is never a
+            # delayed copy of main.
+            git checkout "$GITHUB_SHA" -- deploy/fish-website
             perl -0pi -e 's|(newName: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(newName: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"
           else
             perl -0pi -e 's|(name: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(name: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"

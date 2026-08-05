@@ -222,13 +222,16 @@ kind: Ingress
 metadata:
   name: fish-website
   namespace: fish-website
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
 spec:
   ingressClassName: traefik
   tls:
-    - hosts: [fish.frozenf1sh.top]
-      secretName: fish-frozenf1sh-top-tls
+    - hosts: [frozenf1sh.top]
+      secretName: frozenf1sh-top-tls
   rules:
-    - host: fish.frozenf1sh.top
+    - host: frozenf1sh.top
       http:
         paths:
           - path: /api
