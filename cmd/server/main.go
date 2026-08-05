@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"embed"
 	"fmt"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,6 +11,7 @@ import (
 
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
+	"github.com/frozenfish/fish-website/db/migrations"
 	homev1connect "github.com/frozenfish/fish-website/gen/go/home/v1/homev1connect"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	pkgconfig "github.com/frozenfish/fish-website/pkg/config"
@@ -52,7 +51,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	// Run database migrations
 	logger.Info("running database migrations")
-	if err := s.runMigrations(ctx); err != nil {
+	if err := s.Migrate(ctx); err != nil {
 		return fmt.Errorf("run migrations: %w", err)
 	}
 	logger.Info("database migrations completed")
@@ -169,25 +168,11 @@ func (s *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-func (s *Server) runMigrations(ctx context.Context) error {
-	// Read schema SQL
-	schema, err := fs.ReadFile(embedSchema, "schema.sql")
-	if err != nil {
-		return fmt.Errorf("read schema: %w", err)
-	}
-
-	// Execute schema
-	logger.Debug("executing schema SQL")
-	_, err = s.pool.Exec(ctx, string(schema))
-	if err != nil {
-		return fmt.Errorf("execute schema: %w", err)
-	}
-
-	return nil
+// Migrate applies the append-only migration history. It is exported for the
+// dedicated migration entrypoint introduced in the next deployment phase.
+func (s *Server) Migrate(ctx context.Context) error {
+	return migrations.Apply(ctx, s.pool)
 }
-
-//go:embed schema.sql
-var embedSchema embed.FS
 
 func main() {
 	ctx := context.Background()
@@ -228,6 +213,16 @@ func main() {
 	if err != nil {
 		logger.Error("failed to initialize server", logger.Err(err))
 		os.Exit(1)
+	}
+
+	if cfg.Server.MigrateOnly {
+		logger.Info("running database migration entrypoint")
+		if err := server.Migrate(ctx); err != nil {
+			logger.Error("database migration failed", logger.Err(err))
+			os.Exit(1)
+		}
+		logger.Info("database migration completed")
+		return
 	}
 
 	// Start server

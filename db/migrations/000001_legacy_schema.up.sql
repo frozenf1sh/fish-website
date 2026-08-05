@@ -1,6 +1,7 @@
--- Database schema for fish-website
+-- Bootstrap the pre-existing fish-website schema into the migration ledger.
+-- This migration is intentionally idempotent so existing databases can adopt
+-- the ledger without a destructive dump/restore.
 
--- Posts table
 CREATE TABLE IF NOT EXISTS posts (
     id VARCHAR(64) PRIMARY KEY,
     content TEXT NOT NULL,
@@ -10,10 +11,8 @@ CREATE TABLE IF NOT EXISTS posts (
 );
 
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW();
-
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
 
--- Folders table (for blog categorization)
 CREATE TABLE IF NOT EXISTS folders (
     id VARCHAR(64) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -27,7 +26,6 @@ INSERT INTO folders (id, name, parent_folder_id)
 VALUES ('root', '根目录', NULL)
 ON CONFLICT (id) DO NOTHING;
 
--- Articles table
 CREATE TABLE IF NOT EXISTS articles (
     id VARCHAR(64) PRIMARY KEY,
     title VARCHAR(500) NOT NULL,
@@ -40,12 +38,10 @@ CREATE TABLE IF NOT EXISTS articles (
 );
 
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'published';
-
 CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_articles_folder_id ON articles(folder_id);
 CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
 
--- Albums table
 CREATE TABLE IF NOT EXISTS albums (
     id VARCHAR(64) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -56,7 +52,6 @@ CREATE TABLE IF NOT EXISTS albums (
 
 CREATE INDEX IF NOT EXISTS idx_albums_is_public ON albums(is_public);
 
--- Images table
 CREATE TABLE IF NOT EXISTS images (
     id VARCHAR(64) PRIMARY KEY,
     album_id VARCHAR(64) NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
@@ -70,7 +65,6 @@ CREATE TABLE IF NOT EXISTS images (
 
 CREATE INDEX IF NOT EXISTS idx_images_album_id ON images(album_id);
 
--- Image reference counters for posts/blog/settings usage analysis
 CREATE TABLE IF NOT EXISTS image_references (
     image_id VARCHAR(64) PRIMARY KEY REFERENCES images(id) ON DELETE CASCADE,
     ref_count INTEGER NOT NULL DEFAULT 0,
@@ -83,10 +77,8 @@ CREATE TABLE IF NOT EXISTS image_references (
 );
 
 ALTER TABLE image_references ADD COLUMN IF NOT EXISTS favicon_ref_count INTEGER NOT NULL DEFAULT 0;
-
 CREATE INDEX IF NOT EXISTS idx_image_references_ref_count ON image_references(ref_count);
 
--- Settings table (we'll store only one row)
 CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
     display_name VARCHAR(255),
@@ -95,12 +87,11 @@ CREATE TABLE IF NOT EXISTS settings (
     twitter_url VARCHAR(2048),
     github_url VARCHAR(2048),
     bilibili_url VARCHAR(2048),
-    custom_links TEXT, -- JSON string
+    custom_links TEXT,
     background_image_url VARCHAR(2048),
     sakura_particles_enabled BOOLEAN NOT NULL DEFAULT true,
     theme_color VARCHAR(32),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- Insert default settings if not exists
 INSERT INTO settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;

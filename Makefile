@@ -12,7 +12,7 @@ lint:
 	buf lint
 
 test:
-	go test ./cmd/... ./internal/... ./pkg/... ./gen/...
+	go test ./cmd/... ./internal/... ./pkg/... ./db/... ./gen/...
 
 web-install:
 	npm --prefix frontend ci
