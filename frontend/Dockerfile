@@ -6,9 +6,9 @@ WORKDIR /app
 # 复制 package 文件
 COPY package*.json ./
 
-# 安装依赖（使用 npm install 代替 npm ci）
+# 使用 lockfile 进行可复现安装。
 RUN npm config set registry https://registry.npmmirror.com
-RUN npm install
+RUN npm ci
 
 # 复制源代码
 COPY . .

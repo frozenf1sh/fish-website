@@ -14,9 +14,9 @@ import (
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
 	homev1connect "github.com/frozenfish/fish-website/gen/go/home/v1/homev1connect"
+	"github.com/frozenfish/fish-website/internal/delivery"
 	pkgconfig "github.com/frozenfish/fish-website/pkg/config"
 	"github.com/frozenfish/fish-website/pkg/logger"
-	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
@@ -25,10 +25,10 @@ import (
 
 // Server represents the application server
 type Server struct {
-	cfg              *pkgconfig.Config
-	pool             *pgxpool.Pool
-	handler          *delivery.Handler
-	authInterceptor  connect.Interceptor
+	cfg             *pkgconfig.Config
+	pool            *pgxpool.Pool
+	handler         *delivery.Handler
+	authInterceptor connect.Interceptor
 }
 
 // NewServer creates a new Server
@@ -39,10 +39,10 @@ func NewServer(
 	authInterceptor connect.Interceptor,
 ) *Server {
 	return &Server{
-		cfg:              cfg,
-		pool:             pool,
-		handler:          handler,
-		authInterceptor:  authInterceptor,
+		cfg:             cfg,
+		pool:            pool,
+		handler:         handler,
+		authInterceptor: authInterceptor,
 	}
 }
 
@@ -101,17 +101,20 @@ func (s *Server) Start(ctx context.Context) error {
 	// CORS configuration
 	logger.Debug("configuring CORS middleware")
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
+		AllowedOrigins: s.cfg.CORS.AllowedOrigins,
 		AllowedMethods: []string{
-			http.MethodGet,
 			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodDelete,
 			http.MethodOptions,
 		},
 		AllowedHeaders: []string{
-			"*",
+			"Accept",
+			"Accept-Language",
+			"Authorization",
+			"Content-Type",
+			"Connect-Protocol-Version",
+			"Connect-Timeout-Ms",
+			"Grpc-Timeout",
+			"X-User-Agent",
 		},
 		ExposedHeaders: []string{
 			"Connect-Protocol-Version",
@@ -212,9 +215,10 @@ func main() {
 		logger.String("log_level", string(cfg.Logger.Level)),
 		logger.Bool("log_json", cfg.Logger.JSON))
 
-	// Check for required admin password
-	if cfg.Auth.AdminPassword == "" {
-		logger.Error("ADMIN_PASSWORD environment variable is required")
+	// A legacy raw password is accepted only during the hash migration. New
+	// deployments use ADMIN_PASSWORD_HASH exclusively.
+	if cfg.Auth.AdminPassword == "" && cfg.Auth.AdminPasswordHash == "" {
+		logger.Error("owner credential configuration is required")
 		os.Exit(1)
 	}
 

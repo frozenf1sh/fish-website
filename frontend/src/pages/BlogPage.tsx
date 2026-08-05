@@ -130,15 +130,6 @@ export function BlogPage() {
     return [{ id: ROOT_FOLDER_ID, name: '根目录', children: folders }]
   }
 
-  const findFolderById = (nodes: FolderNode[], id: string): FolderNode | null => {
-    for (const node of nodes) {
-      if (node.id === id) return node
-      const found = findFolderById(node.children || [], id)
-      if (found) return found
-    }
-    return null
-  }
-
   const getMoveLevels = () => {
     const levels: FolderNode[][] = []
     let level = 0
@@ -564,7 +555,7 @@ export function BlogPage() {
 
   const ensureDefaultAlbumId = async () => {
     const albums = await clients.album.listAlbums({ pageSize: 100, onlyPublic: false })
-    const matched = (albums.albums || []).find((item: any) => item.name === '默认相册' || item.id === 'default')
+    const matched = (albums.albums || []).find((item) => item.name === '默认相册' || item.id === 'default')
     if (matched?.id) return matched.id
 
     const created = await clients.album.createAlbum({

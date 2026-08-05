@@ -140,6 +140,7 @@ spec:
             - {name: MINIO_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
             - {name: MINIO_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
             - {name: MINIO_USE_SSL, value: "true"}
+            - {name: CORS_ALLOWED_ORIGINS, value: "https://frozenf1sh.top,https://fish.frozenf1sh.top"}
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}
             - {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: application, key: jwt-secret}}}
             - {name: LOGGER_JSON, value: "true"}

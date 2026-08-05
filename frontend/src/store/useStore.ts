@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { clients, setAuthToken, getAuthToken } from '../lib/connect'
 
-interface Settings {
+export interface Settings {
   displayName: string
   bio: string
   avatarUrl: string
@@ -60,7 +60,7 @@ export const useStore = create<AppState>((set, get) => ({
   token: getAuthToken(),
 
   login: async (username: string, password: string) => {
-    const response: any = await clients.auth.login({ username, password })
+    const response = await clients.auth.login({ username, password })
     const token = response.token
     setAuthToken(token)
     set({ isLoggedIn: true, token, showLoginModal: false })
@@ -94,7 +94,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchSettings: async () => {
     set({ isLoadingSettings: true, settingsError: null })
     try {
-      const response: any = await clients.settings.getSettings()
+      const response = await clients.settings.getSettings()
       if (response.settings) {
         set({ settings: response.settings })
       }

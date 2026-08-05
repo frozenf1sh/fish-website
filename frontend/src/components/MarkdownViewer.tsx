@@ -1,6 +1,7 @@
 import { memo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
 import { AnimatePresence, motion } from 'framer-motion'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
@@ -67,40 +68,41 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
           remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
           rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex, rehypeSlug]}
           components={{
-          h1({ children }: any) {
+          h1({ children }) {
             return <h1 className={theme === 'dark' ? 'text-3xl font-bold text-white mt-6 mb-3' : 'text-3xl font-bold mt-6 mb-3'}>{children}</h1>
           },
-          h2({ children }: any) {
+          h2({ children }) {
             return <h2 className={theme === 'dark' ? 'text-2xl font-bold text-white mt-5 mb-3' : 'text-2xl font-bold mt-5 mb-3'}>{children}</h2>
           },
-          h3({ children }: any) {
+          h3({ children }) {
             return <h3 className={theme === 'dark' ? 'text-xl font-semibold text-white mt-4 mb-2' : 'text-xl font-semibold mt-4 mb-2'}>{children}</h3>
           },
-          h4({ children }: any) {
+          h4({ children }) {
             return <h4 className={theme === 'dark' ? 'text-lg font-semibold text-white mt-3 mb-2' : 'text-lg font-semibold mt-3 mb-2'}>{children}</h4>
           },
-          h5({ children }: any) {
+          h5({ children }) {
             return <h5 className={theme === 'dark' ? 'text-base font-semibold text-white mt-2 mb-1' : 'text-base font-semibold mt-2 mb-1'}>{children}</h5>
           },
-          ul({ children }: any) {
+          ul({ children }) {
             return <ul className="list-disc pl-6 my-3 space-y-1">{children}</ul>
           },
-          ol({ children, start, ...props }: any) {
+          ol({ children, start, ...props }) {
             return <ol start={start} className="list-decimal pl-6 my-3 space-y-1" {...props}>{children}</ol>
           },
-          li({ children }: any) {
+          li({ children }) {
             return <li className={theme === 'dark' ? 'text-white/90 marker:text-white/70' : 'text-slate-800'}>{children}</li>
           },
-          blockquote({ children }: any) {
+          blockquote({ children }) {
             return (
               <blockquote className={theme === 'dark' ? 'my-4 border-l-4 border-sky-300/70 bg-white/5 px-4 py-3 rounded-r-xl text-white/90' : 'my-4 border-l-4 border-sky-500 bg-sky-50 px-4 py-3 rounded-r-xl text-slate-700'}>
                 {children}
               </blockquote>
             )
           },
-          code({ node, inline, className, children, ...props }: any) {
+          code({ node, className, children, ...props }) {
+            void node
             const text = String(children || '')
-            const isInlineCode = Boolean(inline) || (!className && !text.includes('\n'))
+            const isInlineCode = !className && !text.includes('\n')
             if (!isInlineCode) {
               return <CodeBlock theme={theme} className={className}>{children}</CodeBlock>
             }
@@ -110,7 +112,7 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
               </code>
             )
           },
-          table({ children }: any) {
+          table({ children }) {
             return (
               <div className="overflow-x-auto my-4">
                 <table className={theme === 'dark' ? 'w-full border-collapse border border-white/25 text-white/90' : 'w-full border-collapse border border-slate-300 text-slate-800'}>
@@ -119,13 +121,13 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
               </div>
             )
           },
-          th({ children }: any) {
+          th({ children }) {
             return <th className={theme === 'dark' ? 'border border-white/25 bg-white/10 px-3 py-2 text-left font-semibold' : 'border border-slate-300 bg-slate-100 px-3 py-2 text-left font-semibold'}>{children}</th>
           },
-          td({ children }: any) {
+          td({ children }) {
             return <td className={theme === 'dark' ? 'border border-white/20 px-3 py-2 align-top' : 'border border-slate-300 px-3 py-2 align-top'}>{children}</td>
           },
-          img({ src, alt, ...props }: any) {
+          img({ src, alt, ...props }) {
             return (
               <div className="my-6">
                 <img
@@ -146,7 +148,7 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
               </div>
             )
           },
-          a({ href, children, ...props }: any) {
+          a({ href, children, ...props }) {
             return (
               <a
                 href={href}
@@ -159,7 +161,7 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
               </a>
             )
           },
-          }}
+          } satisfies Components}
         >
           {content}
         </ReactMarkdown>

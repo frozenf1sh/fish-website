@@ -23,6 +23,8 @@ interface TimelineItem {
   }
 }
 
+type TimelinePost = Awaited<ReturnType<typeof clients.post.listPosts>>['posts'][number]
+
 const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number; onDelete?: (id: string) => void }) => {
   const { settings, isLoggedIn } = useStore()
   const navigate = useNavigate()
@@ -352,11 +354,11 @@ export function Timeline() {
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-  const mapPosts = (posts: any[]): TimelineItem[] => {
-    return posts.map((post: any) => {
+  const mapPosts = (posts: TimelinePost[]): TimelineItem[] => {
+    return posts.map((post) => {
       let timestampStr = '刚刚'
       if (post.createdAt) {
-        const date = typeof post.createdAt.toDate === 'function' ? post.createdAt.toDate() : new Date(post.createdAt)
+        const date = post.createdAt.toDate()
         timestampStr = date.toLocaleString('zh-CN', {
           month: 'long',
           day: 'numeric',

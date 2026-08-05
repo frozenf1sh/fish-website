@@ -1,15 +1,18 @@
 .DEFAULT_GOAL := verify
 
-.PHONY: generate lint test build verify web-install web-lint web-build kustomize
+.PHONY: generate generate-check lint test build verify web-install web-lint web-build kustomize
 
 generate:
 	buf generate
+
+generate-check: generate
+	git diff --exit-code -- gen frontend/src/gen
 
 lint:
 	buf lint
 
 test:
-	go test ./...
+	go test ./cmd/... ./internal/... ./pkg/... ./gen/...
 
 web-install:
 	npm --prefix frontend ci
@@ -22,9 +25,10 @@ web-build:
 
 kustomize:
 	kubectl kustomize deploy/fish-website >/dev/null
+	kubectl kustomize deploy/fish-website-dev >/dev/null
 	kubectl kustomize deploy/registry >/dev/null
 
 build: web-build
-	go build ./cmd/server
+	go build -o /dev/null ./cmd/server
 
-verify: generate lint test web-lint build kustomize
+verify: generate-check lint test web-lint build kustomize

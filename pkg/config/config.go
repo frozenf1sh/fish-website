@@ -16,6 +16,7 @@ type Config struct {
 	Database DatabaseConfig
 	MinIO    MinIOConfig
 	Auth     AuthConfig
+	CORS     CORSConfig
 	Logger   LoggerConfig
 }
 
@@ -48,6 +49,12 @@ type AuthConfig struct {
 	AdminPasswordHash string
 	JWTSecret         string
 	TokenTTLSeconds   int
+}
+
+// CORSConfig defines browser origins that may call the API cross-origin.
+// Origins are explicit by design; wildcard origins are never valid here.
+type CORSConfig struct {
+	AllowedOrigins []string
 }
 
 // LoggerConfig holds logger-related configuration
@@ -148,6 +155,10 @@ func bindLegacyEnvVars(v *viper.Viper) {
 		v.Set("Auth.JWTSecret", val)
 	}
 
+	if val := os.Getenv("CORS_ALLOWED_ORIGINS"); val != "" {
+		v.Set("CORS.AllowedOrigins", splitCSV(val))
+	}
+
 	// Server
 	if val := os.Getenv("SERVER_ADDRESS"); val != "" {
 		v.Set("Server.Address", val)
@@ -203,6 +214,9 @@ func applyLegacyEnvVars(cfg *Config) {
 	if val := os.Getenv("AUTH_TOKEN_TTL_SECONDS"); val != "" && cfg.Auth.TokenTTLSeconds == 0 {
 		cfg.Auth.TokenTTLSeconds, _ = strconv.Atoi(val)
 	}
+	if val := os.Getenv("CORS_ALLOWED_ORIGINS"); val != "" && len(cfg.CORS.AllowedOrigins) == 0 {
+		cfg.CORS.AllowedOrigins = splitCSV(val)
+	}
 	if val := os.Getenv("JWT_SECRET"); val != "" && cfg.Auth.JWTSecret == "" {
 		cfg.Auth.JWTSecret = val
 	}
@@ -218,6 +232,10 @@ func setDefaults(v *viper.Viper) {
 	// Auth defaults
 	v.SetDefault("Auth.OwnerUsername", "admin")
 	v.SetDefault("Auth.TokenTTLSeconds", 900)
+
+	// Local development is safe by default. All deployed environments override
+	// this with their public HTTPS origins through a non-secret environment value.
+	v.SetDefault("CORS.AllowedOrigins", []string{"http://localhost:5173"})
 
 	// Logger defaults
 	v.SetDefault("Logger.Level", "info")
@@ -253,5 +271,24 @@ func validate(cfg *Config) error {
 	if cfg.Auth.TokenTTLSeconds <= 0 || cfg.Auth.TokenTTLSeconds > 24*60*60 {
 		return fmt.Errorf("auth token TTL must be between 1 and 86400 seconds")
 	}
+	if len(cfg.CORS.AllowedOrigins) == 0 {
+		return fmt.Errorf("at least one CORS allowed origin is required")
+	}
+	for _, origin := range cfg.CORS.AllowedOrigins {
+		if origin == "*" || !strings.HasPrefix(origin, "http://") && !strings.HasPrefix(origin, "https://") {
+			return fmt.Errorf("CORS allowed origins must be explicit http(s) origins")
+		}
+	}
 	return nil
+}
+
+func splitCSV(value string) []string {
+	parts := strings.Split(value, ",")
+	origins := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			origins = append(origins, trimmed)
+		}
+	}
+	return origins
 }

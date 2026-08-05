@@ -101,7 +101,7 @@ export interface ImageDimensions {
 
 export function getImageDimensions(file: File): Promise<ImageDimensions> {
   return new Promise((resolve, reject) => {
-    const img = new (window as any).Image()
+    const img = new Image()
     img.onload = () => {
       resolve({ width: img.width, height: img.height })
       URL.revokeObjectURL(img.src)

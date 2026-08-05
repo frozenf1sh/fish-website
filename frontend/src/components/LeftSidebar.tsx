@@ -7,7 +7,7 @@ const socialLinks = [
   { name: '小红书', icon: '📕', key: 'twitterUrl', color: 'from-rose-400 to-red-500' },
   { name: '抖音', icon: '🎵', key: 'douyinUrl', color: 'from-cyan-400 to-indigo-500' },
   { name: 'Bilibili', icon: '📺', key: 'bilibiliUrl', color: 'from-pink-400 to-rose-400' },
-]
+] as const
 
 export function LeftSidebar() {
   const {
@@ -86,7 +86,7 @@ export function LeftSidebar() {
           <div className="flex justify-center gap-3">
             {socialLinks.map((link, index) => (
               (() => {
-                const href = link.key === 'douyinUrl' ? (customLinks.douyinUrl || '') : ((settings as any)?.[link.key] || '')
+                const href = link.key === 'douyinUrl' ? (customLinks.douyinUrl || '') : (settings?.[link.key] || '')
                 return (
               <motion.a
                 key={link.name}

@@ -1,12 +1,20 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 
+interface Schedule {
+  id: string
+  title: string
+  time: string
+  color: string
+  icon: string
+}
+
 export function CalendarWidget() {
   const today = new Date()
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [selectedDate, setSelectedDate] = useState<Date>(today)
-  const [schedules] = useState<Record<string, any[]>>({})
+  const [schedules] = useState<Record<string, Schedule[]>>({})
 
   const daysInMonth = useMemo(() => {
     return new Date(currentYear, currentMonth + 1, 0).getDate()
@@ -154,7 +162,7 @@ export function CalendarWidget() {
             {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日 日程
           </h3>
           <div className="space-y-3">
-            {selectedSchedules.map((schedule: any) => (
+            {selectedSchedules.map((schedule) => (
               <motion.div
                 key={schedule.id}
                 initial={{ opacity: 0, x: -20 }}

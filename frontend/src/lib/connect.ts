@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createPromiseClient } from '@connectrpc/connect'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
@@ -69,19 +68,50 @@ export function getAuthToken(): string | null {
   }
 }
 
-function createAuthenticatedClient(service) {
-  return createPromiseClient(service, transport)
-}
+const authClient = createPromiseClient(AuthService, transport)
+const postClient = createPromiseClient(PostService, transport)
+const blogClient = createPromiseClient(BlogService, transport)
+const albumClient = createPromiseClient(AlbumService, transport)
+const settingsClient = createPromiseClient(SettingsService, transport)
 
-const authClient = createAuthenticatedClient(AuthService)
-const postClient = createAuthenticatedClient(PostService)
-const blogClient = createAuthenticatedClient(BlogService)
-const albumClient = createAuthenticatedClient(AlbumService)
-const settingsClient = createAuthenticatedClient(SettingsService)
+type ArticleStatus = 'draft' | 'published'
+type PageInput = { pageSize?: number; pageToken?: string }
+type LoginInput = { username: string; password: string }
+type CreatePostInput = { content: string; imageIds?: string[] }
+type PostIDInput = { id: string }
+type UpdatePostInput = { id: string; content: string; imageUrls?: string[] }
+type CreateArticleInput = { title: string; content: string; folderId?: string; tags?: string[]; status: ArticleStatus }
+type UpdateArticleInput = CreateArticleInput & { articleId: string }
+type ArticleIDInput = { articleId: string }
+type ListArticleInput = PageInput & { folderId?: string; tag?: string; status?: ArticleStatus }
+type FolderInput = { name: string; parentFolderId?: string }
+type UpdateFolderInput = FolderInput & { folderId: string }
+type FolderIDInput = { folderId: string }
+type CreateAlbumInput = { name: string; description?: string; isPublic?: boolean }
+type ListAlbumInput = PageInput & { onlyPublic?: boolean }
+type AlbumIDInput = { albumId: string }
+type UploadImageInput = { albumId?: string; fileName: string; mimeType: string; fileSize: number | bigint | string }
+type ConfirmImageInput = { imageId: string; uploadUrl: string }
+type UpdateAlbumInput = CreateAlbumInput & { albumId: string }
+type MoveImagesInput = { fromAlbumId: string; targetAlbumId: string; imageIds?: string[] }
+type DeleteImagesInput = { albumId: string; imageIds?: string[] }
+type SiteSettingsInput = {
+  displayName?: string
+  bio?: string
+  avatarUrl?: string
+  twitterUrl?: string
+  githubUrl?: string
+  bilibiliUrl?: string
+  customLinks?: string
+  backgroundImageUrl?: string
+  sakuraParticlesEnabled?: boolean
+  themeColor?: string
+}
+type UpdateSettingsInput = { settings?: SiteSettingsInput; updateMask?: string[] }
 
 export const clients = {
   auth: {
-    login: async (req) => {
+    login: async (req: LoginInput) => {
       const response = await authClient.login(req)
       return {
         token: response.token,
@@ -92,11 +122,11 @@ export const clients = {
     },
   },
   post: {
-    createPost: async (req) => {
+    createPost: async (req: CreatePostInput) => {
       const response = await postClient.createPost(req)
       return { post: response.post ? { id: response.post.id } : { id: 'new-post' } }
     },
-    listPosts: async (req = {}) => {
+    listPosts: async (req: PageInput = {}) => {
       const response = await postClient.listPosts({
         pageSize: req.pageSize ?? 50,
         pageToken: req.pageToken ?? '',
@@ -113,7 +143,7 @@ export const clients = {
         hasMore: response.hasMore,
       }
     },
-    getPost: async (req) => {
+    getPost: async (req: PostIDInput) => {
       const response = await postClient.getPost({ id: req.id })
       return {
         post: response.post
@@ -127,7 +157,7 @@ export const clients = {
           : null,
       }
     },
-    updatePost: async (req) => {
+    updatePost: async (req: UpdatePostInput) => {
       const response = await postClient.updatePost({
         id: req.id,
         content: req.content,
@@ -145,13 +175,13 @@ export const clients = {
           : null,
       }
     },
-    deletePost: async (req) => {
+    deletePost: async (req: PostIDInput) => {
       await postClient.deletePost(req)
       return {}
     },
   },
   blog: {
-    createArticle: async (req) => {
+    createArticle: async (req: CreateArticleInput) => {
       const response = await blogClient.createArticle({
         title: req.title,
         content: req.content,
@@ -175,7 +205,7 @@ export const clients = {
           : null,
       }
     },
-    updateArticle: async (req) => {
+    updateArticle: async (req: UpdateArticleInput) => {
       const response = await blogClient.updateArticle({
         articleId: req.articleId,
         title: req.title,
@@ -199,11 +229,11 @@ export const clients = {
           : null,
       }
     },
-    deleteArticle: async (req) => {
+    deleteArticle: async (req: ArticleIDInput) => {
       await blogClient.deleteArticle({ articleId: req.articleId })
       return {}
     },
-    listArticles: async (req = {}) => {
+    listArticles: async (req: ListArticleInput = {}) => {
       const response = await blogClient.listArticles({
         pageSize: req.pageSize ?? 50,
         pageToken: req.pageToken ?? '',
@@ -227,7 +257,7 @@ export const clients = {
         folders: response.folders || [],
       }
     },
-    getArticle: async (req) => {
+    getArticle: async (req: ArticleIDInput) => {
       const response = await blogClient.getArticle({ articleId: req.articleId })
       return {
         article: response.article
@@ -244,7 +274,7 @@ export const clients = {
           : null,
       }
     },
-    createFolder: async (req) => {
+    createFolder: async (req: FolderInput) => {
       const response = await blogClient.createFolder({
         name: req.name,
         parentFolderId: req.parentFolderId || '',
@@ -260,7 +290,7 @@ export const clients = {
           : null,
       }
     },
-    updateFolder: async (req) => {
+    updateFolder: async (req: UpdateFolderInput) => {
       const response = await blogClient.updateFolder({
         folderId: req.folderId,
         name: req.name,
@@ -277,7 +307,7 @@ export const clients = {
           : null,
       }
     },
-    deleteFolder: async (req) => {
+    deleteFolder: async (req: FolderIDInput) => {
       await blogClient.deleteFolder({
         folderId: req.folderId,
       })
@@ -285,7 +315,7 @@ export const clients = {
     },
   },
   album: {
-    createAlbum: async (req) => {
+    createAlbum: async (req: CreateAlbumInput) => {
       const response = await albumClient.createAlbum({
         name: req.name,
         description: req.description || '',
@@ -305,7 +335,7 @@ export const clients = {
           : null,
       }
     },
-    listAlbums: async (req = {}) => {
+    listAlbums: async (req: ListAlbumInput = {}) => {
       const response = await albumClient.listAlbums({
         pageSize: req.pageSize ?? 50,
         pageToken: req.pageToken ?? '',
@@ -323,7 +353,7 @@ export const clients = {
         hasMore: !!response.hasMore,
       }
     },
-    getAlbum: async (req) => {
+    getAlbum: async (req: AlbumIDInput) => {
       const response = await albumClient.getAlbum({ albumId: req.albumId })
       return {
         album: response.album
@@ -347,7 +377,7 @@ export const clients = {
         })),
       }
     },
-    uploadImageRequest: async (req) => {
+    uploadImageRequest: async (req: UploadImageInput) => {
       const response = await albumClient.uploadImageRequest({
         albumId: req.albumId || '',
         fileName: req.fileName,
@@ -363,7 +393,7 @@ export const clients = {
         },
       }
     },
-    confirmImageUpload: async (req) => {
+    confirmImageUpload: async (req: ConfirmImageInput) => {
       const response = await albumClient.confirmImageUpload(req)
       return {
         image: response.image
@@ -380,7 +410,7 @@ export const clients = {
           : null,
       }
     },
-    updateAlbum: async (req) => {
+    updateAlbum: async (req: UpdateAlbumInput) => {
       const response = await albumClient.updateAlbum({
         albumId: req.albumId,
         name: req.name,
@@ -399,7 +429,7 @@ export const clients = {
           : null,
       }
     },
-    moveImages: async (req) => {
+    moveImages: async (req: MoveImagesInput) => {
       const response = await albumClient.moveImages({
         fromAlbumId: req.fromAlbumId,
         targetAlbumId: req.targetAlbumId,
@@ -409,7 +439,7 @@ export const clients = {
         movedCount: Number(response.movedCount || 0),
       }
     },
-    analyzeImageReferences: async (req) => {
+    analyzeImageReferences: async (req: AlbumIDInput) => {
       const response = await albumClient.analyzeImageReferences({
         albumId: req.albumId,
       })
@@ -423,7 +453,7 @@ export const clients = {
           blogReferenceCount: Number(r.blogReferenceCount || 0),
           avatarReferenceCount: Number(r.avatarReferenceCount || 0),
           backgroundReferenceCount: Number(r.backgroundReferenceCount || 0),
-          faviconReferenceCount: Number((r as any).faviconReferenceCount || 0),
+          faviconReferenceCount: Number(r.faviconReferenceCount || 0),
           safeToDelete: !!r.safeToDelete,
         })),
         totalImages: Number(response.totalImages || 0),
@@ -441,7 +471,7 @@ export const clients = {
         repairedAt: { toDate: () => response.repairedAt?.toDate() || new Date() },
       }
     },
-    deleteImages: async (req) => {
+    deleteImages: async (req: DeleteImagesInput) => {
       const response = await albumClient.deleteImages({
         albumId: req.albumId,
         imageIds: req.imageIds || [],
@@ -453,7 +483,7 @@ export const clients = {
         },
       }
     },
-    deleteAlbum: async (req) => {
+    deleteAlbum: async (req: AlbumIDInput) => {
       await albumClient.deleteAlbum({ albumId: req.albumId })
       return {}
     },
@@ -461,25 +491,26 @@ export const clients = {
   settings: {
     getSettings: async () => {
       const response = await settingsClient.getSettings({})
+      const settings = response.settings
       return {
-        settings: response.settings
+        settings: settings
           ? {
-              displayName: response.settings.displayName,
-              bio: response.settings.bio,
-              avatarUrl: response.settings.avatarUrl,
-              twitterUrl: response.settings.twitterUrl,
-              githubUrl: response.settings.githubUrl,
-              bilibiliUrl: response.settings.bilibiliUrl,
-              customLinks: response.settings.customLinks,
-              backgroundImageUrl: response.settings.backgroundImageUrl,
-              sakuraParticlesEnabled: response.settings.sakuraParticlesEnabled,
-              themeColor: response.settings.themeColor,
-              updatedAt: { toDate: () => response.settings.updatedAt?.toDate() || new Date() },
+              displayName: settings.displayName,
+              bio: settings.bio,
+              avatarUrl: settings.avatarUrl,
+              twitterUrl: settings.twitterUrl,
+              githubUrl: settings.githubUrl,
+              bilibiliUrl: settings.bilibiliUrl,
+              customLinks: settings.customLinks,
+              backgroundImageUrl: settings.backgroundImageUrl,
+              sakuraParticlesEnabled: settings.sakuraParticlesEnabled,
+              themeColor: settings.themeColor,
+              updatedAt: { toDate: () => settings.updatedAt?.toDate() || new Date() },
             }
           : null,
       }
     },
-    updateSettings: async (req) => {
+    updateSettings: async (req: UpdateSettingsInput) => {
       // 提取安全的字段，排除可能导致反序列化崩溃的自定义包装对象如 updatedAt
       const safeSettings = {
         displayName: req.settings?.displayName || '',
@@ -495,7 +526,7 @@ export const clients = {
       };
       
       const cleanUpdateMask = req.updateMask?.filter(
-        (key) => key !== 'updatedAt'
+        (key: string) => key !== 'updatedAt'
       ) || [];
 
       const response = await settingsClient.updateSettings({

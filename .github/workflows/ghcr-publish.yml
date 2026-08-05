@@ -18,8 +18,36 @@ env:
   IMAGE_PREFIX: registry.frozenf1sh.top/fish-website
 
 jobs:
+  quality:
+    name: Verify contracts and application quality
+    runs-on: [self-hosted, linux, x64, k3s]
+    # Public-repository forks must never execute on the private runner.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify generated API contracts
+        run: make generate-check lint
+
+      - name: Test backend
+        run: make test
+
+      - name: Install web dependencies reproducibly
+        run: npm --prefix frontend ci
+
+      - name: Verify web application
+        run: make web-lint web-build
+
+      - name: Validate Kubernetes manifests
+        run: make kustomize
+
   docker:
     name: Build ${{ matrix.name }} image
+    needs: quality
     runs-on: [self-hosted, linux, x64, k3s]
     # Public-repository forks must never execute on the private runner.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
