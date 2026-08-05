@@ -22,8 +22,9 @@ type Config struct {
 
 // ServerConfig holds server-related configuration
 type ServerConfig struct {
-	Address     string
-	MigrateOnly bool
+	Address          string
+	MigrateOnly      bool
+	EnableReflection bool
 }
 
 // DatabaseConfig holds database-related configuration
@@ -167,6 +168,9 @@ func bindLegacyEnvVars(v *viper.Viper) {
 	if val := os.Getenv("MIGRATE_ONLY"); val != "" {
 		v.Set("Server.MigrateOnly", val == "true" || val == "1")
 	}
+	if val := os.Getenv("ENABLE_REFLECTION"); val != "" {
+		v.Set("Server.EnableReflection", val == "true" || val == "1")
+	}
 
 	// Logger
 	if val := os.Getenv("LOGGER_LEVEL"); val != "" {
@@ -229,6 +233,9 @@ func applyLegacyEnvVars(cfg *Config) {
 	}
 	if val := os.Getenv("MIGRATE_ONLY"); val != "" {
 		cfg.Server.MigrateOnly = val == "true" || val == "1"
+	}
+	if val := os.Getenv("ENABLE_REFLECTION"); val != "" {
+		cfg.Server.EnableReflection = val == "true" || val == "1"
 	}
 }
 

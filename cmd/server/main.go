@@ -72,17 +72,18 @@ func (s *Server) Start(ctx context.Context) error {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// Add reflection
-	logger.Debug("adding gRPC reflection service")
-	reflector := grpcreflect.NewStaticReflector(
-		homev1connect.AuthServiceName,
-		homev1connect.PostServiceName,
-		homev1connect.BlogServiceName,
-		homev1connect.AlbumServiceName,
-		homev1connect.SettingsServiceName,
-	)
-	mux.Handle(grpcreflect.NewHandlerV1(reflector))
-	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
+	if s.cfg.Server.EnableReflection {
+		logger.Debug("adding development gRPC reflection service")
+		reflector := grpcreflect.NewStaticReflector(
+			homev1connect.AuthServiceName,
+			homev1connect.PostServiceName,
+			homev1connect.BlogServiceName,
+			homev1connect.AlbumServiceName,
+			homev1connect.SettingsServiceName,
+		)
+		mux.Handle(grpcreflect.NewHandlerV1(reflector))
+		mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
+	}
 
 	// Connect-RPC options with interceptors
 	opts := []connect.HandlerOption{

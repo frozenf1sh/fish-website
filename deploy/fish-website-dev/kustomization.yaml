@@ -50,6 +50,8 @@ patches:
                 env:
                   - name: CORS_ALLOWED_ORIGINS
                     value: "https://dev.frozenf1sh.top,http://localhost:5173"
+                  - name: ENABLE_REFLECTION
+                    value: "true"
                   - name: ADMIN_PASSWORD_HASH
                     valueFrom:
                       secretKeyRef:
