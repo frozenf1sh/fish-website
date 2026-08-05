@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
+    tags: ["v*"]
     paths-ignore:
       - "deploy/**"
   workflow_dispatch:
@@ -85,24 +86,35 @@ jobs:
           cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}/cache-${{ matrix.image }}:buildcache,mode=max
 
   reconcile:
-    name: Commit desired image revision
+    name: Promote desired image revision
     needs: docker
     runs-on: [self-hosted, linux, x64, k3s]
     if: github.event_name == 'push'
+    environment: ${{ github.ref_type == 'tag' && 'production' || 'development' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Update the GitOps image tags
         env:
           IMAGE_TAG: sha-${{ github.sha }}
         run: |
-          perl -0pi -e 's|(newName: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(newName: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' deploy/fish-website/kustomization.yaml
+          git pull --rebase origin main
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            deployment_path=deploy/fish-website/kustomization.yaml
+            commit_message="部署：提升生产环境至 ${IMAGE_TAG} [skip ci]"
+            perl -0pi -e 's|(newName: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(newName: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"
+          else
+            deployment_path=deploy/fish-website-dev/kustomization.yaml
+            commit_message="部署：更新开发环境至 ${IMAGE_TAG} [skip ci]"
+            perl -0pi -e 's|(name: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(name: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add deploy/fish-website/kustomization.yaml
-          git diff --cached --quiet || git commit -m "chore(gitops): deploy ${IMAGE_TAG} [skip ci]"
+          git add "$deployment_path"
+          git diff --cached --quiet || git commit -m "$commit_message"
           git push

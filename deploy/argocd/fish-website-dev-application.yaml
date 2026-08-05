@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fish-website-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/part-of: fish-website
+    app.kubernetes.io/environment: development
+spec:
+  project: fish-website
+  source:
+    repoURL: https://github.com/frozenf1sh/fish-website.git
+    targetRevision: main
+    path: deploy/fish-website-dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: fish-website-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

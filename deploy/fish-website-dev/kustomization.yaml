@@ -1,0 +1,74 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Development deliberately reuses the production workload definition, but has
+# its own namespace, data volume, ingress certificate and immutable image tag.
+# Secrets are provisioned outside Git (see scripts/bootstrap-environment-secrets.sh).
+namespace: fish-website-dev
+resources:
+  - ../fish-website
+patches:
+  - target:
+      version: v1
+      kind: Namespace
+      name: fish-website
+    patch: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: fish-website-dev
+        labels:
+          app.kubernetes.io/part-of: fish-website
+          app.kubernetes.io/environment: development
+  - target:
+      group: apps
+      version: v1
+      kind: StatefulSet
+      name: minio
+    patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: minio
+      spec:
+        replicas: 0
+  - target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: fish-website
+    patch: |-
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: fish-website
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-prod
+          traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+      spec:
+        tls:
+          - hosts: [dev.frozenf1sh.top]
+            secretName: dev-frozenf1sh-top-tls
+        rules:
+          - host: dev.frozenf1sh.top
+            http:
+              paths:
+                - path: /api
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: backend
+                      port:
+                        name: http
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: frontend
+                      port:
+                        name: http
+images:
+  - name: registry.frozenf1sh.top/fish-website/backend
+    newTag: sha-5667fe7e9f55edf0262ce90a328533aa7b0ba20c
+  - name: registry.frozenf1sh.top/fish-website/frontend
+    newTag: sha-5667fe7e9f55edf0262ce90a328533aa7b0ba20c
