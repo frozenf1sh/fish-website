@@ -6,7 +6,7 @@ resources:
 images:
   - name: backend
     newName: registry.frozenf1sh.top/fish-website/backend
-    newTag: sha-1c5f45b01aea0f32543b1e894e0b5faee5fe83c1
+    newTag: sha-5667fe7e9f55edf0262ce90a328533aa7b0ba20c
   - name: frontend
     newName: registry.frozenf1sh.top/fish-website/frontend
-    newTag: sha-1c5f45b01aea0f32543b1e894e0b5faee5fe83c1
+    newTag: sha-5667fe7e9f55edf0262ce90a328533aa7b0ba20c
