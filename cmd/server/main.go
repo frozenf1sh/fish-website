@@ -49,13 +49,6 @@ func NewServer(
 func (s *Server) Start(ctx context.Context) error {
 	logger.Info("starting server", logger.String("address", s.cfg.Server.Address))
 
-	// Run database migrations
-	logger.Info("running database migrations")
-	if err := s.Migrate(ctx); err != nil {
-		return fmt.Errorf("run migrations: %w", err)
-	}
-	logger.Info("database migrations completed")
-
 	// Setup HTTP handlers
 	logger.Debug("setting up HTTP handlers")
 	mux := http.NewServeMux()
