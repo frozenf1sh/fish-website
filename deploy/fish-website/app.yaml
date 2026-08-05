@@ -41,7 +41,6 @@ spec:
     metadata: {labels: {app.kubernetes.io/name: postgres}}
     spec:
       serviceAccountName: fish-website
-      securityContext: {fsGroup: 70}
       containers:
         - name: postgres
           image: postgres:17.4-alpine
@@ -61,7 +60,6 @@ spec:
             exec: {command: [sh, -c, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']}
             initialDelaySeconds: 20
             periodSeconds: 20
-          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
           volumeMounts: [{name: data, mountPath: /var/lib/postgresql/data}]
       volumes: [{name: data, persistentVolumeClaim: {claimName: postgres-data}}]
 ---
@@ -156,7 +154,7 @@ spec:
           livenessProbe:
             httpGet: {path: /healthz, port: http}
             periodSeconds: 20
-          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, capabilities: {drop: [ALL]}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, runAsUser: 65532, capabilities: {drop: [ALL]}}
 ---
 apiVersion: v1
 kind: Service
@@ -193,6 +191,14 @@ spec:
             httpGet: {path: /, port: http}
             periodSeconds: 20
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, runAsUser: 101, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: cache, mountPath: /var/cache/nginx}
+            - {name: run, mountPath: /var/run}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: cache, emptyDir: {}}
+        - {name: run, emptyDir: {}}
+        - {name: tmp, emptyDir: {}}
 ---
 apiVersion: v1
 kind: Service
