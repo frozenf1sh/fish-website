@@ -1,0 +1,224 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fish-website
+  namespace: fish-website
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: fish-website
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data
+  namespace: fish-website
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: fish-website
+  labels: {app.kubernetes.io/name: postgres}
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector: {matchLabels: {app.kubernetes.io/name: postgres}}
+  template:
+    metadata: {labels: {app.kubernetes.io/name: postgres}}
+    spec:
+      serviceAccountName: fish-website
+      securityContext: {fsGroup: 70}
+      containers:
+        - name: postgres
+          image: postgres:17.4-alpine
+          ports: [{name: postgres, containerPort: 5432}]
+          env:
+            - {name: POSTGRES_DB, value: fish_website}
+            - {name: POSTGRES_USER, valueFrom: {secretKeyRef: {name: database, key: username}}}
+            - {name: POSTGRES_PASSWORD, valueFrom: {secretKeyRef: {name: database, key: password}}}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          readinessProbe:
+            exec: {command: [sh, -c, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec: {command: [sh, -c, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']}
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: data, mountPath: /var/lib/postgresql/data}]
+      volumes: [{name: data, persistentVolumeClaim: {claimName: postgres-data}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: postgres, namespace: fish-website}
+spec:
+  selector: {app.kubernetes.io/name: postgres}
+  ports: [{name: postgres, port: 5432, targetPort: postgres}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+  namespace: fish-website
+  labels: {app.kubernetes.io/name: minio}
+spec:
+  serviceName: minio
+  replicas: 1
+  selector: {matchLabels: {app.kubernetes.io/name: minio}}
+  template:
+    metadata: {labels: {app.kubernetes.io/name: minio}}
+    spec:
+      serviceAccountName: fish-website
+      containers:
+        - name: minio
+          image: minio/minio:RELEASE.2025-03-12T18-04-18Z
+          args: [server, /data]
+          ports: [{name: api, containerPort: 9000}]
+          env:
+            - {name: MINIO_ROOT_USER, valueFrom: {secretKeyRef: {name: minio, key: username}}}
+            - {name: MINIO_ROOT_PASSWORD, valueFrom: {secretKeyRef: {name: minio, key: password}}}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          readinessProbe:
+            httpGet: {path: /minio/health/ready, port: api}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /minio/health/live, port: api}
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: data, mountPath: /data}]
+      volumes: [{name: data, persistentVolumeClaim: {claimName: minio-data}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: minio, namespace: fish-website}
+spec:
+  selector: {app.kubernetes.io/name: minio}
+  ports: [{name: api, port: 9000, targetPort: api}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: fish-website
+  labels: {app.kubernetes.io/name: backend}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app.kubernetes.io/name: backend}}
+  template:
+    metadata: {labels: {app.kubernetes.io/name: backend}}
+    spec:
+      serviceAccountName: fish-website
+      imagePullSecrets: [{name: registry-credentials}]
+      containers:
+        - name: backend
+          image: backend
+          ports: [{name: http, containerPort: 8080}]
+          env:
+            - {name: POSTGRES_DSN, valueFrom: {secretKeyRef: {name: database, key: dsn}}}
+            - {name: MINIO_ENDPOINT, value: minio:9000}
+            - {name: MINIO_ACCESS_KEY, valueFrom: {secretKeyRef: {name: minio, key: username}}}
+            - {name: MINIO_SECRET_KEY, valueFrom: {secretKeyRef: {name: minio, key: password}}}
+            - {name: MINIO_BUCKET, value: fish-website}
+            - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}
+            - {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: application, key: jwt-secret}}}
+            - {name: LOGGER_JSON, value: "true"}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          startupProbe:
+            httpGet: {path: /readyz, port: http}
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, capabilities: {drop: [ALL]}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: backend, namespace: fish-website}
+spec:
+  selector: {app.kubernetes.io/name: backend}
+  ports: [{name: http, port: 8080, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: fish-website
+  labels: {app.kubernetes.io/name: frontend}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app.kubernetes.io/name: frontend}}
+  template:
+    metadata: {labels: {app.kubernetes.io/name: frontend}}
+    spec:
+      serviceAccountName: fish-website
+      imagePullSecrets: [{name: registry-credentials}]
+      containers:
+        - name: frontend
+          image: frontend
+          ports: [{name: http, containerPort: 80}]
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 20
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, runAsUser: 101, capabilities: {drop: [ALL]}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: frontend, namespace: fish-website}
+spec:
+  selector: {app.kubernetes.io/name: frontend}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fish-website
+  namespace: fish-website
+  annotations: {cert-manager.io/cluster-issuer: letsencrypt-prod}
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [fish.frozenf1sh.top]
+      secretName: fish-frozenf1sh-top-tls
+  rules:
+    - host: fish.frozenf1sh.top
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend: {service: {name: backend, port: {name: http}}}
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: frontend, port: {name: http}}}

@@ -1,36 +1,37 @@
-name: Build and Publish Images
+name: Build, Publish, and Reconcile
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
-    tags:
-      - "v*"
-      - "V*"
+    branches: [main]
+    paths-ignore:
+      - "deploy/**"
   workflow_dispatch:
 
 permissions:
-  contents: read
-  packages: write
+  contents: write
 
 env:
-  REGISTRY: ghcr.io
-  DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+  REGISTRY: registry.frozenf1sh.top
+  IMAGE_PREFIX: registry.frozenf1sh.top/fish-website
 
 jobs:
   docker:
     name: Build ${{ matrix.name }} image
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, k3s]
+    # Public-repository forks must never execute on the private runner.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: backend
-            image: fish-website-backend
+            image: backend
             context: .
             dockerfile: ./Dockerfile
           - name: frontend
-            image: fish-website-frontend
+            image: frontend
             context: ./frontend
             dockerfile: ./frontend/Dockerfile
 
@@ -43,26 +44,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
-        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+      - name: Log in to the private registry
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Extract image metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          images: ${{ env.IMAGE_PREFIX }}/${{ matrix.image }}
           flavor: |
             latest=false
           tags: |
-            type=ref,event=pr
-            type=ref,event=tag
             type=sha,prefix=sha-
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
           labels: |
             org.opencontainers.image.title=${{ matrix.image }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
@@ -73,33 +71,26 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
-          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.image }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}/cache-${{ matrix.image }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}/cache-${{ matrix.image }}:buildcache,mode=max
 
-  deploy:
-    name: Deploy to server
+  reconcile:
+    name: Commit desired image revision
     needs: docker
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/V')) }}
+    runs-on: [self-hosted, linux, x64, k3s]
+    if: github.event_name == 'push'
 
     steps:
-      - name: Deploy with SSH
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Update the GitOps image tags
         env:
-          DEPLOY_DIR: ${{ env.DEPLOY_DIR }}
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT }}
-          script_stop: true
-          envs: DEPLOY_DIR
-          script: |
-            TARGET_DIR="${DEPLOY_DIR:-/opt/fish-website}"
-            echo "Deploy directory: ${TARGET_DIR}"
-            cd "${TARGET_DIR}"
-            docker compose pull
-            docker compose up -d
+          IMAGE_TAG: sha-${{ github.sha }}
+        run: |
+          perl -0pi -e 's|(newName: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(newName: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' deploy/fish-website/kustomization.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy/fish-website/kustomization.yaml
+          git diff --cached --quiet || git commit -m "chore(gitops): deploy ${IMAGE_TAG} [skip ci]"
+          git push
