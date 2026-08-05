@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: coredns-custom
+    app.kubernetes.io/part-of: fish-website-platform
+  annotations:
+    fish-website.frozenf1sh.top/purpose: public-zone-dns-forwarding
+data:
+  frozenf1sh-top.override: |
+    # The node resolver is Tailnet-only. Cert-manager and workloads must also
+    # resolve the public website zone for ACME and R2 endpoints.
+    forward frozenf1sh.top 1.1.1.1 1.0.0.1

@@ -29,3 +29,7 @@ separate rotation window.
 tailnet-only, so it uses a private CA rather than publicly-verifiable ACME. Its
 CA must be trusted by every build host and k3s node. Registry authentication is
 mandatory.
+
+The `fish-website-platform` Argo CD Application owns only the CoreDNS override
+needed for public `frozenf1sh.top` lookups from pods. It deliberately does not
+grant website applications authority over `kube-system`.
