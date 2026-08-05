@@ -55,11 +55,11 @@ spec:
             requests: {cpu: 50m, memory: 128Mi}
             limits: {cpu: "1", memory: 512Mi}
           readinessProbe:
-            httpGet: {path: /v2/, port: https}
+            tcpSocket: {port: https}
             initialDelaySeconds: 3
             periodSeconds: 10
           livenessProbe:
-            httpGet: {path: /v2/, port: https}
+            tcpSocket: {port: https}
             initialDelaySeconds: 15
             periodSeconds: 20
           securityContext:
