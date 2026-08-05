@@ -67,7 +67,7 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,format=long
           labels: |
             org.opencontainers.image.title=${{ matrix.image }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
