@@ -206,7 +206,6 @@ kind: Ingress
 metadata:
   name: fish-website
   namespace: fish-website
-  annotations: {cert-manager.io/cluster-issuer: letsencrypt-prod}
 spec:
   ingressClassName: traefik
   tls:
