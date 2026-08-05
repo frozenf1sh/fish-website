@@ -13,7 +13,9 @@ need htpasswd
 
 registry_user=ci
 registry_password=$(openssl rand -base64 32 | tr -d '\n')
-postgres_password=$(openssl rand -base64 32 | tr -d '\n')
+# PostgreSQL DSN is a URL. Hex avoids reserved URL characters and keeps the
+# generated password safe to embed without leaking it through shell escaping.
+postgres_password=$(openssl rand -hex 32)
 minio_password=$(openssl rand -base64 32 | tr -d '\n')
 admin_password=$(openssl rand -base64 32 | tr -d '\n')
 jwt_secret=$(openssl rand -hex 48)
