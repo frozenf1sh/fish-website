@@ -58,6 +58,12 @@ type Image struct {
 	CreatedAt          time.Time
 }
 
+// ObjectMetadata is the verified subset of an object-store HEAD response.
+type ObjectMetadata struct {
+	Size        int64
+	ContentType string
+}
+
 // Settings represents user settings
 type Settings struct {
 	DisplayName            string

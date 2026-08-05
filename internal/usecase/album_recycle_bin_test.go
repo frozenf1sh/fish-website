@@ -154,3 +154,27 @@ func TestGetAlbumWithImagesResolvesURLFromObjectKey(t *testing.T) {
 		t.Fatalf("resolved URLs = (%q, %q), want (%q, %q)", images[0].URL, images[0].ThumbnailURL, want, want)
 	}
 }
+
+func TestValidateImageUpload(t *testing.T) {
+	tests := []struct {
+		name      string
+		fileName  string
+		mimeType  string
+		fileSize  int64
+		wantError bool
+	}{
+		{name: "valid webp", fileName: "photo.webp", mimeType: "image/webp", fileSize: 1},
+		{name: "mime parameters", fileName: "photo.png", mimeType: "image/png; charset=binary", fileSize: 1},
+		{name: "svg denied", fileName: "payload.svg", mimeType: "image/svg+xml", fileSize: 1, wantError: true},
+		{name: "empty file", fileName: "photo.png", mimeType: "image/png", fileSize: 0, wantError: true},
+		{name: "oversized", fileName: "photo.png", mimeType: "image/png", fileSize: maxImageUploadBytes + 1, wantError: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateImageUpload(test.fileName, test.mimeType, test.fileSize)
+			if (err != nil) != test.wantError {
+				t.Fatalf("validateImageUpload() error = %v, wantError %v", err, test.wantError)
+			}
+		})
+	}
+}

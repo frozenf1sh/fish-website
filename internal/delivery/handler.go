@@ -393,6 +393,9 @@ func (h *Handler) UploadImageRequest(ctx context.Context, req *connect.Request[h
 		req.Msg.FileSize,
 	)
 	if err != nil {
+		if errors.Is(err, domain.ErrInvalidImageUpload) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
 		logger.Error("UploadImageRequest failed", logger.Err(err))
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -414,6 +417,9 @@ func (h *Handler) ConfirmImageUpload(ctx context.Context, req *connect.Request[h
 	if err != nil {
 		if errors.Is(err, domain.ErrImageNotUploaded) {
 			logger.Warn("ConfirmImageUpload failed: image not uploaded", logger.String("image_id", req.Msg.ImageId))
+			return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+		}
+		if errors.Is(err, domain.ErrImageUploadMismatch) {
 			return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 		}
 		logger.Error("ConfirmImageUpload failed", logger.Err(err))

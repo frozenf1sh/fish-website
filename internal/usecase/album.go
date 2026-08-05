@@ -4,11 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"mime"
+	"strings"
 	"time"
 
 	"github.com/frozenfish/fish-website/internal/domain"
 	"github.com/rs/xid"
 )
+
+const maxImageUploadBytes int64 = 25 * 1024 * 1024
+
+var allowedImageMIMETypes = map[string]struct{}{
+	"image/jpeg": {}, "image/png": {}, "image/webp": {}, "image/avif": {},
+}
 
 const (
 	recycleBinAlbumID   = "recycle-bin"
@@ -250,6 +258,9 @@ func (u *AlbumUsecase) GetAlbumWithImages(ctx context.Context, albumID string, i
 
 // GetPresignedUploadURL gets a presigned URL for uploading an image
 func (u *AlbumUsecase) GetPresignedUploadURL(ctx context.Context, albumID, fileName, mimeType string, fileSize int64) (uploadURL string, imageID string, headers map[string]string, expiresAt time.Time, err error) {
+	if err := validateImageUpload(fileName, mimeType, fileSize); err != nil {
+		return "", "", nil, time.Time{}, err
+	}
 	// Verify album exists
 	_, err = u.albumRepo.GetAlbum(ctx, albumID)
 	if err != nil {
@@ -311,12 +322,15 @@ func (u *AlbumUsecase) ConfirmImageUpload(ctx context.Context, imageID, uploadUR
 
 	// Verify the object exists in storage
 	objectName := imageObjectKey(image)
-	exists, err := u.objectStore.IsObjectExists(ctx, objectName)
+	metadata, err := u.objectStore.HeadObject(ctx, objectName)
 	if err != nil {
-		return nil, fmt.Errorf("check object exists: %w", err)
-	}
-	if !exists {
+		if !u.isObjectNotFound(ctx, objectName, err) {
+			return nil, fmt.Errorf("inspect uploaded object: %w", err)
+		}
 		return nil, domain.ErrImageNotUploaded
+	}
+	if metadata.Size != image.FileSize || !sameMediaType(metadata.ContentType, image.MimeType) {
+		return nil, domain.ErrImageUploadMismatch
 	}
 
 	image.ObjectKey = objectName
@@ -330,6 +344,31 @@ func (u *AlbumUsecase) ConfirmImageUpload(ctx context.Context, imageID, uploadUR
 	}
 
 	return updatedImage, nil
+}
+
+func (u *AlbumUsecase) isObjectNotFound(ctx context.Context, objectName string, headErr error) bool {
+	exists, err := u.objectStore.IsObjectExists(ctx, objectName)
+	return err == nil && !exists && headErr != nil
+}
+
+func validateImageUpload(fileName, contentType string, fileSize int64) error {
+	if strings.TrimSpace(fileName) == "" || len(fileName) > 255 || fileSize <= 0 || fileSize > maxImageUploadBytes {
+		return domain.ErrInvalidImageUpload
+	}
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return domain.ErrInvalidImageUpload
+	}
+	if _, ok := allowedImageMIMETypes[strings.ToLower(mediaType)]; !ok {
+		return domain.ErrInvalidImageUpload
+	}
+	return nil
+}
+
+func sameMediaType(actual, expected string) bool {
+	actualType, _, actualErr := mime.ParseMediaType(actual)
+	expectedType, _, expectedErr := mime.ParseMediaType(expected)
+	return actualErr == nil && expectedErr == nil && strings.EqualFold(actualType, expectedType)
 }
 
 // DeleteImages moves images to the recycle bin. A request from the recycle bin

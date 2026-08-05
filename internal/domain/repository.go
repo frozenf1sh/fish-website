@@ -53,6 +53,7 @@ type SettingsRepository interface {
 type ObjectStore interface {
 	GetPresignedUploadURL(ctx context.Context, objectName string, contentType string, fileSize int64, expires time.Duration) (uploadURL string, headers map[string]string, err error)
 	GetFileURL(ctx context.Context, objectName string) (string, error)
+	HeadObject(ctx context.Context, objectName string) (ObjectMetadata, error)
 	IsObjectExists(ctx context.Context, objectName string) (bool, error)
 	DeleteObject(ctx context.Context, objectName string) error
 }

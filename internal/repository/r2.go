@@ -70,7 +70,7 @@ func (s *R2ObjectStore) GetFileURL(_ context.Context, objectName string) (string
 }
 
 func (s *R2ObjectStore) IsObjectExists(ctx context.Context, objectName string) (bool, error) {
-	_, err := s.client.StatObject(ctx, s.bucketName, objectName, minio.StatObjectOptions{})
+	_, err := s.HeadObject(ctx, objectName)
 	if err != nil {
 		if minio.ToErrorResponse(err).Code == "NoSuchKey" {
 			return false, nil
@@ -78,6 +78,14 @@ func (s *R2ObjectStore) IsObjectExists(ctx context.Context, objectName string) (
 		return false, fmt.Errorf("stat R2 object: %w", err)
 	}
 	return true, nil
+}
+
+func (s *R2ObjectStore) HeadObject(ctx context.Context, objectName string) (domain.ObjectMetadata, error) {
+	info, err := s.client.StatObject(ctx, s.bucketName, objectName, minio.StatObjectOptions{})
+	if err != nil {
+		return domain.ObjectMetadata{}, fmt.Errorf("stat R2 object: %w", err)
+	}
+	return domain.ObjectMetadata{Size: info.Size, ContentType: info.ContentType}, nil
 }
 
 func (s *R2ObjectStore) DeleteObject(ctx context.Context, objectName string) error {
