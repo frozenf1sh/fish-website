@@ -14,7 +14,7 @@ import (
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
-	MinIO    MinIOConfig
+	Storage  StorageConfig
 	Auth     AuthConfig
 	CORS     CORSConfig
 	Logger   LoggerConfig
@@ -32,16 +32,21 @@ type DatabaseConfig struct {
 	DSN string
 }
 
-// MinIOConfig holds MinIO-related configuration
-type MinIOConfig struct {
-	Endpoint  string
-	AccessKey string
-	SecretKey string
-	UseSSL    bool
-	Bucket    string
-	// PublicBaseURL is the browser-facing read endpoint. It is intentionally
-	// separate from the S3 API endpoint so storage can stay private to clients.
-	PublicBaseURL string
+// StorageConfig groups outbound object-storage configuration.
+type StorageConfig struct {
+	R2 R2Config
+}
+
+// R2Config holds Cloudflare R2's S3 API credentials and its distinct public
+// read origin. The public origin is intentionally separate from the S3 API
+// endpoint because presigned writes must never be issued against the CDN host.
+type R2Config struct {
+	Endpoint        string
+	AccessKeyID     string
+	SecretAccessKey string
+	Bucket          string
+	UseSSL          bool
+	PublicBaseURL   string
 }
 
 // AuthConfig holds authentication-related configuration
@@ -87,8 +92,9 @@ func Load() (*Config, error) {
 		}
 	}
 
-	// Bind old environment variable names for backward compatibility
-	bindLegacyEnvVars(v)
+	// Bind explicitly named environment variables. Configuration remains
+	// discoverable without retaining provider-era compatibility aliases.
+	bindEnvironment(v)
 
 	// Configure environment variables - first try nested names, then legacy
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -100,8 +106,9 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	// Apply legacy env vars for any missing values
-	applyLegacyEnvVars(&cfg)
+	// Preserve explicitly supplied environment values when a config file omits
+	// them. This is intentionally not a legacy alias layer.
+	applyEnvironmentFallback(&cfg)
 
 	// Validate configuration
 	if err := validate(&cfg); err != nil {
@@ -111,33 +118,30 @@ func Load() (*Config, error) {
 	return &cfg, nil
 }
 
-func bindLegacyEnvVars(v *viper.Viper) {
+func bindEnvironment(v *viper.Viper) {
 	// Database
 	if val := os.Getenv("POSTGRES_DSN"); val != "" {
 		v.Set("Database.DSN", val)
 	}
 
-	// MinIO
-	if val := os.Getenv("MINIO_ENDPOINT"); val != "" {
-		v.Set("MinIO.Endpoint", val)
+	// Cloudflare R2
+	if val := os.Getenv("R2_ENDPOINT"); val != "" {
+		v.Set("Storage.R2.Endpoint", val)
 	}
-	if val := os.Getenv("MINIO_ACCESS_KEY"); val != "" {
-		v.Set("MinIO.AccessKey", val)
+	if val := os.Getenv("R2_ACCESS_KEY_ID"); val != "" {
+		v.Set("Storage.R2.AccessKeyID", val)
 	}
-	if val := os.Getenv("MINIO_SECRET_KEY"); val != "" {
-		v.Set("MinIO.SecretKey", val)
+	if val := os.Getenv("R2_SECRET_ACCESS_KEY"); val != "" {
+		v.Set("Storage.R2.SecretAccessKey", val)
 	}
-	if val := os.Getenv("MINIO_USE_SSL"); val != "" {
-		v.Set("MinIO.UseSSL", val == "true" || val == "1")
+	if val := os.Getenv("R2_USE_SSL"); val != "" {
+		v.Set("Storage.R2.UseSSL", val == "true" || val == "1")
 	}
-	if val := os.Getenv("MINIO_BUCKET_NAME"); val != "" {
-		v.Set("MinIO.Bucket", val)
+	if val := os.Getenv("R2_BUCKET"); val != "" {
+		v.Set("Storage.R2.Bucket", val)
 	}
-	if val := os.Getenv("MINIO_BUCKET"); val != "" {
-		v.Set("MinIO.Bucket", val)
-	}
-	if val := os.Getenv("MINIO_PUBLIC_BASE_URL"); val != "" {
-		v.Set("MinIO.PublicBaseURL", val)
+	if val := os.Getenv("R2_PUBLIC_BASE_URL"); val != "" {
+		v.Set("Storage.R2.PublicBaseURL", val)
 	}
 
 	// Auth
@@ -184,31 +188,27 @@ func bindLegacyEnvVars(v *viper.Viper) {
 	}
 }
 
-func applyLegacyEnvVars(cfg *Config) {
-	// This function ensures backward compatibility
+func applyEnvironmentFallback(cfg *Config) {
 	if val := os.Getenv("POSTGRES_DSN"); val != "" && cfg.Database.DSN == "" {
 		cfg.Database.DSN = val
 	}
-	if val := os.Getenv("MINIO_ENDPOINT"); val != "" && cfg.MinIO.Endpoint == "" {
-		cfg.MinIO.Endpoint = val
+	if val := os.Getenv("R2_ENDPOINT"); val != "" && cfg.Storage.R2.Endpoint == "" {
+		cfg.Storage.R2.Endpoint = val
 	}
-	if val := os.Getenv("MINIO_ACCESS_KEY"); val != "" && cfg.MinIO.AccessKey == "" {
-		cfg.MinIO.AccessKey = val
+	if val := os.Getenv("R2_ACCESS_KEY_ID"); val != "" && cfg.Storage.R2.AccessKeyID == "" {
+		cfg.Storage.R2.AccessKeyID = val
 	}
-	if val := os.Getenv("MINIO_SECRET_KEY"); val != "" && cfg.MinIO.SecretKey == "" {
-		cfg.MinIO.SecretKey = val
+	if val := os.Getenv("R2_SECRET_ACCESS_KEY"); val != "" && cfg.Storage.R2.SecretAccessKey == "" {
+		cfg.Storage.R2.SecretAccessKey = val
 	}
-	if val := os.Getenv("MINIO_USE_SSL"); val != "" {
-		cfg.MinIO.UseSSL = val == "true" || val == "1"
+	if val := os.Getenv("R2_USE_SSL"); val != "" {
+		cfg.Storage.R2.UseSSL = val == "true" || val == "1"
 	}
-	if val := os.Getenv("MINIO_BUCKET_NAME"); val != "" && cfg.MinIO.Bucket == "" {
-		cfg.MinIO.Bucket = val
+	if val := os.Getenv("R2_BUCKET"); val != "" && cfg.Storage.R2.Bucket == "" {
+		cfg.Storage.R2.Bucket = val
 	}
-	if val := os.Getenv("MINIO_BUCKET"); val != "" && cfg.MinIO.Bucket == "" {
-		cfg.MinIO.Bucket = val
-	}
-	if val := os.Getenv("MINIO_PUBLIC_BASE_URL"); val != "" && cfg.MinIO.PublicBaseURL == "" {
-		cfg.MinIO.PublicBaseURL = val
+	if val := os.Getenv("R2_PUBLIC_BASE_URL"); val != "" && cfg.Storage.R2.PublicBaseURL == "" {
+		cfg.Storage.R2.PublicBaseURL = val
 	}
 	if val := os.Getenv("ADMIN_PASSWORD"); val != "" && cfg.Auth.AdminPassword == "" {
 		cfg.Auth.AdminPassword = val
@@ -261,17 +261,20 @@ func validate(cfg *Config) error {
 	if cfg.Database.DSN == "" {
 		return fmt.Errorf("database DSN is required")
 	}
-	if cfg.MinIO.Endpoint == "" {
-		return fmt.Errorf("MinIO endpoint is required")
+	if cfg.Storage.R2.Endpoint == "" {
+		return fmt.Errorf("R2 endpoint is required")
 	}
-	if cfg.MinIO.AccessKey == "" {
-		return fmt.Errorf("MinIO access key is required")
+	if cfg.Storage.R2.AccessKeyID == "" {
+		return fmt.Errorf("R2 access key ID is required")
 	}
-	if cfg.MinIO.SecretKey == "" {
-		return fmt.Errorf("MinIO secret key is required")
+	if cfg.Storage.R2.SecretAccessKey == "" {
+		return fmt.Errorf("R2 secret access key is required")
 	}
-	if cfg.MinIO.Bucket == "" {
-		return fmt.Errorf("MinIO bucket is required")
+	if cfg.Storage.R2.Bucket == "" {
+		return fmt.Errorf("R2 bucket is required")
+	}
+	if cfg.Storage.R2.PublicBaseURL == "" {
+		return fmt.Errorf("R2 public base URL is required")
 	}
 	if cfg.Auth.OwnerUsername == "" {
 		return fmt.Errorf("owner username is required")

@@ -30,6 +30,27 @@ services:
     networks:
       - fish-network
 
+  # Local-only S3 emulator setup. Production R2 buckets, custom domains and
+  # CORS are platform-managed and are never configured by the application.
+  minio-init:
+    image: minio/mc:RELEASE.2025-03-12T17-29-24Z
+    depends_on:
+      minio:
+        condition: service_started
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-fishminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+      R2_BUCKET: ${R2_BUCKET:-fish-website}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do sleep 1; done
+        mc mb --ignore-existing "local/$$R2_BUCKET"
+        mc anonymous set download "local/$$R2_BUCKET"
+    networks:
+      - fish-network
+
   backend:
     image: ghcr.io/${GHCR_OWNER:-your-github-username-or-org}/fish-website-backend:${IMAGE_TAG:-latest}
     container_name: fish-website-backend
@@ -42,8 +63,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
-        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
     networks:
       - fish-network
 

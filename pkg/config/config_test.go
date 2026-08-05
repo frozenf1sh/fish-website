@@ -36,12 +36,13 @@ func TestSplitCSV(t *testing.T) {
 func validConfig() Config {
 	return Config{
 		Database: DatabaseConfig{DSN: "postgres://example"},
-		MinIO: MinIOConfig{
-			Endpoint:  "r2.example",
-			AccessKey: "access-key",
-			SecretKey: "secret-key",
-			Bucket:    "bucket",
-		},
+		Storage: StorageConfig{R2: R2Config{
+			Endpoint:        "r2.example",
+			AccessKeyID:     "access-key",
+			SecretAccessKey: "secret-key",
+			Bucket:          "bucket",
+			PublicBaseURL:   "https://media.example",
+		}},
 		Auth: AuthConfig{
 			OwnerUsername:     "owner",
 			AdminPasswordHash: "$argon2id$v=19$m=65536,t=3,p=2$salt$hash",

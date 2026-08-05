@@ -28,8 +28,8 @@ func InitializeServer(ctx context.Context, cfg *pkgconfig.Config) (*Server, erro
 		provideAlbumRepository,
 		provideImageReferenceRepository,
 		provideSettingsRepository,
-		provideMinIOStorage,
-		provideFileStorage,
+		provideR2ObjectStore,
+		provideObjectStore,
 		provideOwnerAuthenticator,
 		providePostUsecase,
 		provideBlogUsecase,
@@ -77,12 +77,12 @@ func provideImageReferenceRepository(repo *repository.PostgresRepository) domain
 	return repo.NewImageReferenceRepository()
 }
 
-func provideMinIOStorage(cfg *pkgconfig.Config) (*repository.MinIOStorage, error) {
-	return repository.NewMinIOStorage(cfg)
+func provideR2ObjectStore(cfg *pkgconfig.Config) (*repository.R2ObjectStore, error) {
+	return repository.NewR2ObjectStore(cfg.Storage.R2)
 }
 
-func provideFileStorage(storage *repository.MinIOStorage) domain.FileStorage {
-	return storage.NewFileStorage()
+func provideObjectStore(storage *repository.R2ObjectStore) domain.ObjectStore {
+	return storage.ObjectStore()
 }
 
 func provideOwnerAuthenticator(cfg *pkgconfig.Config) *identityapplication.OwnerAuthenticator {
@@ -103,8 +103,8 @@ func provideBlogUsecase(repo domain.BlogRepository, imageRefRepo domain.ImageRef
 	return usecase.NewBlogUsecase(repo, imageRefRepo)
 }
 
-func provideAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage, imageRefRepo domain.ImageReferenceRepository) *usecase.AlbumUsecase {
-	return usecase.NewAlbumUsecase(albumRepo, fileStorage, imageRefRepo)
+func provideAlbumUsecase(albumRepo domain.AlbumRepository, objectStore domain.ObjectStore, imageRefRepo domain.ImageReferenceRepository) *usecase.AlbumUsecase {
+	return usecase.NewAlbumUsecase(albumRepo, objectStore, imageRefRepo)
 }
 
 func provideSettingsUsecase(repo domain.SettingsRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.SettingsUsecase {

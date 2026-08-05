@@ -28,7 +28,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	storageConfig, err := loadStorageConfig()
+	r2Config, err := loadR2Config()
 	if err != nil {
 		logger.Error("invalid recycle-bin purge configuration", logger.Err(err))
 		os.Exit(1)
@@ -46,14 +46,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	storage, err := repository.NewMinIOStorage(&pkgconfig.Config{MinIO: storageConfig})
+	storage, err := repository.NewR2ObjectStore(r2Config)
 	if err != nil {
 		logger.Error("initialize object storage", logger.Err(err))
 		os.Exit(1)
 	}
 
 	repo := repository.NewPostgresRepository(pool)
-	purger := usecase.NewAlbumUsecase(repo.NewAlbumRepository(), storage.NewFileStorage(), nil)
+	purger := usecase.NewAlbumUsecase(repo.NewAlbumRepository(), storage.ObjectStore(), nil)
 	purged, err := purger.PurgeRecycleBin(ctx)
 	if err != nil {
 		logger.Error("recycle-bin purge failed", logger.Int("purged_images", purged), logger.Err(err))
@@ -63,34 +63,34 @@ func main() {
 	logger.Info("recycle-bin purge completed", logger.Int("purged_images", purged))
 }
 
-func loadStorageConfig() (pkgconfig.MinIOConfig, error) {
-	endpoint, err := requiredEnv("MINIO_ENDPOINT")
+func loadR2Config() (pkgconfig.R2Config, error) {
+	endpoint, err := requiredEnv("R2_ENDPOINT")
 	if err != nil {
-		return pkgconfig.MinIOConfig{}, err
+		return pkgconfig.R2Config{}, err
 	}
-	accessKey, err := requiredEnv("MINIO_ACCESS_KEY")
+	accessKeyID, err := requiredEnv("R2_ACCESS_KEY_ID")
 	if err != nil {
-		return pkgconfig.MinIOConfig{}, err
+		return pkgconfig.R2Config{}, err
 	}
-	secretKey, err := requiredEnv("MINIO_SECRET_KEY")
+	secretAccessKey, err := requiredEnv("R2_SECRET_ACCESS_KEY")
 	if err != nil {
-		return pkgconfig.MinIOConfig{}, err
+		return pkgconfig.R2Config{}, err
 	}
-	bucket, err := requiredEnv("MINIO_BUCKET")
+	bucket, err := requiredEnv("R2_BUCKET")
 	if err != nil {
-		return pkgconfig.MinIOConfig{}, err
+		return pkgconfig.R2Config{}, err
 	}
-	publicBaseURL, err := requiredEnv("MINIO_PUBLIC_BASE_URL")
+	publicBaseURL, err := requiredEnv("R2_PUBLIC_BASE_URL")
 	if err != nil {
-		return pkgconfig.MinIOConfig{}, err
+		return pkgconfig.R2Config{}, err
 	}
-	useSSL, err := strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
+	useSSL, err := strconv.ParseBool(os.Getenv("R2_USE_SSL"))
 	if err != nil {
-		return pkgconfig.MinIOConfig{}, fmt.Errorf("MINIO_USE_SSL must be a boolean: %w", err)
+		return pkgconfig.R2Config{}, fmt.Errorf("R2_USE_SSL must be a boolean: %w", err)
 	}
 
-	return pkgconfig.MinIOConfig{
-		Endpoint: endpoint, AccessKey: accessKey, SecretKey: secretKey,
+	return pkgconfig.R2Config{
+		Endpoint: endpoint, AccessKeyID: accessKeyID, SecretAccessKey: secretAccessKey,
 		Bucket: bucket, PublicBaseURL: publicBaseURL, UseSSL: useSSL,
 	}, nil
 }

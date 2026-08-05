@@ -146,12 +146,12 @@ spec:
           image: backend
           env:
             - {name: POSTGRES_DSN, valueFrom: {secretKeyRef: {name: database, key: dsn}}}
-            - {name: MINIO_ENDPOINT, valueFrom: {secretKeyRef: {name: r2, key: endpoint}}}
-            - {name: MINIO_ACCESS_KEY, valueFrom: {secretKeyRef: {name: r2, key: access-key-id}}}
-            - {name: MINIO_SECRET_KEY, valueFrom: {secretKeyRef: {name: r2, key: secret-access-key}}}
-            - {name: MINIO_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
-            - {name: MINIO_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
-            - {name: MINIO_USE_SSL, value: "true"}
+            - {name: R2_ENDPOINT, valueFrom: {secretKeyRef: {name: r2, key: endpoint}}}
+            - {name: R2_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: r2, key: access-key-id}}}
+            - {name: R2_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: r2, key: secret-access-key}}}
+            - {name: R2_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
+            - {name: R2_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
+            - {name: R2_USE_SSL, value: "true"}
             - {name: CORS_ALLOWED_ORIGINS, value: "https://frozenf1sh.top,https://fish.frozenf1sh.top"}
             - {name: ENABLE_REFLECTION, value: "false"}
             - {name: MIGRATE_ONLY, value: "true"}
@@ -206,12 +206,12 @@ spec:
               command: ["/app/recycle-bin-purge"]
               env:
                 - {name: POSTGRES_DSN, valueFrom: {secretKeyRef: {name: database, key: dsn}}}
-                - {name: MINIO_ENDPOINT, valueFrom: {secretKeyRef: {name: r2, key: endpoint}}}
-                - {name: MINIO_ACCESS_KEY, valueFrom: {secretKeyRef: {name: r2, key: access-key-id}}}
-                - {name: MINIO_SECRET_KEY, valueFrom: {secretKeyRef: {name: r2, key: secret-access-key}}}
-                - {name: MINIO_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
-                - {name: MINIO_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
-                - {name: MINIO_USE_SSL, value: "true"}
+                - {name: R2_ENDPOINT, valueFrom: {secretKeyRef: {name: r2, key: endpoint}}}
+                - {name: R2_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: r2, key: access-key-id}}}
+                - {name: R2_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: r2, key: secret-access-key}}}
+                - {name: R2_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
+                - {name: R2_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
+                - {name: R2_USE_SSL, value: "true"}
               resources:
                 requests: {cpu: 50m, memory: 96Mi}
                 limits: {cpu: 500m, memory: 256Mi}
@@ -243,12 +243,12 @@ spec:
           ports: [{name: http, containerPort: 8080}]
           env:
             - {name: POSTGRES_DSN, valueFrom: {secretKeyRef: {name: database, key: dsn}}}
-            - {name: MINIO_ENDPOINT, valueFrom: {secretKeyRef: {name: r2, key: endpoint}}}
-            - {name: MINIO_ACCESS_KEY, valueFrom: {secretKeyRef: {name: r2, key: access-key-id}}}
-            - {name: MINIO_SECRET_KEY, valueFrom: {secretKeyRef: {name: r2, key: secret-access-key}}}
-            - {name: MINIO_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
-            - {name: MINIO_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
-            - {name: MINIO_USE_SSL, value: "true"}
+            - {name: R2_ENDPOINT, valueFrom: {secretKeyRef: {name: r2, key: endpoint}}}
+            - {name: R2_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: r2, key: access-key-id}}}
+            - {name: R2_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: r2, key: secret-access-key}}}
+            - {name: R2_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
+            - {name: R2_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
+            - {name: R2_USE_SSL, value: "true"}
             - {name: CORS_ALLOWED_ORIGINS, value: "https://frozenf1sh.top,https://fish.frozenf1sh.top"}
             - {name: ENABLE_REFLECTION, value: "false"}
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}

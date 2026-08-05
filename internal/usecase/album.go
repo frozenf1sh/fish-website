@@ -20,15 +20,15 @@ const (
 // AlbumUsecase handles album business logic
 type AlbumUsecase struct {
 	albumRepo    domain.AlbumRepository
-	fileStorage  domain.FileStorage
+	objectStore  domain.ObjectStore
 	imageRefRepo domain.ImageReferenceRepository
 }
 
 // NewAlbumUsecase creates a new AlbumUsecase
-func NewAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage, imageRefRepo domain.ImageReferenceRepository) *AlbumUsecase {
+func NewAlbumUsecase(albumRepo domain.AlbumRepository, objectStore domain.ObjectStore, imageRefRepo domain.ImageReferenceRepository) *AlbumUsecase {
 	return &AlbumUsecase{
 		albumRepo:    albumRepo,
-		fileStorage:  fileStorage,
+		objectStore:  objectStore,
 		imageRefRepo: imageRefRepo,
 	}
 }
@@ -110,7 +110,7 @@ func (u *AlbumUsecase) PurgeRecycleBin(ctx context.Context) (int, error) {
 		var objectErrors []error
 		for _, image := range images {
 			objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
-			if err := u.fileStorage.DeleteObject(ctx, objectName); err != nil {
+			if err := u.objectStore.DeleteObject(ctx, objectName); err != nil {
 				objectErrors = append(objectErrors, fmt.Errorf("delete object for image %s: %w", image.ID, err))
 				continue
 			}
@@ -270,7 +270,7 @@ func (u *AlbumUsecase) GetPresignedUploadURL(ctx context.Context, albumID, fileN
 	objectName := fmt.Sprintf("images/%s/%s", albumID, imageID)
 	expiresAt = time.Now().Add(1 * time.Hour)
 
-	uploadURL, headers, err = u.fileStorage.GetPresignedUploadURL(ctx, objectName, mimeType, fileSize, time.Until(expiresAt))
+	uploadURL, headers, err = u.objectStore.GetPresignedUploadURL(ctx, objectName, mimeType, fileSize, time.Until(expiresAt))
 	if err != nil {
 		return "", "", nil, time.Time{}, fmt.Errorf("get presigned url: %w", err)
 	}
@@ -302,7 +302,7 @@ func (u *AlbumUsecase) ConfirmImageUpload(ctx context.Context, imageID, uploadUR
 
 	// Verify the object exists in storage
 	objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, imageID)
-	exists, err := u.fileStorage.IsObjectExists(ctx, objectName)
+	exists, err := u.objectStore.IsObjectExists(ctx, objectName)
 	if err != nil {
 		return nil, fmt.Errorf("check object exists: %w", err)
 	}
@@ -311,7 +311,7 @@ func (u *AlbumUsecase) ConfirmImageUpload(ctx context.Context, imageID, uploadUR
 	}
 
 	// Get the permanent URL
-	fileURL, err := u.fileStorage.GetFileURL(ctx, objectName)
+	fileURL, err := u.objectStore.GetFileURL(ctx, objectName)
 	if err != nil {
 		return nil, fmt.Errorf("get file url: %w", err)
 	}
@@ -340,7 +340,7 @@ func (u *AlbumUsecase) DeleteImages(ctx context.Context, albumID string, imageID
 		}
 		for _, image := range deletedImages {
 			objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
-			if err := u.fileStorage.DeleteObject(ctx, objectName); err != nil {
+			if err := u.objectStore.DeleteObject(ctx, objectName); err != nil {
 				logger.Error("delete recycle object failed", logger.String("image_id", image.ID), logger.Err(err))
 			}
 		}

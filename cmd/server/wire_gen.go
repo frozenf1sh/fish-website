@@ -35,12 +35,12 @@ func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) 
 	postUsecase := providePostUsecase(postRepository, albumRepository, imageReferenceRepository)
 	blogRepository := provideBlogRepository(postgresRepository)
 	blogUsecase := provideBlogUsecase(blogRepository, imageReferenceRepository)
-	minIOStorage, err := provideMinIOStorage(cfg)
+	r2ObjectStore, err := provideR2ObjectStore(cfg)
 	if err != nil {
 		return nil, err
 	}
-	fileStorage := provideFileStorage(minIOStorage)
-	albumUsecase := provideAlbumUsecase(albumRepository, fileStorage, imageReferenceRepository)
+	objectStore := provideObjectStore(r2ObjectStore)
+	albumUsecase := provideAlbumUsecase(albumRepository, objectStore, imageReferenceRepository)
 	settingsRepository := provideSettingsRepository(postgresRepository)
 	settingsUsecase := provideSettingsUsecase(settingsRepository, imageReferenceRepository)
 	handler := provideHandler(ownerAuthenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
@@ -86,12 +86,12 @@ func provideImageReferenceRepository(repo *repository.PostgresRepository) domain
 	return repo.NewImageReferenceRepository()
 }
 
-func provideMinIOStorage(cfg *config.Config) (*repository.MinIOStorage, error) {
-	return repository.NewMinIOStorage(cfg)
+func provideR2ObjectStore(cfg *config.Config) (*repository.R2ObjectStore, error) {
+	return repository.NewR2ObjectStore(cfg.Storage.R2)
 }
 
-func provideFileStorage(storage *repository.MinIOStorage) domain.FileStorage {
-	return storage.NewFileStorage()
+func provideObjectStore(storage *repository.R2ObjectStore) domain.ObjectStore {
+	return storage.ObjectStore()
 }
 
 func provideOwnerAuthenticator(cfg *config.Config) *application.OwnerAuthenticator {
@@ -111,8 +111,8 @@ func provideBlogUsecase(repo domain.BlogRepository, imageRefRepo domain.ImageRef
 	return usecase.NewBlogUsecase(repo, imageRefRepo)
 }
 
-func provideAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage, imageRefRepo domain.ImageReferenceRepository) *usecase.AlbumUsecase {
-	return usecase.NewAlbumUsecase(albumRepo, fileStorage, imageRefRepo)
+func provideAlbumUsecase(albumRepo domain.AlbumRepository, objectStore domain.ObjectStore, imageRefRepo domain.ImageReferenceRepository) *usecase.AlbumUsecase {
+	return usecase.NewAlbumUsecase(albumRepo, objectStore, imageRefRepo)
 }
 
 func provideSettingsUsecase(repo domain.SettingsRepository, imageRefRepo domain.ImageReferenceRepository) *usecase.SettingsUsecase {

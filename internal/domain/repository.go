@@ -48,8 +48,9 @@ type SettingsRepository interface {
 	Update(ctx context.Context, settings *Settings) (*Settings, error)
 }
 
-// FileStorage defines the interface for file storage operations
-type FileStorage interface {
+// ObjectStore is the media bounded context's outbound storage port. It does
+// not expose provider concepts (R2, S3 or MinIO) to application code.
+type ObjectStore interface {
 	GetPresignedUploadURL(ctx context.Context, objectName string, contentType string, fileSize int64, expires time.Duration) (uploadURL string, headers map[string]string, err error)
 	GetFileURL(ctx context.Context, objectName string) (string, error)
 	IsObjectExists(ctx context.Context, objectName string) (bool, error)

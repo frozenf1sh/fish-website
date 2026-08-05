@@ -30,7 +30,7 @@ func (r *purgeAlbumRepository) DeleteImages(_ context.Context, _ string, imageID
 }
 
 type purgeFileStorage struct {
-	domain.FileStorage
+	domain.ObjectStore
 	deleteErr error
 	deleted   []string
 }
