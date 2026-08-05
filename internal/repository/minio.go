@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -116,7 +117,7 @@ func (s *minioFileStorage) GetPresignedUploadURL(ctx context.Context, objectName
 	reqParams := make(url.Values)
 	reqParams.Set("Content-Type", contentType)
 
-	presignedURL, err := s.client.PresignedPutObject(ctx, s.bucketName, objectName, expires)
+	presignedURL, err := s.client.Presign(ctx, http.MethodPut, s.bucketName, objectName, expires, reqParams)
 	if err != nil {
 		logger.Error("failed to generate presigned URL", logger.Err(err))
 		return "", nil, fmt.Errorf("presign put object: %w", err)
