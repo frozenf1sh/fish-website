@@ -29,6 +29,6 @@ kustomize:
 	kubectl kustomize deploy/registry >/dev/null
 
 build: web-build
-	go build -o /dev/null ./cmd/server
+	go build ./cmd/...
 
 verify: generate-check lint test web-lint build kustomize

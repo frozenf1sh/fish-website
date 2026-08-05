@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -25,13 +26,11 @@ type AlbumUsecase struct {
 
 // NewAlbumUsecase creates a new AlbumUsecase
 func NewAlbumUsecase(albumRepo domain.AlbumRepository, fileStorage domain.FileStorage, imageRefRepo domain.ImageReferenceRepository) *AlbumUsecase {
-	u := &AlbumUsecase{
+	return &AlbumUsecase{
 		albumRepo:    albumRepo,
 		fileStorage:  fileStorage,
 		imageRefRepo: imageRefRepo,
 	}
-	go u.startRecycleBinCleaner()
-	return u
 }
 
 func (u *AlbumUsecase) AnalyzeImageReferences(ctx context.Context, albumID string) ([]*domain.ImageReferenceRecord, *domain.ImageReferenceSummary, error) {
@@ -85,55 +84,53 @@ func nextMidnight(t time.Time) time.Time {
 	return time.Date(y, m, d+1, 0, 0, 0, 0, loc)
 }
 
-func (u *AlbumUsecase) purgeRecycleBin() {
-	ctx := context.Background()
+// PurgeRecycleBin permanently removes all images currently in the recycle
+// bin. It is deliberately a bounded, one-shot application command so that a
+// platform scheduler can own retries, observability and concurrency.
+//
+// Objects are removed before their metadata. This ordering preserves a retry
+// path when object storage is temporarily unavailable: metadata remains until
+// the object has been removed (or is already absent).
+func (u *AlbumUsecase) PurgeRecycleBin(ctx context.Context) (int, error) {
 	if err := u.ensureRecycleBinAlbum(ctx); err != nil {
-		logger.Error("ensure recycle bin before purge failed", logger.Err(err))
-		return
+		return 0, err
 	}
 
+	purged := 0
 	for {
 		images, _, hasMore, err := u.albumRepo.ListImagesByAlbum(ctx, recycleBinAlbumID, 200, "")
 		if err != nil {
-			logger.Error("list recycle bin images failed", logger.Err(err))
-			return
+			return purged, fmt.Errorf("list recycle bin images: %w", err)
 		}
 		if len(images) == 0 {
-			return
+			return purged, nil
 		}
 
-		imageIDs := make([]string, 0, len(images))
+		deletedIDs := make([]string, 0, len(images))
+		var objectErrors []error
 		for _, image := range images {
-			imageIDs = append(imageIDs, image.ID)
-		}
-
-		deletedImages, err := u.albumRepo.DeleteImages(ctx, recycleBinAlbumID, imageIDs)
-		if err != nil {
-			logger.Error("delete recycle bin images failed", logger.Err(err))
-			return
-		}
-
-		for _, image := range deletedImages {
 			objectName := fmt.Sprintf("images/%s/%s", image.AlbumID, image.ID)
 			if err := u.fileStorage.DeleteObject(ctx, objectName); err != nil {
-				logger.Error("purge recycle object failed", logger.String("image_id", image.ID), logger.Err(err))
+				objectErrors = append(objectErrors, fmt.Errorf("delete object for image %s: %w", image.ID, err))
+				continue
 			}
+			deletedIDs = append(deletedIDs, image.ID)
+		}
+
+		if len(deletedIDs) > 0 {
+			if _, err := u.albumRepo.DeleteImages(ctx, recycleBinAlbumID, deletedIDs); err != nil {
+				return purged, fmt.Errorf("delete recycle bin metadata: %w", err)
+			}
+			purged += len(deletedIDs)
+		}
+
+		if len(objectErrors) > 0 {
+			return purged, fmt.Errorf("purge recycle bin objects: %w", errors.Join(objectErrors...))
 		}
 
 		if !hasMore {
-			return
+			return purged, nil
 		}
-	}
-}
-
-func (u *AlbumUsecase) startRecycleBinCleaner() {
-	for {
-		now := time.Now()
-		target := nextMidnight(now)
-		timer := time.NewTimer(time.Until(target))
-		<-timer.C
-		timer.Stop()
-		u.purgeRecycleBin()
 	}
 }
 

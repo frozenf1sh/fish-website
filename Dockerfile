@@ -16,7 +16,8 @@ RUN go mod download
 COPY . .
 
 # 构建应用
-RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server \
+    && CGO_ENABLED=0 GOOS=linux go build -o recycle-bin-purge ./cmd/recycle-bin-purge
 
 # 第二阶段：生产镜像
 FROM alpine:3.22
@@ -30,6 +31,7 @@ RUN apk add --no-cache ca-certificates tzdata \
 
 # 从构建阶段复制二进制文件。schema 已通过 go:embed 编入二进制。
 COPY --from=builder --chown=65532:65532 /app/server /app/server
+COPY --from=builder --chown=65532:65532 /app/recycle-bin-purge /app/recycle-bin-purge
 
 # 暴露端口
 EXPOSE 8080

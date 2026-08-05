@@ -169,6 +169,60 @@ spec:
             capabilities: {drop: [ALL]}
             seccompProfile: {type: RuntimeDefault}
 ---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: recycle-bin-purge
+  namespace: fish-website
+  labels:
+    app.kubernetes.io/name: recycle-bin-purge
+    app.kubernetes.io/component: maintenance
+    app.kubernetes.io/part-of: fish-website
+spec:
+  schedule: "0 0 * * *"
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1200
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: recycle-bin-purge
+            app.kubernetes.io/component: maintenance
+            app.kubernetes.io/part-of: fish-website
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: fish-website
+          automountServiceAccountToken: false
+          imagePullSecrets: [{name: registry-credentials}]
+          containers:
+            - name: recycle-bin-purge
+              image: backend
+              command: ["/app/recycle-bin-purge"]
+              env:
+                - {name: POSTGRES_DSN, valueFrom: {secretKeyRef: {name: database, key: dsn}}}
+                - {name: MINIO_ENDPOINT, valueFrom: {secretKeyRef: {name: r2, key: endpoint}}}
+                - {name: MINIO_ACCESS_KEY, valueFrom: {secretKeyRef: {name: r2, key: access-key-id}}}
+                - {name: MINIO_SECRET_KEY, valueFrom: {secretKeyRef: {name: r2, key: secret-access-key}}}
+                - {name: MINIO_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
+                - {name: MINIO_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
+                - {name: MINIO_USE_SSL, value: "true"}
+              resources:
+                requests: {cpu: 50m, memory: 96Mi}
+                limits: {cpu: 500m, memory: 256Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 65532
+                capabilities: {drop: [ALL]}
+                seccompProfile: {type: RuntimeDefault}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
