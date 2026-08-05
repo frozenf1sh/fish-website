@@ -9,7 +9,6 @@ import (
 	context "context"
 	errors "errors"
 	v1 "github.com/frozenfish/fish-website/gen/go/home/v1"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"
 )
@@ -198,7 +197,7 @@ type PostServiceClient interface {
 	// UpdatePost updates post content and image urls
 	UpdatePost(context.Context, *connect.Request[v1.UpdatePostRequest]) (*connect.Response[v1.UpdatePostResponse], error)
 	// DeletePost deletes a post by ID
-	DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error)
+	DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[v1.DeletePostResponse], error)
 }
 
 // NewPostServiceClient constructs a client for the home.v1.PostService service. By default, it uses
@@ -236,7 +235,7 @@ func NewPostServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(postServiceMethods.ByName("UpdatePost")),
 			connect.WithClientOptions(opts...),
 		),
-		deletePost: connect.NewClient[v1.DeletePostRequest, emptypb.Empty](
+		deletePost: connect.NewClient[v1.DeletePostRequest, v1.DeletePostResponse](
 			httpClient,
 			baseURL+PostServiceDeletePostProcedure,
 			connect.WithSchema(postServiceMethods.ByName("DeletePost")),
@@ -251,7 +250,7 @@ type postServiceClient struct {
 	listPosts  *connect.Client[v1.ListPostsRequest, v1.ListPostsResponse]
 	getPost    *connect.Client[v1.GetPostRequest, v1.GetPostResponse]
 	updatePost *connect.Client[v1.UpdatePostRequest, v1.UpdatePostResponse]
-	deletePost *connect.Client[v1.DeletePostRequest, emptypb.Empty]
+	deletePost *connect.Client[v1.DeletePostRequest, v1.DeletePostResponse]
 }
 
 // CreatePost calls home.v1.PostService.CreatePost.
@@ -275,7 +274,7 @@ func (c *postServiceClient) UpdatePost(ctx context.Context, req *connect.Request
 }
 
 // DeletePost calls home.v1.PostService.DeletePost.
-func (c *postServiceClient) DeletePost(ctx context.Context, req *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error) {
+func (c *postServiceClient) DeletePost(ctx context.Context, req *connect.Request[v1.DeletePostRequest]) (*connect.Response[v1.DeletePostResponse], error) {
 	return c.deletePost.CallUnary(ctx, req)
 }
 
@@ -290,7 +289,7 @@ type PostServiceHandler interface {
 	// UpdatePost updates post content and image urls
 	UpdatePost(context.Context, *connect.Request[v1.UpdatePostRequest]) (*connect.Response[v1.UpdatePostResponse], error)
 	// DeletePost deletes a post by ID
-	DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error)
+	DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[v1.DeletePostResponse], error)
 }
 
 // NewPostServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -367,7 +366,7 @@ func (UnimplementedPostServiceHandler) UpdatePost(context.Context, *connect.Requ
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.PostService.UpdatePost is not implemented"))
 }
 
-func (UnimplementedPostServiceHandler) DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error) {
+func (UnimplementedPostServiceHandler) DeletePost(context.Context, *connect.Request[v1.DeletePostRequest]) (*connect.Response[v1.DeletePostResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.PostService.DeletePost is not implemented"))
 }
 
@@ -378,7 +377,7 @@ type BlogServiceClient interface {
 	// UpdateArticle updates an existing blog article
 	UpdateArticle(context.Context, *connect.Request[v1.UpdateArticleRequest]) (*connect.Response[v1.UpdateArticleResponse], error)
 	// DeleteArticle deletes a blog article
-	DeleteArticle(context.Context, *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error)
+	DeleteArticle(context.Context, *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[v1.DeleteArticleResponse], error)
 	// ListArticles returns articles with folder filter support
 	ListArticles(context.Context, *connect.Request[v1.ListArticlesRequest]) (*connect.Response[v1.ListArticlesResponse], error)
 	// GetArticle returns a single article by ID
@@ -388,7 +387,7 @@ type BlogServiceClient interface {
 	// UpdateFolder updates folder name or hierarchy
 	UpdateFolder(context.Context, *connect.Request[v1.UpdateFolderRequest]) (*connect.Response[v1.UpdateFolderResponse], error)
 	// DeleteFolder deletes a folder and moves all nested articles to root
-	DeleteFolder(context.Context, *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error)
+	DeleteFolder(context.Context, *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[v1.DeleteFolderResponse], error)
 }
 
 // NewBlogServiceClient constructs a client for the home.v1.BlogService service. By default, it uses
@@ -414,7 +413,7 @@ func NewBlogServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(blogServiceMethods.ByName("UpdateArticle")),
 			connect.WithClientOptions(opts...),
 		),
-		deleteArticle: connect.NewClient[v1.DeleteArticleRequest, emptypb.Empty](
+		deleteArticle: connect.NewClient[v1.DeleteArticleRequest, v1.DeleteArticleResponse](
 			httpClient,
 			baseURL+BlogServiceDeleteArticleProcedure,
 			connect.WithSchema(blogServiceMethods.ByName("DeleteArticle")),
@@ -444,7 +443,7 @@ func NewBlogServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(blogServiceMethods.ByName("UpdateFolder")),
 			connect.WithClientOptions(opts...),
 		),
-		deleteFolder: connect.NewClient[v1.DeleteFolderRequest, emptypb.Empty](
+		deleteFolder: connect.NewClient[v1.DeleteFolderRequest, v1.DeleteFolderResponse](
 			httpClient,
 			baseURL+BlogServiceDeleteFolderProcedure,
 			connect.WithSchema(blogServiceMethods.ByName("DeleteFolder")),
@@ -457,12 +456,12 @@ func NewBlogServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 type blogServiceClient struct {
 	createArticle *connect.Client[v1.CreateArticleRequest, v1.CreateArticleResponse]
 	updateArticle *connect.Client[v1.UpdateArticleRequest, v1.UpdateArticleResponse]
-	deleteArticle *connect.Client[v1.DeleteArticleRequest, emptypb.Empty]
+	deleteArticle *connect.Client[v1.DeleteArticleRequest, v1.DeleteArticleResponse]
 	listArticles  *connect.Client[v1.ListArticlesRequest, v1.ListArticlesResponse]
 	getArticle    *connect.Client[v1.GetArticleRequest, v1.GetArticleResponse]
 	createFolder  *connect.Client[v1.CreateFolderRequest, v1.CreateFolderResponse]
 	updateFolder  *connect.Client[v1.UpdateFolderRequest, v1.UpdateFolderResponse]
-	deleteFolder  *connect.Client[v1.DeleteFolderRequest, emptypb.Empty]
+	deleteFolder  *connect.Client[v1.DeleteFolderRequest, v1.DeleteFolderResponse]
 }
 
 // CreateArticle calls home.v1.BlogService.CreateArticle.
@@ -476,7 +475,7 @@ func (c *blogServiceClient) UpdateArticle(ctx context.Context, req *connect.Requ
 }
 
 // DeleteArticle calls home.v1.BlogService.DeleteArticle.
-func (c *blogServiceClient) DeleteArticle(ctx context.Context, req *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error) {
+func (c *blogServiceClient) DeleteArticle(ctx context.Context, req *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[v1.DeleteArticleResponse], error) {
 	return c.deleteArticle.CallUnary(ctx, req)
 }
 
@@ -501,7 +500,7 @@ func (c *blogServiceClient) UpdateFolder(ctx context.Context, req *connect.Reque
 }
 
 // DeleteFolder calls home.v1.BlogService.DeleteFolder.
-func (c *blogServiceClient) DeleteFolder(ctx context.Context, req *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error) {
+func (c *blogServiceClient) DeleteFolder(ctx context.Context, req *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[v1.DeleteFolderResponse], error) {
 	return c.deleteFolder.CallUnary(ctx, req)
 }
 
@@ -512,7 +511,7 @@ type BlogServiceHandler interface {
 	// UpdateArticle updates an existing blog article
 	UpdateArticle(context.Context, *connect.Request[v1.UpdateArticleRequest]) (*connect.Response[v1.UpdateArticleResponse], error)
 	// DeleteArticle deletes a blog article
-	DeleteArticle(context.Context, *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error)
+	DeleteArticle(context.Context, *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[v1.DeleteArticleResponse], error)
 	// ListArticles returns articles with folder filter support
 	ListArticles(context.Context, *connect.Request[v1.ListArticlesRequest]) (*connect.Response[v1.ListArticlesResponse], error)
 	// GetArticle returns a single article by ID
@@ -522,7 +521,7 @@ type BlogServiceHandler interface {
 	// UpdateFolder updates folder name or hierarchy
 	UpdateFolder(context.Context, *connect.Request[v1.UpdateFolderRequest]) (*connect.Response[v1.UpdateFolderResponse], error)
 	// DeleteFolder deletes a folder and moves all nested articles to root
-	DeleteFolder(context.Context, *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error)
+	DeleteFolder(context.Context, *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[v1.DeleteFolderResponse], error)
 }
 
 // NewBlogServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -615,7 +614,7 @@ func (UnimplementedBlogServiceHandler) UpdateArticle(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.UpdateArticle is not implemented"))
 }
 
-func (UnimplementedBlogServiceHandler) DeleteArticle(context.Context, *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error) {
+func (UnimplementedBlogServiceHandler) DeleteArticle(context.Context, *connect.Request[v1.DeleteArticleRequest]) (*connect.Response[v1.DeleteArticleResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.DeleteArticle is not implemented"))
 }
 
@@ -635,7 +634,7 @@ func (UnimplementedBlogServiceHandler) UpdateFolder(context.Context, *connect.Re
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.UpdateFolder is not implemented"))
 }
 
-func (UnimplementedBlogServiceHandler) DeleteFolder(context.Context, *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error) {
+func (UnimplementedBlogServiceHandler) DeleteFolder(context.Context, *connect.Request[v1.DeleteFolderRequest]) (*connect.Response[v1.DeleteFolderResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.BlogService.DeleteFolder is not implemented"))
 }
 
@@ -658,11 +657,11 @@ type AlbumServiceClient interface {
 	// AnalyzeImageReferences analyzes whether images in an album are still referenced
 	AnalyzeImageReferences(context.Context, *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error)
 	// RepairImageReferences repairs reference counter consistency from source data
-	RepairImageReferences(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.RepairImageReferencesResponse], error)
+	RepairImageReferences(context.Context, *connect.Request[v1.RepairImageReferencesRequest]) (*connect.Response[v1.RepairImageReferencesResponse], error)
 	// DeleteImages deletes images from album and schedules delayed object deletion
 	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
 	// DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
-	DeleteAlbum(context.Context, *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error)
+	DeleteAlbum(context.Context, *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[v1.DeleteAlbumResponse], error)
 }
 
 // NewAlbumServiceClient constructs a client for the home.v1.AlbumService service. By default, it
@@ -724,7 +723,7 @@ func NewAlbumServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(albumServiceMethods.ByName("AnalyzeImageReferences")),
 			connect.WithClientOptions(opts...),
 		),
-		repairImageReferences: connect.NewClient[emptypb.Empty, v1.RepairImageReferencesResponse](
+		repairImageReferences: connect.NewClient[v1.RepairImageReferencesRequest, v1.RepairImageReferencesResponse](
 			httpClient,
 			baseURL+AlbumServiceRepairImageReferencesProcedure,
 			connect.WithSchema(albumServiceMethods.ByName("RepairImageReferences")),
@@ -736,7 +735,7 @@ func NewAlbumServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(albumServiceMethods.ByName("DeleteImages")),
 			connect.WithClientOptions(opts...),
 		),
-		deleteAlbum: connect.NewClient[v1.DeleteAlbumRequest, emptypb.Empty](
+		deleteAlbum: connect.NewClient[v1.DeleteAlbumRequest, v1.DeleteAlbumResponse](
 			httpClient,
 			baseURL+AlbumServiceDeleteAlbumProcedure,
 			connect.WithSchema(albumServiceMethods.ByName("DeleteAlbum")),
@@ -755,9 +754,9 @@ type albumServiceClient struct {
 	updateAlbum            *connect.Client[v1.UpdateAlbumRequest, v1.UpdateAlbumResponse]
 	moveImages             *connect.Client[v1.MoveImagesRequest, v1.MoveImagesResponse]
 	analyzeImageReferences *connect.Client[v1.AnalyzeImageReferencesRequest, v1.AnalyzeImageReferencesResponse]
-	repairImageReferences  *connect.Client[emptypb.Empty, v1.RepairImageReferencesResponse]
+	repairImageReferences  *connect.Client[v1.RepairImageReferencesRequest, v1.RepairImageReferencesResponse]
 	deleteImages           *connect.Client[v1.DeleteImagesRequest, v1.DeleteImagesResponse]
-	deleteAlbum            *connect.Client[v1.DeleteAlbumRequest, emptypb.Empty]
+	deleteAlbum            *connect.Client[v1.DeleteAlbumRequest, v1.DeleteAlbumResponse]
 }
 
 // CreateAlbum calls home.v1.AlbumService.CreateAlbum.
@@ -801,7 +800,7 @@ func (c *albumServiceClient) AnalyzeImageReferences(ctx context.Context, req *co
 }
 
 // RepairImageReferences calls home.v1.AlbumService.RepairImageReferences.
-func (c *albumServiceClient) RepairImageReferences(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[v1.RepairImageReferencesResponse], error) {
+func (c *albumServiceClient) RepairImageReferences(ctx context.Context, req *connect.Request[v1.RepairImageReferencesRequest]) (*connect.Response[v1.RepairImageReferencesResponse], error) {
 	return c.repairImageReferences.CallUnary(ctx, req)
 }
 
@@ -811,7 +810,7 @@ func (c *albumServiceClient) DeleteImages(ctx context.Context, req *connect.Requ
 }
 
 // DeleteAlbum calls home.v1.AlbumService.DeleteAlbum.
-func (c *albumServiceClient) DeleteAlbum(ctx context.Context, req *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error) {
+func (c *albumServiceClient) DeleteAlbum(ctx context.Context, req *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[v1.DeleteAlbumResponse], error) {
 	return c.deleteAlbum.CallUnary(ctx, req)
 }
 
@@ -834,11 +833,11 @@ type AlbumServiceHandler interface {
 	// AnalyzeImageReferences analyzes whether images in an album are still referenced
 	AnalyzeImageReferences(context.Context, *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error)
 	// RepairImageReferences repairs reference counter consistency from source data
-	RepairImageReferences(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.RepairImageReferencesResponse], error)
+	RepairImageReferences(context.Context, *connect.Request[v1.RepairImageReferencesRequest]) (*connect.Response[v1.RepairImageReferencesResponse], error)
 	// DeleteImages deletes images from album and schedules delayed object deletion
 	DeleteImages(context.Context, *connect.Request[v1.DeleteImagesRequest]) (*connect.Response[v1.DeleteImagesResponse], error)
 	// DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
-	DeleteAlbum(context.Context, *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error)
+	DeleteAlbum(context.Context, *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[v1.DeleteAlbumResponse], error)
 }
 
 // NewAlbumServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -979,7 +978,7 @@ func (UnimplementedAlbumServiceHandler) AnalyzeImageReferences(context.Context, 
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.AnalyzeImageReferences is not implemented"))
 }
 
-func (UnimplementedAlbumServiceHandler) RepairImageReferences(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.RepairImageReferencesResponse], error) {
+func (UnimplementedAlbumServiceHandler) RepairImageReferences(context.Context, *connect.Request[v1.RepairImageReferencesRequest]) (*connect.Response[v1.RepairImageReferencesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.RepairImageReferences is not implemented"))
 }
 
@@ -987,14 +986,14 @@ func (UnimplementedAlbumServiceHandler) DeleteImages(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.DeleteImages is not implemented"))
 }
 
-func (UnimplementedAlbumServiceHandler) DeleteAlbum(context.Context, *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error) {
+func (UnimplementedAlbumServiceHandler) DeleteAlbum(context.Context, *connect.Request[v1.DeleteAlbumRequest]) (*connect.Response[v1.DeleteAlbumResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.DeleteAlbum is not implemented"))
 }
 
 // SettingsServiceClient is a client for the home.v1.SettingsService service.
 type SettingsServiceClient interface {
 	// GetSettings retrieves current user settings
-	GetSettings(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.GetSettingsResponse], error)
+	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// UpdateSettings updates user settings
 	UpdateSettings(context.Context, *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error)
 }
@@ -1010,7 +1009,7 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 	baseURL = strings.TrimRight(baseURL, "/")
 	settingsServiceMethods := v1.File_home_v1_homepage_proto.Services().ByName("SettingsService").Methods()
 	return &settingsServiceClient{
-		getSettings: connect.NewClient[emptypb.Empty, v1.GetSettingsResponse](
+		getSettings: connect.NewClient[v1.GetSettingsRequest, v1.GetSettingsResponse](
 			httpClient,
 			baseURL+SettingsServiceGetSettingsProcedure,
 			connect.WithSchema(settingsServiceMethods.ByName("GetSettings")),
@@ -1027,12 +1026,12 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 
 // settingsServiceClient implements SettingsServiceClient.
 type settingsServiceClient struct {
-	getSettings    *connect.Client[emptypb.Empty, v1.GetSettingsResponse]
+	getSettings    *connect.Client[v1.GetSettingsRequest, v1.GetSettingsResponse]
 	updateSettings *connect.Client[v1.UpdateSettingsRequest, v1.UpdateSettingsResponse]
 }
 
 // GetSettings calls home.v1.SettingsService.GetSettings.
-func (c *settingsServiceClient) GetSettings(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[v1.GetSettingsResponse], error) {
+func (c *settingsServiceClient) GetSettings(ctx context.Context, req *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error) {
 	return c.getSettings.CallUnary(ctx, req)
 }
 
@@ -1044,7 +1043,7 @@ func (c *settingsServiceClient) UpdateSettings(ctx context.Context, req *connect
 // SettingsServiceHandler is an implementation of the home.v1.SettingsService service.
 type SettingsServiceHandler interface {
 	// GetSettings retrieves current user settings
-	GetSettings(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.GetSettingsResponse], error)
+	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// UpdateSettings updates user settings
 	UpdateSettings(context.Context, *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error)
 }
@@ -1083,7 +1082,7 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 // UnimplementedSettingsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedSettingsServiceHandler struct{}
 
-func (UnimplementedSettingsServiceHandler) GetSettings(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.GetSettingsResponse], error) {
+func (UnimplementedSettingsServiceHandler) GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.SettingsService.GetSettings is not implemented"))
 }
 

@@ -5,7 +5,6 @@ package home.v1;
 option go_package = "github.com/frozenfish/fish-website/gen/go/home/v1;homev1";
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
 
 // AuthService handles user authentication
 service AuthService {
@@ -24,7 +23,7 @@ service PostService {
   // UpdatePost updates post content and image urls
   rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse);
   // DeletePost deletes a post by ID
-  rpc DeletePost(DeletePostRequest) returns (google.protobuf.Empty);
+  rpc DeletePost(DeletePostRequest) returns (DeletePostResponse);
 }
 
 // BlogService handles blog articles with folder organization
@@ -34,7 +33,7 @@ service BlogService {
   // UpdateArticle updates an existing blog article
   rpc UpdateArticle(UpdateArticleRequest) returns (UpdateArticleResponse);
   // DeleteArticle deletes a blog article
-  rpc DeleteArticle(DeleteArticleRequest) returns (google.protobuf.Empty);
+  rpc DeleteArticle(DeleteArticleRequest) returns (DeleteArticleResponse);
   // ListArticles returns articles with folder filter support
   rpc ListArticles(ListArticlesRequest) returns (ListArticlesResponse);
   // GetArticle returns a single article by ID
@@ -44,7 +43,7 @@ service BlogService {
   // UpdateFolder updates folder name or hierarchy
   rpc UpdateFolder(UpdateFolderRequest) returns (UpdateFolderResponse);
   // DeleteFolder deletes a folder and moves all nested articles to root
-  rpc DeleteFolder(DeleteFolderRequest) returns (google.protobuf.Empty);
+  rpc DeleteFolder(DeleteFolderRequest) returns (DeleteFolderResponse);
 }
 
 // AlbumService handles photo albums and image uploads
@@ -66,17 +65,17 @@ service AlbumService {
   // AnalyzeImageReferences analyzes whether images in an album are still referenced
   rpc AnalyzeImageReferences(AnalyzeImageReferencesRequest) returns (AnalyzeImageReferencesResponse);
   // RepairImageReferences repairs reference counter consistency from source data
-  rpc RepairImageReferences(google.protobuf.Empty) returns (RepairImageReferencesResponse);
+  rpc RepairImageReferences(RepairImageReferencesRequest) returns (RepairImageReferencesResponse);
   // DeleteImages deletes images from album and schedules delayed object deletion
   rpc DeleteImages(DeleteImagesRequest) returns (DeleteImagesResponse);
   // DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
-  rpc DeleteAlbum(DeleteAlbumRequest) returns (google.protobuf.Empty);
+  rpc DeleteAlbum(DeleteAlbumRequest) returns (DeleteAlbumResponse);
 }
 
 // SettingsService handles user settings and preferences
 service SettingsService {
   // GetSettings retrieves current user settings
-  rpc GetSettings(google.protobuf.Empty) returns (GetSettingsResponse);
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
   // UpdateSettings updates user settings
   rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
 }
@@ -143,6 +142,8 @@ message DeletePostRequest {
   string id = 1;
 }
 
+message DeletePostResponse {}
+
 // Blog messages
 message Folder {
   string id = 1;
@@ -197,6 +198,8 @@ message DeleteArticleRequest {
   string article_id = 1;
 }
 
+message DeleteArticleResponse {}
+
 message ListArticlesRequest {
   int32 page_size = 1;
   string page_token = 2;
@@ -242,6 +245,8 @@ message UpdateFolderResponse {
 message DeleteFolderRequest {
   string folder_id = 1;
 }
+
+message DeleteFolderResponse {}
 
 // Album messages
 message Album {
@@ -363,6 +368,8 @@ message AnalyzeImageReferencesResponse {
   int32 total_reference_count = 5;
 }
 
+message RepairImageReferencesRequest {}
+
 message RepairImageReferencesResponse {
   int32 processed_images = 1;
   int32 referenced_images = 2;
@@ -384,7 +391,11 @@ message DeleteAlbumRequest {
   string album_id = 1;
 }
 
+message DeleteAlbumResponse {}
+
 // Settings messages
+message GetSettingsRequest {}
+
 message Settings {
   // Personal info
   string display_name = 1;

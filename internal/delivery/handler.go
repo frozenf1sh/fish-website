@@ -12,7 +12,6 @@ import (
 	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/usecase"
 	"github.com/frozenfish/fish-website/pkg/logger"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -156,7 +155,7 @@ func (h *Handler) UpdatePost(ctx context.Context, req *connect.Request[homev1.Up
 }
 
 // DeletePost deletes a post
-func (h *Handler) DeletePost(ctx context.Context, req *connect.Request[homev1.DeletePostRequest]) (*connect.Response[emptypb.Empty], error) {
+func (h *Handler) DeletePost(ctx context.Context, req *connect.Request[homev1.DeletePostRequest]) (*connect.Response[homev1.DeletePostResponse], error) {
 	logger.Info("received DeletePost request", logger.String("post_id", req.Msg.Id))
 
 	err := h.postUsecase.DeletePost(ctx, req.Msg.Id)
@@ -166,7 +165,7 @@ func (h *Handler) DeletePost(ctx context.Context, req *connect.Request[homev1.De
 	}
 
 	logger.Info("DeletePost successful", logger.String("post_id", req.Msg.Id))
-	return connect.NewResponse(&emptypb.Empty{}), nil
+	return connect.NewResponse(&homev1.DeletePostResponse{}), nil
 }
 
 // CreateArticle creates a new article
@@ -207,7 +206,7 @@ func (h *Handler) UpdateArticle(ctx context.Context, req *connect.Request[homev1
 }
 
 // DeleteArticle deletes an article
-func (h *Handler) DeleteArticle(ctx context.Context, req *connect.Request[homev1.DeleteArticleRequest]) (*connect.Response[emptypb.Empty], error) {
+func (h *Handler) DeleteArticle(ctx context.Context, req *connect.Request[homev1.DeleteArticleRequest]) (*connect.Response[homev1.DeleteArticleResponse], error) {
 	logger.Info("received DeleteArticle request", logger.String("article_id", req.Msg.ArticleId))
 
 	if err := h.blogUsecase.DeleteArticle(ctx, req.Msg.ArticleId); err != nil {
@@ -215,7 +214,7 @@ func (h *Handler) DeleteArticle(ctx context.Context, req *connect.Request[homev1
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return connect.NewResponse(&emptypb.Empty{}), nil
+	return connect.NewResponse(&homev1.DeleteArticleResponse{}), nil
 }
 
 // ListArticles lists articles
@@ -296,7 +295,7 @@ func (h *Handler) UpdateFolder(ctx context.Context, req *connect.Request[homev1.
 }
 
 // DeleteFolder deletes a folder and moves nested articles to root
-func (h *Handler) DeleteFolder(ctx context.Context, req *connect.Request[homev1.DeleteFolderRequest]) (*connect.Response[emptypb.Empty], error) {
+func (h *Handler) DeleteFolder(ctx context.Context, req *connect.Request[homev1.DeleteFolderRequest]) (*connect.Response[homev1.DeleteFolderResponse], error) {
 	logger.Info("received DeleteFolder request", logger.String("folder_id", req.Msg.FolderId))
 
 	if err := h.blogUsecase.DeleteFolder(ctx, req.Msg.FolderId); err != nil {
@@ -304,7 +303,7 @@ func (h *Handler) DeleteFolder(ctx context.Context, req *connect.Request[homev1.
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return connect.NewResponse(&emptypb.Empty{}), nil
+	return connect.NewResponse(&homev1.DeleteFolderResponse{}), nil
 }
 
 // CreateAlbum creates an album
@@ -490,7 +489,7 @@ func (h *Handler) AnalyzeImageReferences(ctx context.Context, req *connect.Reque
 }
 
 // RepairImageReferences rebuilds reference counters from source data.
-func (h *Handler) RepairImageReferences(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[homev1.RepairImageReferencesResponse], error) {
+func (h *Handler) RepairImageReferences(ctx context.Context, req *connect.Request[homev1.RepairImageReferencesRequest]) (*connect.Response[homev1.RepairImageReferencesResponse], error) {
 	logger.Info("received RepairImageReferences request")
 
 	result, err := h.albumUsecase.RepairImageReferenceConsistency(ctx)
@@ -526,7 +525,7 @@ func (h *Handler) DeleteImages(ctx context.Context, req *connect.Request[homev1.
 }
 
 // DeleteAlbum deletes an album. Deleting recycle bin means permanent deletion.
-func (h *Handler) DeleteAlbum(ctx context.Context, req *connect.Request[homev1.DeleteAlbumRequest]) (*connect.Response[emptypb.Empty], error) {
+func (h *Handler) DeleteAlbum(ctx context.Context, req *connect.Request[homev1.DeleteAlbumRequest]) (*connect.Response[homev1.DeleteAlbumResponse], error) {
 	logger.Info("received DeleteAlbum request", logger.String("album_id", req.Msg.AlbumId))
 
 	if err := h.albumUsecase.DeleteAlbum(ctx, req.Msg.AlbumId); err != nil {
@@ -534,11 +533,11 @@ func (h *Handler) DeleteAlbum(ctx context.Context, req *connect.Request[homev1.D
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return connect.NewResponse(&emptypb.Empty{}), nil
+	return connect.NewResponse(&homev1.DeleteAlbumResponse{}), nil
 }
 
 // GetSettings gets settings
-func (h *Handler) GetSettings(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[homev1.GetSettingsResponse], error) {
+func (h *Handler) GetSettings(ctx context.Context, req *connect.Request[homev1.GetSettingsRequest]) (*connect.Response[homev1.GetSettingsResponse], error) {
 	logger.Debug("received GetSettings request")
 
 	settings, err := h.settingsUsecase.GetSettings(ctx)

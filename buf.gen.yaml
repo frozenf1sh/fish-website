@@ -1,14 +1,14 @@
 version: v2
 plugins:
-  - local: protoc-gen-go
+  - remote: buf.build/protocolbuffers/go:v1.36.9
     out: gen/go
     opt: paths=source_relative
-  - local: protoc-gen-connect-go
+  - remote: buf.build/connectrpc/go:v1.19.1
     out: gen/go
     opt: paths=source_relative
-  - local: /home/fish/.nvm/versions/node/v24.11.0/bin/protoc-gen-es
-    out: gen/web
+  - remote: buf.build/bufbuild/es:v1.10.0
+    out: frontend/src/gen
     opt: target=ts
-  - local: /home/fish/.nvm/versions/node/v24.11.0/bin/protoc-gen-connect-es
-    out: gen/web
+  - remote: buf.build/connectrpc/es:v1.6.1
+    out: frontend/src/gen
     opt: target=ts
