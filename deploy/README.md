@@ -18,6 +18,13 @@ first promotion. Create development namespace secrets with
 bucket-scoped R2 and registry credentials through the Kubernetes API and creates
 new database and application secrets.
 
+Owner credentials use an Argon2id PHC hash in the `application` Secret. Before
+enabling the `ADMIN_PASSWORD_HASH` workload variable on an existing namespace,
+run `scripts/migrate-admin-password-hash.sh fish-website` (and the development
+namespace equivalent). The script only adds `admin-password-hash`; after both
+environments run the new image, remove the legacy `admin-password` key during a
+separate rotation window.
+
 `fish.frozenf1sh.top` is protected by Traefik and cert-manager. The Registry is
 tailnet-only, so it uses a private CA rather than publicly-verifiable ACME. Its
 CA must be trusted by every build host and k3s node. Registry authentication is

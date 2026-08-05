@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"os"
 	"strings"
@@ -18,13 +19,15 @@ const (
 )
 
 var (
-	globalLogger *slog.Logger
+	// Keep package consumers testable before the composition root installs the
+	// configured logger. Production startup replaces this silent fallback.
+	globalLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
 )
 
 // Config represents logger configuration
 type Config struct {
-	Level  Level
-	JSON   bool
+	Level     Level
+	JSON      bool
 	AddSource bool
 }
 

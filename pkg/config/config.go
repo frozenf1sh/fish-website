@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/frozenfish/fish-website/pkg/logger"
@@ -42,8 +43,11 @@ type MinIOConfig struct {
 
 // AuthConfig holds authentication-related configuration
 type AuthConfig struct {
-	AdminPassword string
-	JWTSecret     string
+	OwnerUsername     string
+	AdminPassword     string // Deprecated transitional input. Do not set in new deployments.
+	AdminPasswordHash string
+	JWTSecret         string
+	TokenTTLSeconds   int
 }
 
 // LoggerConfig holds logger-related configuration
@@ -131,6 +135,15 @@ func bindLegacyEnvVars(v *viper.Viper) {
 	if val := os.Getenv("ADMIN_PASSWORD"); val != "" {
 		v.Set("Auth.AdminPassword", val)
 	}
+	if val := os.Getenv("ADMIN_PASSWORD_HASH"); val != "" {
+		v.Set("Auth.AdminPasswordHash", val)
+	}
+	if val := os.Getenv("ADMIN_USERNAME"); val != "" {
+		v.Set("Auth.OwnerUsername", val)
+	}
+	if val := os.Getenv("AUTH_TOKEN_TTL_SECONDS"); val != "" {
+		v.Set("Auth.TokenTTLSeconds", val)
+	}
 	if val := os.Getenv("JWT_SECRET"); val != "" {
 		v.Set("Auth.JWTSecret", val)
 	}
@@ -181,6 +194,15 @@ func applyLegacyEnvVars(cfg *Config) {
 	if val := os.Getenv("ADMIN_PASSWORD"); val != "" && cfg.Auth.AdminPassword == "" {
 		cfg.Auth.AdminPassword = val
 	}
+	if val := os.Getenv("ADMIN_PASSWORD_HASH"); val != "" && cfg.Auth.AdminPasswordHash == "" {
+		cfg.Auth.AdminPasswordHash = val
+	}
+	if val := os.Getenv("ADMIN_USERNAME"); val != "" && cfg.Auth.OwnerUsername == "" {
+		cfg.Auth.OwnerUsername = val
+	}
+	if val := os.Getenv("AUTH_TOKEN_TTL_SECONDS"); val != "" && cfg.Auth.TokenTTLSeconds == 0 {
+		cfg.Auth.TokenTTLSeconds, _ = strconv.Atoi(val)
+	}
 	if val := os.Getenv("JWT_SECRET"); val != "" && cfg.Auth.JWTSecret == "" {
 		cfg.Auth.JWTSecret = val
 	}
@@ -204,7 +226,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("MinIO.Bucket", "fish-website")
 
 	// Auth defaults
-	v.SetDefault("Auth.JWTSecret", "your-super-secret-jwt-key-change-in-production")
+	v.SetDefault("Auth.OwnerUsername", "admin")
+	v.SetDefault("Auth.TokenTTLSeconds", 900)
 
 	// Logger defaults
 	v.SetDefault("Logger.Level", "info")
@@ -228,8 +251,17 @@ func validate(cfg *Config) error {
 	if cfg.MinIO.Bucket == "" {
 		return fmt.Errorf("MinIO bucket is required")
 	}
-	if cfg.Auth.AdminPassword == "" {
-		return fmt.Errorf("admin password is required")
+	if cfg.Auth.OwnerUsername == "" {
+		return fmt.Errorf("owner username is required")
+	}
+	if cfg.Auth.AdminPasswordHash == "" && cfg.Auth.AdminPassword == "" {
+		return fmt.Errorf("admin password hash is required")
+	}
+	if len(cfg.Auth.JWTSecret) < 32 {
+		return fmt.Errorf("JWT secret must contain at least 32 bytes")
+	}
+	if cfg.Auth.TokenTTLSeconds <= 0 || cfg.Auth.TokenTTLSeconds > 24*60*60 {
+		return fmt.Errorf("auth token TTL must be between 1 and 86400 seconds")
 	}
 	return nil
 }

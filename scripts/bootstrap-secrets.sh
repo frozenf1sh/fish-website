@@ -10,6 +10,7 @@ need() { command -v "$1" >/dev/null || { echo "missing required command: $1" >&2
 need kubectl
 need openssl
 need htpasswd
+need go
 
 registry_user=ci
 registry_password=$(openssl rand -base64 32 | tr -d '\n')
@@ -18,6 +19,7 @@ registry_password=$(openssl rand -base64 32 | tr -d '\n')
 postgres_password=$(openssl rand -hex 32)
 minio_password=$(openssl rand -base64 32 | tr -d '\n')
 admin_password=$(openssl rand -base64 32 | tr -d '\n')
+admin_password_hash=$(printf %s "$admin_password" | go run ./cmd/passwordhash)
 jwt_secret=$(openssl rand -hex 48)
 
 kubectl create namespace registry --dry-run=client -o yaml | kubectl apply -f -
@@ -34,7 +36,7 @@ kubectl -n fish-website create secret generic minio \
   --from-literal=password="$minio_password" \
   --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n fish-website create secret generic application \
-  --from-literal=admin-password="$admin_password" \
+  --from-literal=admin-password-hash="$admin_password_hash" \
   --from-literal=jwt-secret="$jwt_secret" \
   --dry-run=client -o yaml | kubectl apply -f -
 

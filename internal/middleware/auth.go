@@ -40,19 +40,15 @@ func (i *AuthInterceptor) RequireAuth() connect.Interceptor {
 				return nil, connect.NewError(connect.CodeUnauthenticated, err)
 			}
 
-			valid, err := i.authUsecase.ValidateToken(ctx, token)
+			user, err := i.authUsecase.ValidateToken(ctx, token)
 			if err != nil {
 				if errors.Is(err, domain.ErrTokenExpired) {
 					return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("token expired"))
 				}
 				return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid token"))
 			}
-			if !valid {
-				return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid token"))
-			}
-
 			// Add user to context
-			ctx = context.WithValue(ctx, userContextKey, "admin")
+			ctx = context.WithValue(ctx, userContextKey, user)
 
 			return next(ctx, req)
 		})
@@ -72,12 +68,12 @@ func (i *AuthInterceptor) attachOptionalUser(ctx context.Context, headers http.H
 		return ctx
 	}
 
-	valid, err := i.authUsecase.ValidateToken(ctx, token)
-	if err != nil || !valid {
+	user, err := i.authUsecase.ValidateToken(ctx, token)
+	if err != nil {
 		return ctx
 	}
 
-	return context.WithValue(ctx, userContextKey, "admin")
+	return context.WithValue(ctx, userContextKey, user)
 }
 
 func extractToken(headers http.Header) (string, error) {
