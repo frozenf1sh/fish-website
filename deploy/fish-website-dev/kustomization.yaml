@@ -94,6 +94,6 @@ patches:
                         name: http
 images:
   - name: registry.frozenf1sh.top/fish-website/backend
-    newTag: sha-fdd20054483c16ce8c6e648d92744274ffc1c0c6
+    newTag: sha-8a04e80de52472a254da3c668bb2b8bceec55288
   - name: registry.frozenf1sh.top/fish-website/frontend
-    newTag: sha-fdd20054483c16ce8c6e648d92744274ffc1c0c6
+    newTag: sha-8a04e80de52472a254da3c668bb2b8bceec55288
