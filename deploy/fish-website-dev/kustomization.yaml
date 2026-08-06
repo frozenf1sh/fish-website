@@ -70,6 +70,7 @@ patches:
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-prod
           traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+          traefik.ingress.kubernetes.io/router.middlewares: fish-website-dev-api-strip@kubernetescrd
       spec:
         tls:
           - hosts: [dev.frozenf1sh.top]
