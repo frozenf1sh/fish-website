@@ -116,12 +116,11 @@ body {
   }
 
   .nav-item {
-    transition: all 0.3s ease;
+    transition: background-color 0.1s ease, color 0.1s ease;
   }
 
   .nav-item:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateX(4px);
   }
 }
 

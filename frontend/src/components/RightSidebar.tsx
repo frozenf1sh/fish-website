@@ -60,15 +60,21 @@ export function RightSidebar() {
                 key={item.name}
                 initial={{ x: 20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
                 whileHover={{ x: 4 }}
+                whileTap={{ scale: 0.98 }}
+                whileFocus={{ x: 4 }}
+                transition={{
+                  x: { duration: 0.12, ease: 'easeOut' },
+                  scale: { duration: 0.1, ease: 'easeOut' },
+                  opacity: { delay: 0.5 + index * 0.1, duration: 0.2 },
+                }}
                 disabled={!item.enabled}
                 onClick={() => {
                   if (item.enabled) {
                     navigate(item.path)
                   }
                 }}
-                className={`w-full nav-item flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
+                className={`w-full nav-item flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-100 ${
                   isActive
                     ? 'bg-white/30 text-white'
                     : item.enabled
