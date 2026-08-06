@@ -48,6 +48,11 @@ jobs:
         with:
           version: "1.72.0"
 
+      - name: Install build tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends make
+
       - name: Verify generated API contracts
         run: make generate-check lint
 
