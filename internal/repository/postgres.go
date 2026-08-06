@@ -885,7 +885,9 @@ func (r *postgresImageReferenceRepository) RepairConsistency(ctx context.Context
 		INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, updated_at)
 		SELECT i.id, COUNT(*)::int, 0, COUNT(*)::int, 0, 0, NOW()
 		FROM articles a
-		CROSS JOIN LATERAL regexp_matches(a.content, '!\\[[^\\]]*\\]\\(([^)]+)\\)', 'g') AS m
+		-- This is a Go raw string; keep one regex escape per metacharacter so
+		-- PostgreSQL sees the same Markdown pattern as the usecase parser.
+		CROSS JOIN LATERAL regexp_matches(a.content, '!\[[^\]]*\]\(([^)]+)\)', 'g') AS m
 		INNER JOIN images i ON i.url = m[1]
 		GROUP BY i.id
 		ON CONFLICT (image_id) DO UPDATE SET
