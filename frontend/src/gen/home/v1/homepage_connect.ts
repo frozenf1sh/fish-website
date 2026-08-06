@@ -3,8 +3,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AnalyzeImageReferencesRequest, AnalyzeImageReferencesResponse, ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteAlbumRequest, DeleteAlbumResponse, DeleteArticleRequest, DeleteArticleResponse, DeleteFolderRequest, DeleteFolderResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, DeletePostResponse, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetSettingsRequest, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, MoveImagesRequest, MoveImagesResponse, RepairImageReferencesRequest, RepairImageReferencesResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
-import { MethodKind } from "@bufbuild/protobuf";
+import { AnalyzeImageReferencesRequest, AnalyzeImageReferencesResponse, ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteAlbumRequest, DeleteAlbumResponse, DeleteArticleRequest, DeleteArticleResponse, DeleteFolderRequest, DeleteFolderResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, DeletePostResponse, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetSettingsRequest, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, LogoutRequest, MoveImagesRequest, MoveImagesResponse, RefreshRequest, RepairImageReferencesRequest, RepairImageReferencesResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
  * AuthService handles user authentication
@@ -23,6 +23,28 @@ export const AuthService = {
       name: "Login",
       I: LoginRequest,
       O: LoginResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * Refresh exchanges the HttpOnly refresh cookie for a new access token.
+     *
+     * @generated from rpc home.v1.AuthService.Refresh
+     */
+    refresh: {
+      name: "Refresh",
+      I: RefreshRequest,
+      O: LoginResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * Logout clears the refresh cookie for this browser.
+     *
+     * @generated from rpc home.v1.AuthService.Logout
+     */
+    logout: {
+      name: "Logout",
+      I: LogoutRequest,
+      O: Empty,
       kind: MethodKind.Unary,
     },
   }

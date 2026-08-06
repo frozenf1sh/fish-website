@@ -21,6 +21,7 @@ const getApiBaseUrl = () => {
 
 const transport = createConnectTransport({
   baseUrl: getApiBaseUrl(),
+  credentials: 'include',
   interceptors: [
     (next) => async (req) => {
       const token = getAuthToken()
@@ -31,10 +32,11 @@ const transport = createConnectTransport({
         return await next(req)
       } catch (err) {
         const connectErr = ConnectError.from(err)
-        if (connectErr.code === Code.Unauthenticated && getAuthToken()) {
-          setAuthToken(null)
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('auth:expired'))
+        if (connectErr.code === Code.Unauthenticated && !req.url.endsWith('/Refresh')) {
+          const refreshed = await refreshAccessToken()
+          if (refreshed) {
+            req.header.set('Authorization', `Bearer ${refreshed}`)
+            return next(req)
           }
         }
         throw err
@@ -73,6 +75,23 @@ const postClient = createPromiseClient(PostService, transport)
 const blogClient = createPromiseClient(BlogService, transport)
 const albumClient = createPromiseClient(AlbumService, transport)
 const settingsClient = createPromiseClient(SettingsService, transport)
+
+let refreshPromise: Promise<string | null> | null = null
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise
+  refreshPromise = authClient.refresh({}).then((response) => {
+    setAuthToken(response.token)
+    return response.token
+  }).catch(() => {
+    setAuthToken(null)
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:expired'))
+    return null
+  }).finally(() => {
+    refreshPromise = null
+  })
+  return refreshPromise
+}
 
 type ArticleStatus = 'draft' | 'published'
 type PageInput = { pageSize?: number; pageToken?: string }
@@ -119,6 +138,13 @@ export const clients = {
           toDate: () => response.expiresAt?.toDate() || new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       }
+    },
+    refresh: async () => {
+      const response = await authClient.refresh({})
+      return { token: response.token, expiresAt: response.expiresAt }
+    },
+    logout: async () => {
+      await authClient.logout({})
     },
   },
   post: {

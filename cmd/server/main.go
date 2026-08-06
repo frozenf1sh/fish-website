@@ -94,7 +94,8 @@ func (s *Server) Start(ctx context.Context) error {
 	// CORS configuration
 	logger.Debug("configuring CORS middleware")
 	c := cors.New(cors.Options{
-		AllowedOrigins: s.cfg.CORS.AllowedOrigins,
+		AllowedOrigins:   s.cfg.CORS.AllowedOrigins,
+		AllowCredentials: true,
 		AllowedMethods: []string{
 			http.MethodPost,
 			http.MethodOptions,

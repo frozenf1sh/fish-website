@@ -12,6 +12,17 @@ import (
 )
 
 const tokenIssuer = "fish-website"
+const refreshTokenTTL = 30 * 24 * time.Hour
+
+const (
+	tokenTypeAccess  = "access"
+	tokenTypeRefresh = "refresh"
+)
+
+type authClaims struct {
+	jwt.RegisteredClaims
+	TokenType string `json:"typ"`
+}
 
 // OwnerAuthenticator is the identity application service for the single owner
 // account. It deliberately accepts primitive configuration at the composition
@@ -41,7 +52,7 @@ func NewOwnerAuthenticator(ownerUsername, passwordHash, legacyPassword, jwtSecre
 	return service
 }
 
-// Login authenticates the configured owner and issues a short-lived token.
+// Login authenticates the configured owner and issues a short-lived access token.
 func (s *OwnerAuthenticator) Login(_ context.Context, username, password string) (string, time.Time, error) {
 	if s.configErr != nil {
 		return "", time.Time{}, fmt.Errorf("initialize password verifier: %w", s.configErr)
@@ -58,13 +69,35 @@ func (s *OwnerAuthenticator) Login(_ context.Context, username, password string)
 		return "", time.Time{}, identitydomain.ErrInvalidCredentials
 	}
 
+	return s.issueToken(s.ownerUsername, tokenTypeAccess, s.tokenTTL)
+}
+
+// IssueRefreshToken creates a long-lived token intended only for the HttpOnly
+// refresh cookie. It is never accepted by authenticated application methods.
+func (s *OwnerAuthenticator) IssueRefreshToken() (string, time.Time, error) {
+	return s.issueToken(s.ownerUsername, tokenTypeRefresh, refreshTokenTTL)
+}
+
+// Refresh validates a refresh token and issues a new short-lived access token.
+func (s *OwnerAuthenticator) Refresh(_ context.Context, refreshToken string) (string, time.Time, error) {
+	claims, err := s.parseToken(refreshToken, tokenTypeRefresh)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	return s.issueToken(claims.Subject, tokenTypeAccess, s.tokenTTL)
+}
+
+func (s *OwnerAuthenticator) issueToken(subject, tokenType string, ttl time.Duration) (string, time.Time, error) {
 	now := s.now().UTC()
-	expiresAt := now.Add(s.tokenTTL)
-	claims := jwt.RegisteredClaims{
-		Issuer:    tokenIssuer,
-		Subject:   s.ownerUsername,
-		IssuedAt:  jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(expiresAt),
+	expiresAt := now.Add(ttl)
+	claims := authClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    tokenIssuer,
+			Subject:   subject,
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+		},
+		TokenType: tokenType,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(s.signingKey)
@@ -76,7 +109,15 @@ func (s *OwnerAuthenticator) Login(_ context.Context, username, password string)
 
 // ValidateToken validates a signed owner token and returns its subject.
 func (s *OwnerAuthenticator) ValidateToken(_ context.Context, tokenString string) (string, error) {
-	claims := &jwt.RegisteredClaims{}
+	claims, err := s.parseToken(tokenString, tokenTypeAccess)
+	if err != nil {
+		return "", err
+	}
+	return claims.Subject, nil
+}
+
+func (s *OwnerAuthenticator) parseToken(tokenString, expectedType string) (*authClaims, error) {
+	claims := &authClaims{}
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		claims,
@@ -89,15 +130,19 @@ func (s *OwnerAuthenticator) ValidateToken(_ context.Context, tokenString string
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
 		jwt.WithIssuer(tokenIssuer),
 		jwt.WithExpirationRequired(),
+		jwt.WithLeeway(time.Second),
 	)
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return "", identitydomain.ErrTokenExpired
+			return nil, identitydomain.ErrTokenExpired
 		}
-		return "", fmt.Errorf("parse token: %w", err)
+		return nil, fmt.Errorf("parse token: %w", err)
+	}
+	if claims.TokenType != expectedType {
+		return nil, identitydomain.ErrInvalidToken
 	}
 	if !token.Valid || claims.Subject == "" || subtle.ConstantTimeCompare([]byte(claims.Subject), []byte(s.ownerUsername)) != 1 {
-		return "", identitydomain.ErrInvalidToken
+		return nil, identitydomain.ErrInvalidToken
 	}
-	return claims.Subject, nil
+	return claims, nil
 }

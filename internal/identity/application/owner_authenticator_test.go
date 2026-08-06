@@ -51,3 +51,24 @@ func TestOwnerAuthenticatorRejectsWrongUsernameOrPassword(t *testing.T) {
 		}
 	}
 }
+
+func TestOwnerAuthenticatorRefreshTokenCannotBeUsedAsAccessToken(t *testing.T) {
+	t.Parallel()
+	hash, err := identitydomain.HashPassword("secret-password")
+	if err != nil {
+		t.Fatalf("HashPassword() error = %v", err)
+	}
+	service := NewOwnerAuthenticator("owner", hash, "", "01234567890123456789012345678901", 15*time.Minute)
+
+	refresh, _, err := service.IssueRefreshToken()
+	if err != nil {
+		t.Fatalf("IssueRefreshToken() error = %v", err)
+	}
+	if _, err := service.ValidateToken(context.Background(), refresh); !errors.Is(err, identitydomain.ErrInvalidToken) {
+		t.Fatalf("ValidateToken(refresh) error = %v, want ErrInvalidToken", err)
+	}
+	access, expiresAt, err := service.Refresh(context.Background(), refresh)
+	if err != nil || access == "" || expiresAt.IsZero() {
+		t.Fatalf("Refresh() = (%q, %v, %v), want access token", access, expiresAt, err)
+	}
+}

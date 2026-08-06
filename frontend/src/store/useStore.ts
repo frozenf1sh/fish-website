@@ -70,6 +70,9 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   logout: () => {
+    void clients.auth.logout().catch((error) => {
+      console.warn('Failed to clear refresh session:', error)
+    })
     setAuthToken(null)
     set({ isLoggedIn: false, token: null, settings: null })
     if (typeof window !== 'undefined') {

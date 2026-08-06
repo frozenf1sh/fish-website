@@ -93,6 +93,8 @@ func extractToken(headers http.Header) (string, error) {
 // Public procedures that don't require authentication
 var publicProcedures = map[string]bool{
 	"/home.v1.AuthService/Login":           true,
+	"/home.v1.AuthService/Refresh":         true,
+	"/home.v1.AuthService/Logout":          true,
 	"/home.v1.PostService/ListPosts":       true,
 	"/home.v1.PostService/GetPost":         true,
 	"/home.v1.BlogService/ListArticles":    true,

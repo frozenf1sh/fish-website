@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"connectrpc.com/connect"
 	homev1 "github.com/frozenfish/fish-website/gen/go/home/v1"
@@ -14,6 +15,7 @@ import (
 	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/usecase"
 	"github.com/frozenfish/fish-website/pkg/logger"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -84,10 +86,57 @@ func (h *Handler) Login(ctx context.Context, req *connect.Request[homev1.LoginRe
 	}
 
 	logger.Info("login successful", logger.String("username", req.Msg.Username))
-	return connect.NewResponse(&homev1.LoginResponse{
+	response := connect.NewResponse(&homev1.LoginResponse{
 		Token:     token,
 		ExpiresAt: timestamppb.New(expiresAt),
-	}), nil
+	})
+	refreshToken, _, err := h.authenticator.IssueRefreshToken()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	setRefreshCookie(response.Header(), refreshToken, isSecureRequest(req.Header()))
+	return response, nil
+}
+
+// Refresh exchanges the HttpOnly refresh cookie for a new access token.
+func (h *Handler) Refresh(ctx context.Context, req *connect.Request[homev1.RefreshRequest]) (*connect.Response[homev1.LoginResponse], error) {
+	cookie, err := (&http.Request{Header: req.Header()}).Cookie("fish_refresh_token")
+	if err != nil || cookie.Value == "" {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("refresh token required"))
+	}
+	token, expiresAt, err := h.authenticator.Refresh(ctx, cookie.Value)
+	if err != nil {
+		if errors.Is(err, identitydomain.ErrTokenExpired) || errors.Is(err, identitydomain.ErrInvalidToken) {
+			return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("refresh token expired"))
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&homev1.LoginResponse{Token: token, ExpiresAt: timestamppb.New(expiresAt)}), nil
+}
+
+// Logout removes the browser refresh cookie. Access tokens remain short-lived
+// and are discarded by the client immediately.
+func (h *Handler) Logout(_ context.Context, req *connect.Request[homev1.LogoutRequest]) (*connect.Response[emptypb.Empty], error) {
+	response := connect.NewResponse(&emptypb.Empty{})
+	parts := []string{"fish_refresh_token=", "Path=/api/home.v1.AuthService", "Max-Age=0", "HttpOnly", "SameSite=Lax"}
+	if isSecureRequest(req.Header()) {
+		parts = append(parts, "Secure")
+	}
+	response.Header().Set("Set-Cookie", strings.Join(parts, "; "))
+	return response, nil
+}
+
+func setRefreshCookie(headers http.Header, value string, secure bool) {
+	parts := []string{"fish_refresh_token=" + value, "Path=/api/home.v1.AuthService", "Max-Age=2592000", "HttpOnly", "SameSite=Lax"}
+	if secure {
+		parts = append(parts, "Secure")
+	}
+	headers.Add("Set-Cookie", strings.Join(parts, "; "))
+}
+
+func isSecureRequest(headers http.Header) bool {
+	origin := headers.Get("Origin")
+	return origin == "" || !strings.HasPrefix(origin, "http://localhost") && !strings.HasPrefix(origin, "http://127.0.0.1")
 }
 
 // CreatePost creates a new post
