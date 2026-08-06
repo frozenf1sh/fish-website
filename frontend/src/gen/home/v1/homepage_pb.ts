@@ -2935,3 +2935,883 @@ export class UpdateSettingsResponse extends Message<UpdateSettingsResponse> {
   }
 }
 
+/**
+ * @generated from message home.v1.Project
+ */
+export class Project extends Message<Project> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title = "";
+
+  /**
+   * @generated from field: string summary = 3;
+   */
+  summary = "";
+
+  /**
+   * @generated from field: string link_url = 4;
+   */
+  linkUrl = "";
+
+  /**
+   * @generated from field: home.v1.Image cover_image = 5;
+   */
+  coverImage?: Image;
+
+  /**
+   * @generated from field: int32 sort_order = 6;
+   */
+  sortOrder = 0;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 7;
+   */
+  createdAt?: Timestamp;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp updated_at = 8;
+   */
+  updatedAt?: Timestamp;
+
+  constructor(data?: PartialMessage<Project>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.Project";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "title", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "summary", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "link_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "cover_image", kind: "message", T: Image },
+    { no: 6, name: "sort_order", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 7, name: "created_at", kind: "message", T: Timestamp },
+    { no: 8, name: "updated_at", kind: "message", T: Timestamp },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Project {
+    return new Project().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Project {
+    return new Project().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Project {
+    return new Project().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Project | PlainMessage<Project> | undefined, b: Project | PlainMessage<Project> | undefined): boolean {
+    return proto3.util.equals(Project, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.ListProjectsRequest
+ */
+export class ListProjectsRequest extends Message<ListProjectsRequest> {
+  constructor(data?: PartialMessage<ListProjectsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.ListProjectsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListProjectsRequest {
+    return new ListProjectsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListProjectsRequest {
+    return new ListProjectsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListProjectsRequest {
+    return new ListProjectsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ListProjectsRequest | PlainMessage<ListProjectsRequest> | undefined, b: ListProjectsRequest | PlainMessage<ListProjectsRequest> | undefined): boolean {
+    return proto3.util.equals(ListProjectsRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.ListProjectsResponse
+ */
+export class ListProjectsResponse extends Message<ListProjectsResponse> {
+  /**
+   * @generated from field: repeated home.v1.Project projects = 1;
+   */
+  projects: Project[] = [];
+
+  constructor(data?: PartialMessage<ListProjectsResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.ListProjectsResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "projects", kind: "message", T: Project, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListProjectsResponse {
+    return new ListProjectsResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListProjectsResponse {
+    return new ListProjectsResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListProjectsResponse {
+    return new ListProjectsResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ListProjectsResponse | PlainMessage<ListProjectsResponse> | undefined, b: ListProjectsResponse | PlainMessage<ListProjectsResponse> | undefined): boolean {
+    return proto3.util.equals(ListProjectsResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GetProjectRequest
+ */
+export class GetProjectRequest extends Message<GetProjectRequest> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  constructor(data?: PartialMessage<GetProjectRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GetProjectRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetProjectRequest {
+    return new GetProjectRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetProjectRequest {
+    return new GetProjectRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetProjectRequest {
+    return new GetProjectRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetProjectRequest | PlainMessage<GetProjectRequest> | undefined, b: GetProjectRequest | PlainMessage<GetProjectRequest> | undefined): boolean {
+    return proto3.util.equals(GetProjectRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GetProjectResponse
+ */
+export class GetProjectResponse extends Message<GetProjectResponse> {
+  /**
+   * @generated from field: home.v1.Project project = 1;
+   */
+  project?: Project;
+
+  constructor(data?: PartialMessage<GetProjectResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GetProjectResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "project", kind: "message", T: Project },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetProjectResponse {
+    return new GetProjectResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetProjectResponse {
+    return new GetProjectResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetProjectResponse {
+    return new GetProjectResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetProjectResponse | PlainMessage<GetProjectResponse> | undefined, b: GetProjectResponse | PlainMessage<GetProjectResponse> | undefined): boolean {
+    return proto3.util.equals(GetProjectResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.CreateProjectRequest
+ */
+export class CreateProjectRequest extends Message<CreateProjectRequest> {
+  /**
+   * @generated from field: string title = 1;
+   */
+  title = "";
+
+  /**
+   * @generated from field: string summary = 2;
+   */
+  summary = "";
+
+  /**
+   * @generated from field: string link_url = 3;
+   */
+  linkUrl = "";
+
+  /**
+   * @generated from field: string cover_image_id = 4;
+   */
+  coverImageId = "";
+
+  constructor(data?: PartialMessage<CreateProjectRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.CreateProjectRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "title", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "summary", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "link_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "cover_image_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateProjectRequest {
+    return new CreateProjectRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateProjectRequest {
+    return new CreateProjectRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateProjectRequest {
+    return new CreateProjectRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CreateProjectRequest | PlainMessage<CreateProjectRequest> | undefined, b: CreateProjectRequest | PlainMessage<CreateProjectRequest> | undefined): boolean {
+    return proto3.util.equals(CreateProjectRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.CreateProjectResponse
+ */
+export class CreateProjectResponse extends Message<CreateProjectResponse> {
+  /**
+   * @generated from field: home.v1.Project project = 1;
+   */
+  project?: Project;
+
+  constructor(data?: PartialMessage<CreateProjectResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.CreateProjectResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "project", kind: "message", T: Project },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateProjectResponse {
+    return new CreateProjectResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateProjectResponse {
+    return new CreateProjectResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateProjectResponse {
+    return new CreateProjectResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CreateProjectResponse | PlainMessage<CreateProjectResponse> | undefined, b: CreateProjectResponse | PlainMessage<CreateProjectResponse> | undefined): boolean {
+    return proto3.util.equals(CreateProjectResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdateProjectRequest
+ */
+export class UpdateProjectRequest extends Message<UpdateProjectRequest> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title = "";
+
+  /**
+   * @generated from field: string summary = 3;
+   */
+  summary = "";
+
+  /**
+   * @generated from field: string link_url = 4;
+   */
+  linkUrl = "";
+
+  /**
+   * @generated from field: string cover_image_id = 5;
+   */
+  coverImageId = "";
+
+  constructor(data?: PartialMessage<UpdateProjectRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateProjectRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "title", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "summary", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "link_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "cover_image_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateProjectRequest {
+    return new UpdateProjectRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateProjectRequest {
+    return new UpdateProjectRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateProjectRequest {
+    return new UpdateProjectRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateProjectRequest | PlainMessage<UpdateProjectRequest> | undefined, b: UpdateProjectRequest | PlainMessage<UpdateProjectRequest> | undefined): boolean {
+    return proto3.util.equals(UpdateProjectRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdateProjectResponse
+ */
+export class UpdateProjectResponse extends Message<UpdateProjectResponse> {
+  /**
+   * @generated from field: home.v1.Project project = 1;
+   */
+  project?: Project;
+
+  constructor(data?: PartialMessage<UpdateProjectResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateProjectResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "project", kind: "message", T: Project },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateProjectResponse {
+    return new UpdateProjectResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateProjectResponse {
+    return new UpdateProjectResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateProjectResponse {
+    return new UpdateProjectResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateProjectResponse | PlainMessage<UpdateProjectResponse> | undefined, b: UpdateProjectResponse | PlainMessage<UpdateProjectResponse> | undefined): boolean {
+    return proto3.util.equals(UpdateProjectResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.DeleteProjectRequest
+ */
+export class DeleteProjectRequest extends Message<DeleteProjectRequest> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  constructor(data?: PartialMessage<DeleteProjectRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.DeleteProjectRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteProjectRequest {
+    return new DeleteProjectRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DeleteProjectRequest {
+    return new DeleteProjectRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DeleteProjectRequest {
+    return new DeleteProjectRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DeleteProjectRequest | PlainMessage<DeleteProjectRequest> | undefined, b: DeleteProjectRequest | PlainMessage<DeleteProjectRequest> | undefined): boolean {
+    return proto3.util.equals(DeleteProjectRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.DeleteProjectResponse
+ */
+export class DeleteProjectResponse extends Message<DeleteProjectResponse> {
+  constructor(data?: PartialMessage<DeleteProjectResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.DeleteProjectResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteProjectResponse {
+    return new DeleteProjectResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DeleteProjectResponse {
+    return new DeleteProjectResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DeleteProjectResponse {
+    return new DeleteProjectResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DeleteProjectResponse | PlainMessage<DeleteProjectResponse> | undefined, b: DeleteProjectResponse | PlainMessage<DeleteProjectResponse> | undefined): boolean {
+    return proto3.util.equals(DeleteProjectResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.ReorderProjectsRequest
+ */
+export class ReorderProjectsRequest extends Message<ReorderProjectsRequest> {
+  /**
+   * @generated from field: repeated string project_ids = 1;
+   */
+  projectIds: string[] = [];
+
+  constructor(data?: PartialMessage<ReorderProjectsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.ReorderProjectsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "project_ids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ReorderProjectsRequest {
+    return new ReorderProjectsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ReorderProjectsRequest {
+    return new ReorderProjectsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ReorderProjectsRequest {
+    return new ReorderProjectsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ReorderProjectsRequest | PlainMessage<ReorderProjectsRequest> | undefined, b: ReorderProjectsRequest | PlainMessage<ReorderProjectsRequest> | undefined): boolean {
+    return proto3.util.equals(ReorderProjectsRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.ReorderProjectsResponse
+ */
+export class ReorderProjectsResponse extends Message<ReorderProjectsResponse> {
+  constructor(data?: PartialMessage<ReorderProjectsResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.ReorderProjectsResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ReorderProjectsResponse {
+    return new ReorderProjectsResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ReorderProjectsResponse {
+    return new ReorderProjectsResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ReorderProjectsResponse {
+    return new ReorderProjectsResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ReorderProjectsResponse | PlainMessage<ReorderProjectsResponse> | undefined, b: ReorderProjectsResponse | PlainMessage<ReorderProjectsResponse> | undefined): boolean {
+    return proto3.util.equals(ReorderProjectsResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.AboutImage
+ */
+export class AboutImage extends Message<AboutImage> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  /**
+   * @generated from field: home.v1.Image image = 2;
+   */
+  image?: Image;
+
+  /**
+   * @generated from field: int32 sort_order = 3;
+   */
+  sortOrder = 0;
+
+  constructor(data?: PartialMessage<AboutImage>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.AboutImage";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "image", kind: "message", T: Image },
+    { no: 3, name: "sort_order", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AboutImage {
+    return new AboutImage().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AboutImage {
+    return new AboutImage().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AboutImage {
+    return new AboutImage().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AboutImage | PlainMessage<AboutImage> | undefined, b: AboutImage | PlainMessage<AboutImage> | undefined): boolean {
+    return proto3.util.equals(AboutImage, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GetAboutRequest
+ */
+export class GetAboutRequest extends Message<GetAboutRequest> {
+  constructor(data?: PartialMessage<GetAboutRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GetAboutRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAboutRequest {
+    return new GetAboutRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAboutRequest {
+    return new GetAboutRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAboutRequest {
+    return new GetAboutRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAboutRequest | PlainMessage<GetAboutRequest> | undefined, b: GetAboutRequest | PlainMessage<GetAboutRequest> | undefined): boolean {
+    return proto3.util.equals(GetAboutRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GetAboutResponse
+ */
+export class GetAboutResponse extends Message<GetAboutResponse> {
+  /**
+   * @generated from field: home.v1.Settings settings = 1;
+   */
+  settings?: Settings;
+
+  /**
+   * @generated from field: repeated home.v1.AboutImage images = 2;
+   */
+  images: AboutImage[] = [];
+
+  constructor(data?: PartialMessage<GetAboutResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GetAboutResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "settings", kind: "message", T: Settings },
+    { no: 2, name: "images", kind: "message", T: AboutImage, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAboutResponse {
+    return new GetAboutResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAboutResponse {
+    return new GetAboutResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAboutResponse {
+    return new GetAboutResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetAboutResponse | PlainMessage<GetAboutResponse> | undefined, b: GetAboutResponse | PlainMessage<GetAboutResponse> | undefined): boolean {
+    return proto3.util.equals(GetAboutResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.AddAboutImageRequest
+ */
+export class AddAboutImageRequest extends Message<AddAboutImageRequest> {
+  /**
+   * @generated from field: string image_id = 1;
+   */
+  imageId = "";
+
+  constructor(data?: PartialMessage<AddAboutImageRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.AddAboutImageRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "image_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AddAboutImageRequest {
+    return new AddAboutImageRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AddAboutImageRequest {
+    return new AddAboutImageRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AddAboutImageRequest {
+    return new AddAboutImageRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AddAboutImageRequest | PlainMessage<AddAboutImageRequest> | undefined, b: AddAboutImageRequest | PlainMessage<AddAboutImageRequest> | undefined): boolean {
+    return proto3.util.equals(AddAboutImageRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.AddAboutImageResponse
+ */
+export class AddAboutImageResponse extends Message<AddAboutImageResponse> {
+  /**
+   * @generated from field: home.v1.AboutImage image = 1;
+   */
+  image?: AboutImage;
+
+  constructor(data?: PartialMessage<AddAboutImageResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.AddAboutImageResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "image", kind: "message", T: AboutImage },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AddAboutImageResponse {
+    return new AddAboutImageResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AddAboutImageResponse {
+    return new AddAboutImageResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AddAboutImageResponse {
+    return new AddAboutImageResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AddAboutImageResponse | PlainMessage<AddAboutImageResponse> | undefined, b: AddAboutImageResponse | PlainMessage<AddAboutImageResponse> | undefined): boolean {
+    return proto3.util.equals(AddAboutImageResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.RemoveAboutImageRequest
+ */
+export class RemoveAboutImageRequest extends Message<RemoveAboutImageRequest> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  constructor(data?: PartialMessage<RemoveAboutImageRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.RemoveAboutImageRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveAboutImageRequest {
+    return new RemoveAboutImageRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RemoveAboutImageRequest {
+    return new RemoveAboutImageRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RemoveAboutImageRequest {
+    return new RemoveAboutImageRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: RemoveAboutImageRequest | PlainMessage<RemoveAboutImageRequest> | undefined, b: RemoveAboutImageRequest | PlainMessage<RemoveAboutImageRequest> | undefined): boolean {
+    return proto3.util.equals(RemoveAboutImageRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.RemoveAboutImageResponse
+ */
+export class RemoveAboutImageResponse extends Message<RemoveAboutImageResponse> {
+  constructor(data?: PartialMessage<RemoveAboutImageResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.RemoveAboutImageResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveAboutImageResponse {
+    return new RemoveAboutImageResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RemoveAboutImageResponse {
+    return new RemoveAboutImageResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RemoveAboutImageResponse {
+    return new RemoveAboutImageResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: RemoveAboutImageResponse | PlainMessage<RemoveAboutImageResponse> | undefined, b: RemoveAboutImageResponse | PlainMessage<RemoveAboutImageResponse> | undefined): boolean {
+    return proto3.util.equals(RemoveAboutImageResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.ReorderAboutImagesRequest
+ */
+export class ReorderAboutImagesRequest extends Message<ReorderAboutImagesRequest> {
+  /**
+   * @generated from field: repeated string image_ids = 1;
+   */
+  imageIds: string[] = [];
+
+  constructor(data?: PartialMessage<ReorderAboutImagesRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.ReorderAboutImagesRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "image_ids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ReorderAboutImagesRequest {
+    return new ReorderAboutImagesRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ReorderAboutImagesRequest {
+    return new ReorderAboutImagesRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ReorderAboutImagesRequest {
+    return new ReorderAboutImagesRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ReorderAboutImagesRequest | PlainMessage<ReorderAboutImagesRequest> | undefined, b: ReorderAboutImagesRequest | PlainMessage<ReorderAboutImagesRequest> | undefined): boolean {
+    return proto3.util.equals(ReorderAboutImagesRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.ReorderAboutImagesResponse
+ */
+export class ReorderAboutImagesResponse extends Message<ReorderAboutImagesResponse> {
+  constructor(data?: PartialMessage<ReorderAboutImagesResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.ReorderAboutImagesResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ReorderAboutImagesResponse {
+    return new ReorderAboutImagesResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ReorderAboutImagesResponse {
+    return new ReorderAboutImagesResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ReorderAboutImagesResponse {
+    return new ReorderAboutImagesResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ReorderAboutImagesResponse | PlainMessage<ReorderAboutImagesResponse> | undefined, b: ReorderAboutImagesResponse | PlainMessage<ReorderAboutImagesResponse> | undefined): boolean {
+    return proto3.util.equals(ReorderAboutImagesResponse, a, b);
+  }
+}
+

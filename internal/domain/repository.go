@@ -48,6 +48,24 @@ type SettingsRepository interface {
 	Update(ctx context.Context, settings *Settings) (*Settings, error)
 }
 
+// ProjectRepository defines public project showcase data access.
+type ProjectRepository interface {
+	List(ctx context.Context) ([]*Project, error)
+	Get(ctx context.Context, id string) (*Project, error)
+	Create(ctx context.Context, project *Project) (*Project, error)
+	Update(ctx context.Context, project *Project) (*Project, error)
+	Delete(ctx context.Context, id string) error
+	Reorder(ctx context.Context, ids []string) error
+}
+
+// AboutRepository defines the editable about page data access.
+type AboutRepository interface {
+	ListImages(ctx context.Context) ([]*AboutImage, error)
+	AddImage(ctx context.Context, image *AboutImage) (*AboutImage, error)
+	RemoveImage(ctx context.Context, id string) error
+	ReorderImages(ctx context.Context, ids []string) error
+}
+
 // ObjectStore is the media bounded context's outbound storage port. It does
 // not expose provider concepts (R2, S3 or MinIO) to application code.
 type ObjectStore interface {
@@ -61,6 +79,7 @@ type ObjectStore interface {
 // ImageReferenceRepository tracks and analyzes image usage references.
 type ImageReferenceRepository interface {
 	ReplaceSourceReferences(ctx context.Context, sourceType, sourceID string, urls []string) error
+	ReplaceSourceImageIDs(ctx context.Context, sourceType, sourceID string, imageIDs []string) error
 	RemoveSourceReferences(ctx context.Context, sourceType, sourceID string) error
 	AnalyzeByAlbum(ctx context.Context, albumID string) ([]*ImageReferenceRecord, error)
 	RepairConsistency(ctx context.Context) (*ImageReferenceRepairResult, error)

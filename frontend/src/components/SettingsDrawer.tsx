@@ -6,6 +6,7 @@ import { compressImage, validateImageFile } from '../utils/imageCompressor'
 import { clients } from '../lib/connect'
 import { showToast } from '../lib/toast'
 import { readSiteBehaviorConfig, writeSiteBehaviorConfig } from '../utils/siteConfig'
+import { useNavigate } from 'react-router-dom'
 
 interface SettingsDrawerProps {
   isOpen: boolean
@@ -13,6 +14,7 @@ interface SettingsDrawerProps {
 }
 
 export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
+  const navigate = useNavigate()
   const { settings, isLoadingSettings, updateSettings } = useStore()
   const [localSettings, setLocalSettings] = useState(settings)
   const [isSaving, setIsSaving] = useState(false)
@@ -239,6 +241,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                   </div>
                 ) : (
                   <>
+                    <button type="button" onClick={() => { onClose(); navigate('/manage/content') }} className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-left text-sm text-white hover:bg-white/20">🧩 管理项目与关于页面</button>
                     {/* 头像设置 */}
                     <div className="glass-card rounded-3xl p-6">
                       <h3 className="text-white/90 font-semibold mb-4 flex items-center gap-2">

@@ -26,6 +26,8 @@ type Handler struct {
 	blogUsecase     *usecase.BlogUsecase
 	albumUsecase    *usecase.AlbumUsecase
 	settingsUsecase *usecase.SettingsUsecase
+	projectUsecase  *usecase.ProjectUsecase
+	aboutUsecase    *usecase.AboutUsecase
 }
 
 // NewHandler creates a new Handler
@@ -35,6 +37,8 @@ func NewHandler(
 	blogUsecase *usecase.BlogUsecase,
 	albumUsecase *usecase.AlbumUsecase,
 	settingsUsecase *usecase.SettingsUsecase,
+	projectUsecase *usecase.ProjectUsecase,
+	aboutUsecase *usecase.AboutUsecase,
 ) *Handler {
 	logger.Info("initializing Connect-RPC handler")
 	return &Handler{
@@ -43,6 +47,8 @@ func NewHandler(
 		blogUsecase:     blogUsecase,
 		albumUsecase:    albumUsecase,
 		settingsUsecase: settingsUsecase,
+		projectUsecase:  projectUsecase,
+		aboutUsecase:    aboutUsecase,
 	}
 }
 
@@ -69,6 +75,14 @@ func (h *Handler) NewAlbumServiceHandler() (string, http.Handler) {
 // NewSettingsServiceHandler creates a new SettingsService handler
 func (h *Handler) NewSettingsServiceHandler() (string, http.Handler) {
 	return homev1connect.NewSettingsServiceHandler(h)
+}
+
+func (h *Handler) NewProjectServiceHandler() (string, http.Handler) {
+	return homev1connect.NewProjectServiceHandler(h)
+}
+
+func (h *Handler) NewAboutServiceHandler() (string, http.Handler) {
+	return homev1connect.NewAboutServiceHandler(h)
 }
 
 // Login authenticates a user

@@ -76,15 +76,9 @@ export function MePage() {
         className="glass-card rounded-3xl p-4"
       >
         <h3 className="text-sm uppercase tracking-wide text-white/60 mb-3">更多</h3>
-        <div className="space-y-2">
-          <p className="text-white/55 text-sm leading-6">关于和项目展示正在规划中，后续会接入可配置内容模块。</p>
-          <button
-            type="button"
-            onClick={() => navigate('/blog')}
-            className="w-full text-left px-3 py-2.5 rounded-xl border border-white/15 text-white/75 text-sm bg-white/5 hover:bg-white/10 transition-colors"
-          >
-            先去看看博客 →
-          </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => navigate('/projects')} className="rounded-2xl border border-white/15 bg-white/5 p-4 text-left text-white hover:bg-white/10"><span className="text-2xl">💻</span><span className="mt-2 block text-sm font-medium">项目</span><span className="mt-1 block text-xs text-white/50">正在做什么</span></button>
+          <button type="button" onClick={() => navigate('/about')} className="rounded-2xl border border-white/15 bg-white/5 p-4 text-left text-white hover:bg-white/10"><span className="text-2xl">🌟</span><span className="mt-2 block text-sm font-medium">关于</span><span className="mt-1 block text-xs text-white/50">认识一下我</span></button>
         </div>
       </motion.section>
     </div>

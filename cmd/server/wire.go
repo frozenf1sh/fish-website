@@ -28,6 +28,8 @@ func InitializeServer(ctx context.Context, cfg *pkgconfig.Config) (*Server, erro
 		provideAlbumRepository,
 		provideImageReferenceRepository,
 		provideSettingsRepository,
+		provideProjectRepository,
+		provideAboutRepository,
 		provideR2ObjectStore,
 		provideObjectStore,
 		provideOwnerAuthenticator,
@@ -35,6 +37,8 @@ func InitializeServer(ctx context.Context, cfg *pkgconfig.Config) (*Server, erro
 		provideBlogUsecase,
 		provideAlbumUsecase,
 		provideSettingsUsecase,
+		provideProjectUsecase,
+		provideAboutUsecase,
 		provideHandler,
 		provideAuthInterceptor,
 		NewServer,
@@ -71,6 +75,13 @@ func provideAlbumRepository(repo *repository.PostgresRepository) domain.AlbumRep
 
 func provideSettingsRepository(repo *repository.PostgresRepository) domain.SettingsRepository {
 	return repo.NewSettingsRepository()
+}
+
+func provideProjectRepository(repo *repository.PostgresRepository) domain.ProjectRepository {
+	return repo.NewProjectRepository()
+}
+func provideAboutRepository(repo *repository.PostgresRepository) domain.AboutRepository {
+	return repo.NewAboutRepository()
 }
 
 func provideImageReferenceRepository(repo *repository.PostgresRepository) domain.ImageReferenceRepository {
@@ -111,14 +122,23 @@ func provideSettingsUsecase(repo domain.SettingsRepository, imageRefRepo domain.
 	return usecase.NewSettingsUsecase(repo, imageRefRepo)
 }
 
+func provideProjectUsecase(repo domain.ProjectRepository, refs domain.ImageReferenceRepository) *usecase.ProjectUsecase {
+	return usecase.NewProjectUsecase(repo, refs)
+}
+func provideAboutUsecase(repo domain.AboutRepository, refs domain.ImageReferenceRepository) *usecase.AboutUsecase {
+	return usecase.NewAboutUsecase(repo, refs)
+}
+
 func provideHandler(
 	authenticator *identityapplication.OwnerAuthenticator,
 	postUsecase *usecase.PostUsecase,
 	blogUsecase *usecase.BlogUsecase,
 	albumUsecase *usecase.AlbumUsecase,
 	settingsUsecase *usecase.SettingsUsecase,
+	projectUsecase *usecase.ProjectUsecase,
+	aboutUsecase *usecase.AboutUsecase,
 ) *delivery.Handler {
-	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
+	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase, projectUsecase, aboutUsecase)
 }
 
 func provideAuthInterceptor(authenticator *identityapplication.OwnerAuthenticator) connect.Interceptor {

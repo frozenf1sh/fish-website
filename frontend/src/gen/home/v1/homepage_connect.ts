@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AnalyzeImageReferencesRequest, AnalyzeImageReferencesResponse, ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, DeleteAlbumRequest, DeleteAlbumResponse, DeleteArticleRequest, DeleteArticleResponse, DeleteFolderRequest, DeleteFolderResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, DeletePostResponse, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetSettingsRequest, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, LoginRequest, LoginResponse, LogoutRequest, MoveImagesRequest, MoveImagesResponse, RefreshRequest, RepairImageReferencesRequest, RepairImageReferencesResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { AddAboutImageRequest, AddAboutImageResponse, AnalyzeImageReferencesRequest, AnalyzeImageReferencesResponse, ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, CreateProjectRequest, CreateProjectResponse, DeleteAlbumRequest, DeleteAlbumResponse, DeleteArticleRequest, DeleteArticleResponse, DeleteFolderRequest, DeleteFolderResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, DeletePostResponse, DeleteProjectRequest, DeleteProjectResponse, GetAboutRequest, GetAboutResponse, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetProjectRequest, GetProjectResponse, GetSettingsRequest, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, ListProjectsRequest, ListProjectsResponse, LoginRequest, LoginResponse, LogoutRequest, MoveImagesRequest, MoveImagesResponse, RefreshRequest, RemoveAboutImageRequest, RemoveAboutImageResponse, ReorderAboutImagesRequest, ReorderAboutImagesResponse, ReorderProjectsRequest, ReorderProjectsResponse, RepairImageReferencesRequest, RepairImageReferencesResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateProjectRequest, UpdateProjectResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -375,6 +375,118 @@ export const SettingsService = {
       name: "UpdateSettings",
       I: UpdateSettingsRequest,
       O: UpdateSettingsResponse,
+      kind: MethodKind.Unary,
+    },
+  }
+} as const;
+
+/**
+ * ProjectService manages the public project showcase.
+ *
+ * @generated from service home.v1.ProjectService
+ */
+export const ProjectService = {
+  typeName: "home.v1.ProjectService",
+  methods: {
+    /**
+     * @generated from rpc home.v1.ProjectService.ListProjects
+     */
+    listProjects: {
+      name: "ListProjects",
+      I: ListProjectsRequest,
+      O: ListProjectsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc home.v1.ProjectService.GetProject
+     */
+    getProject: {
+      name: "GetProject",
+      I: GetProjectRequest,
+      O: GetProjectResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc home.v1.ProjectService.CreateProject
+     */
+    createProject: {
+      name: "CreateProject",
+      I: CreateProjectRequest,
+      O: CreateProjectResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc home.v1.ProjectService.UpdateProject
+     */
+    updateProject: {
+      name: "UpdateProject",
+      I: UpdateProjectRequest,
+      O: UpdateProjectResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc home.v1.ProjectService.DeleteProject
+     */
+    deleteProject: {
+      name: "DeleteProject",
+      I: DeleteProjectRequest,
+      O: DeleteProjectResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc home.v1.ProjectService.ReorderProjects
+     */
+    reorderProjects: {
+      name: "ReorderProjects",
+      I: ReorderProjectsRequest,
+      O: ReorderProjectsResponse,
+      kind: MethodKind.Unary,
+    },
+  }
+} as const;
+
+/**
+ * AboutService manages the public about-page photo collection.
+ *
+ * @generated from service home.v1.AboutService
+ */
+export const AboutService = {
+  typeName: "home.v1.AboutService",
+  methods: {
+    /**
+     * @generated from rpc home.v1.AboutService.GetAbout
+     */
+    getAbout: {
+      name: "GetAbout",
+      I: GetAboutRequest,
+      O: GetAboutResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc home.v1.AboutService.AddAboutImage
+     */
+    addAboutImage: {
+      name: "AddAboutImage",
+      I: AddAboutImageRequest,
+      O: AddAboutImageResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc home.v1.AboutService.RemoveAboutImage
+     */
+    removeAboutImage: {
+      name: "RemoveAboutImage",
+      I: RemoveAboutImageRequest,
+      O: RemoveAboutImageResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc home.v1.AboutService.ReorderAboutImages
+     */
+    reorderAboutImages: {
+      name: "ReorderAboutImages",
+      I: ReorderAboutImagesRequest,
+      O: ReorderAboutImagesResponse,
       kind: MethodKind.Unary,
     },
   }

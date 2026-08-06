@@ -43,7 +43,11 @@ func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) 
 	albumUsecase := provideAlbumUsecase(albumRepository, objectStore, imageReferenceRepository)
 	settingsRepository := provideSettingsRepository(postgresRepository)
 	settingsUsecase := provideSettingsUsecase(settingsRepository, imageReferenceRepository)
-	handler := provideHandler(ownerAuthenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
+	projectRepository := provideProjectRepository(postgresRepository)
+	projectUsecase := provideProjectUsecase(projectRepository, imageReferenceRepository)
+	aboutRepository := provideAboutRepository(postgresRepository)
+	aboutUsecase := provideAboutUsecase(aboutRepository, imageReferenceRepository)
+	handler := provideHandler(ownerAuthenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase, projectUsecase, aboutUsecase)
 	interceptor := provideAuthInterceptor(ownerAuthenticator)
 	server := NewServer(cfg, pool, handler, interceptor)
 	return server, nil
@@ -80,6 +84,14 @@ func provideAlbumRepository(repo *repository.PostgresRepository) domain.AlbumRep
 
 func provideSettingsRepository(repo *repository.PostgresRepository) domain.SettingsRepository {
 	return repo.NewSettingsRepository()
+}
+
+func provideProjectRepository(repo *repository.PostgresRepository) domain.ProjectRepository {
+	return repo.NewProjectRepository()
+}
+
+func provideAboutRepository(repo *repository.PostgresRepository) domain.AboutRepository {
+	return repo.NewAboutRepository()
 }
 
 func provideImageReferenceRepository(repo *repository.PostgresRepository) domain.ImageReferenceRepository {
@@ -119,14 +131,24 @@ func provideSettingsUsecase(repo domain.SettingsRepository, imageRefRepo domain.
 	return usecase.NewSettingsUsecase(repo, imageRefRepo)
 }
 
+func provideProjectUsecase(repo domain.ProjectRepository, refs domain.ImageReferenceRepository) *usecase.ProjectUsecase {
+	return usecase.NewProjectUsecase(repo, refs)
+}
+
+func provideAboutUsecase(repo domain.AboutRepository, refs domain.ImageReferenceRepository) *usecase.AboutUsecase {
+	return usecase.NewAboutUsecase(repo, refs)
+}
+
 func provideHandler(
 	authenticator *application.OwnerAuthenticator,
 	postUsecase *usecase.PostUsecase,
 	blogUsecase *usecase.BlogUsecase,
 	albumUsecase *usecase.AlbumUsecase,
 	settingsUsecase *usecase.SettingsUsecase,
+	projectUsecase *usecase.ProjectUsecase,
+	aboutUsecase *usecase.AboutUsecase,
 ) *delivery.Handler {
-	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase)
+	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase, projectUsecase, aboutUsecase)
 }
 
 func provideAuthInterceptor(authenticator *application.OwnerAuthenticator) connect.Interceptor {

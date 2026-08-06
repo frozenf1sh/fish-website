@@ -102,6 +102,9 @@ var publicProcedures = map[string]bool{
 	"/home.v1.AlbumService/ListAlbums":     true,
 	"/home.v1.AlbumService/GetAlbum":       true,
 	"/home.v1.SettingsService/GetSettings": true,
+	"/home.v1.ProjectService/ListProjects": true,
+	"/home.v1.ProjectService/GetProject": true,
+	"/home.v1.AboutService/GetAbout": true,
 }
 
 func isPublicProcedure(procedure string) bool {

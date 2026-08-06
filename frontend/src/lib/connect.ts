@@ -7,6 +7,8 @@ import {
   BlogService,
   AlbumService,
   SettingsService,
+  ProjectService,
+  AboutService,
 } from '../gen/home/v1/homepage_connect'
 
 const getApiBaseUrl = () => {
@@ -75,6 +77,8 @@ const postClient = createPromiseClient(PostService, transport)
 const blogClient = createPromiseClient(BlogService, transport)
 const albumClient = createPromiseClient(AlbumService, transport)
 const settingsClient = createPromiseClient(SettingsService, transport)
+const projectClient = createPromiseClient(ProjectService, transport)
+const aboutClient = createPromiseClient(AboutService, transport)
 
 let refreshPromise: Promise<string | null> | null = null
 
@@ -127,6 +131,8 @@ type SiteSettingsInput = {
   themeColor?: string
 }
 type UpdateSettingsInput = { settings?: SiteSettingsInput; updateMask?: string[] }
+type ProjectInput = { title: string; summary?: string; linkUrl?: string; coverImageId: string }
+type ProjectIDInput = { id: string }
 
 export const clients = {
   auth: {
@@ -575,5 +581,31 @@ export const clients = {
         },
       }
     },
+  },
+  projects: {
+    list: async () => {
+      const response = await projectClient.listProjects({})
+      return response.projects.map((project) => ({
+        id: project.id, title: project.title, summary: project.summary, linkUrl: project.linkUrl,
+        coverImage: project.coverImage ? { id: project.coverImage.id, url: project.coverImage.url, thumbnailUrl: project.coverImage.thumbnailUrl } : null,
+        sortOrder: Number(project.sortOrder),
+      }))
+    },
+    create: async (req: ProjectInput) => (await projectClient.createProject(req)).project,
+    update: async (req: ProjectInput & ProjectIDInput) => (await projectClient.updateProject(req)).project,
+    remove: async (req: ProjectIDInput) => { await projectClient.deleteProject(req); return {} },
+    reorder: async (projectIds: string[]) => { await projectClient.reorderProjects({ projectIds }); return {} },
+  },
+  about: {
+    get: async () => {
+      const response = await aboutClient.getAbout({})
+      return {
+        settings: response.settings,
+        images: response.images.map((item) => ({ id: item.id, sortOrder: Number(item.sortOrder), image: item.image ? { id: item.image.id, url: item.image.url, thumbnailUrl: item.image.thumbnailUrl } : null })),
+      }
+    },
+    addImage: async (imageId: string) => (await aboutClient.addAboutImage({ imageId })).image,
+    removeImage: async (id: string) => { await aboutClient.removeAboutImage({ id }); return {} },
+    reorderImages: async (imageIds: string[]) => { await aboutClient.reorderAboutImages({ imageIds }); return {} },
   },
 }

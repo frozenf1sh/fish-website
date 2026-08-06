@@ -45,6 +45,14 @@ func (r *PostgresRepository) NewSettingsRepository() domain.SettingsRepository {
 	return (*postgresSettingsRepository)(r)
 }
 
+func (r *PostgresRepository) NewProjectRepository() domain.ProjectRepository {
+	return (*postgresProjectRepository)(r)
+}
+
+func (r *PostgresRepository) NewAboutRepository() domain.AboutRepository {
+	return (*postgresAboutRepository)(r)
+}
+
 // NewImageReferenceRepository returns an ImageReferenceRepository implementation
 func (r *PostgresRepository) NewImageReferenceRepository() domain.ImageReferenceRepository {
 	return (*postgresImageReferenceRepository)(r)
@@ -891,13 +899,60 @@ func (r *postgresImageReferenceRepository) ReplaceSourceReferences(ctx context.C
 	return nil
 }
 
+// ReplaceSourceImageIDs is the ID-native path used by first-class content
+// modules. It avoids URL resolution and keeps image identity stable when a
+// delivery URL changes.
+func (r *postgresImageReferenceRepository) ReplaceSourceImageIDs(ctx context.Context, sourceType, sourceID string, imageIDs []string) error {
+	if sourceType == "" || sourceID == "" {
+		return fmt.Errorf("reference source type and id are required")
+	}
+	if !supportedReferenceSource(sourceType) {
+		return fmt.Errorf("unsupported reference source: %s", sourceType)
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin replace image ID references tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	oldIDs, err := querySourceImageIDs(ctx, tx, sourceType, sourceID)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM image_reference_sources WHERE source_type = $1 AND source_id = $2`, sourceType, sourceID); err != nil {
+		return fmt.Errorf("delete source image references: %w", err)
+	}
+	ids := appendUniqueIDs(nil, imageIDs...)
+	if len(ids) > 0 {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO image_reference_sources (source_type, source_id, image_id, occurrence_count, updated_at)
+			SELECT $1, $2, i.id, 1, NOW()
+			FROM unnest($3::text[]) AS u(image_id)
+			INNER JOIN images i ON i.id = u.image_id
+			ON CONFLICT (source_type, source_id, image_id) DO UPDATE SET updated_at = NOW()
+		`, sourceType, sourceID, ids); err != nil {
+			return fmt.Errorf("insert source image references: %w", err)
+		}
+	}
+	newIDs, err := querySourceImageIDs(ctx, tx, sourceType, sourceID)
+	if err != nil {
+		return err
+	}
+	if err := rebuildReferenceProjection(ctx, tx, appendUniqueIDs(oldIDs, newIDs...)); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit replace image ID references: %w", err)
+	}
+	return nil
+}
+
 func (r *postgresImageReferenceRepository) RemoveSourceReferences(ctx context.Context, sourceType, sourceID string) error {
 	return r.ReplaceSourceReferences(ctx, sourceType, sourceID, nil)
 }
 
 func supportedReferenceSource(source string) bool {
 	switch source {
-	case "post", "blog", "avatar", "background", "favicon":
+	case "post", "blog", "avatar", "background", "favicon", "project", "about":
 		return true
 	default:
 		return false
@@ -1243,6 +1298,226 @@ func (r *postgresSettingsRepository) Update(ctx context.Context, settings *domai
 		return nil, fmt.Errorf("update settings: %w", err)
 	}
 	return settings, nil
+}
+
+type postgresProjectRepository PostgresRepository
+
+func (r *postgresProjectRepository) List(ctx context.Context) ([]*domain.Project, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT p.id, p.title, p.summary, p.link_url, p.cover_image_id, p.sort_order,
+		       p.created_at, p.updated_at,
+		       i.id, i.album_id, i.object_key, i.thumbnail_object_key, i.url, i.thumbnail_url,
+		       i.file_name, i.file_size, i.mime_type, i.created_at
+		FROM projects p
+		INNER JOIN images i ON i.id = p.cover_image_id
+		ORDER BY p.sort_order, p.created_at DESC, p.id
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("list projects: %w", err)
+	}
+	defer rows.Close()
+	projects := make([]*domain.Project, 0)
+	for rows.Next() {
+		project, image, err := scanProject(rows)
+		if err != nil {
+			return nil, err
+		}
+		project.CoverImage = image
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("project rows error: %w", err)
+	}
+	return projects, nil
+}
+
+func (r *postgresProjectRepository) Get(ctx context.Context, id string) (*domain.Project, error) {
+	row := r.pool.QueryRow(ctx, `
+		SELECT p.id, p.title, p.summary, p.link_url, p.cover_image_id, p.sort_order,
+		       p.created_at, p.updated_at,
+		       i.id, i.album_id, i.object_key, i.thumbnail_object_key, i.url, i.thumbnail_url,
+		       i.file_name, i.file_size, i.mime_type, i.created_at
+		FROM projects p INNER JOIN images i ON i.id = p.cover_image_id WHERE p.id = $1
+	`, id)
+	project, image, err := scanProject(row)
+	if err != nil {
+		return nil, fmt.Errorf("get project: %w", err)
+	}
+	project.CoverImage = image
+	return project, nil
+}
+
+func (r *postgresProjectRepository) Create(ctx context.Context, project *domain.Project) (*domain.Project, error) {
+	if project.ID == "" {
+		id, err := uuid.NewV7()
+		if err == nil {
+			project.ID = id.String()
+		} else {
+			project.ID = xid.New().String()
+		}
+	}
+	if project.CreatedAt.IsZero() {
+		project.CreatedAt = time.Now()
+	}
+	project.UpdatedAt = project.CreatedAt
+	if _, err := r.pool.Exec(ctx, `INSERT INTO projects (id,title,summary,link_url,cover_image_id,sort_order,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, project.ID, project.Title, project.Summary, project.LinkURL, project.CoverImageID, project.SortOrder, project.CreatedAt, project.UpdatedAt); err != nil {
+		return nil, fmt.Errorf("create project: %w", err)
+	}
+	return r.Get(ctx, project.ID)
+}
+
+func (r *postgresProjectRepository) Update(ctx context.Context, project *domain.Project) (*domain.Project, error) {
+	project.UpdatedAt = time.Now()
+	if _, err := r.pool.Exec(ctx, `UPDATE projects SET title=$2, summary=$3, link_url=$4, cover_image_id=$5, updated_at=$6 WHERE id=$1`, project.ID, project.Title, project.Summary, project.LinkURL, project.CoverImageID, project.UpdatedAt); err != nil {
+		return nil, fmt.Errorf("update project: %w", err)
+	}
+	return r.Get(ctx, project.ID)
+}
+
+func (r *postgresProjectRepository) Delete(ctx context.Context, id string) error {
+	if _, err := r.pool.Exec(ctx, `DELETE FROM projects WHERE id = $1`, id); err != nil {
+		return fmt.Errorf("delete project: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresProjectRepository) Reorder(ctx context.Context, ids []string) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin reorder projects: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	tag, err := tx.Exec(ctx, `UPDATE projects p SET sort_order = u.position - 1, updated_at = NOW() FROM unnest($1::text[]) WITH ORDINALITY AS u(id, position) WHERE p.id = u.id`, ids)
+	if err != nil {
+		return fmt.Errorf("reorder projects: %w", err)
+	}
+	if int(tag.RowsAffected()) != len(ids) {
+		return fmt.Errorf("reorder projects: expected %d rows, updated %d", len(ids), tag.RowsAffected())
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit reorder projects: %w", err)
+	}
+	return nil
+}
+
+type postgresAboutRepository PostgresRepository
+
+func (r *postgresAboutRepository) ListImages(ctx context.Context) ([]*domain.AboutImage, error) {
+	rows, err := r.pool.Query(ctx, `SELECT a.id,a.image_id,a.sort_order,a.created_at,i.id,i.album_id,i.object_key,i.thumbnail_object_key,i.url,i.thumbnail_url,i.file_name,i.file_size,i.mime_type,i.created_at FROM about_images a INNER JOIN images i ON i.id=a.image_id ORDER BY a.sort_order,a.created_at,a.id`)
+	if err != nil {
+		return nil, fmt.Errorf("list about images: %w", err)
+	}
+	defer rows.Close()
+	result := make([]*domain.AboutImage, 0)
+	for rows.Next() {
+		var item domain.AboutImage
+		image, err := scanAboutImage(rows, &item)
+		if err != nil {
+			return nil, err
+		}
+		item.Image = image
+		result = append(result, &item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("about image rows error: %w", err)
+	}
+	return result, nil
+}
+
+func (r *postgresAboutRepository) AddImage(ctx context.Context, image *domain.AboutImage) (*domain.AboutImage, error) {
+	if image.ID == "" {
+		id, err := uuid.NewV7()
+		if err == nil {
+			image.ID = id.String()
+		} else {
+			image.ID = xid.New().String()
+		}
+	}
+	if image.CreatedAt.IsZero() {
+		image.CreatedAt = time.Now()
+	}
+	if _, err := r.pool.Exec(ctx, `INSERT INTO about_images (id,image_id,sort_order,created_at) VALUES ($1,$2,$3,$4)`, image.ID, image.ImageID, image.SortOrder, image.CreatedAt); err != nil {
+		return nil, fmt.Errorf("add about image: %w", err)
+	}
+	items, err := r.ListImages(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range items {
+		if item.ID == image.ID {
+			return item, nil
+		}
+	}
+	return nil, fmt.Errorf("about image %s not found after insert", image.ID)
+}
+
+func (r *postgresAboutRepository) RemoveImage(ctx context.Context, id string) error {
+	if _, err := r.pool.Exec(ctx, `DELETE FROM about_images WHERE id=$1`, id); err != nil {
+		return fmt.Errorf("remove about image: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresAboutRepository) ReorderImages(ctx context.Context, ids []string) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin reorder about images: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	tag, err := tx.Exec(ctx, `UPDATE about_images a SET sort_order = u.position - 1 FROM unnest($1::text[]) WITH ORDINALITY AS u(id, position) WHERE a.id = u.id`, ids)
+	if err != nil {
+		return fmt.Errorf("reorder about images: %w", err)
+	}
+	if int(tag.RowsAffected()) != len(ids) {
+		return fmt.Errorf("reorder about images: expected %d rows, updated %d", len(ids), tag.RowsAffected())
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit reorder about images: %w", err)
+	}
+	return nil
+}
+
+func scanProject(row imageScanner) (*domain.Project, *domain.Image, error) {
+	var p domain.Project
+	var image domain.Image
+	var objectKey, thumbKey, url, thumbURL sql.NullString
+	if err := row.Scan(&p.ID, &p.Title, &p.Summary, &p.LinkURL, &p.CoverImageID, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt, &image.ID, &image.AlbumID, &objectKey, &thumbKey, &url, &thumbURL, &image.FileName, &image.FileSize, &image.MimeType, &image.CreatedAt); err != nil {
+		return nil, nil, fmt.Errorf("scan project: %w", err)
+	}
+	if objectKey.Valid {
+		image.ObjectKey = objectKey.String
+	}
+	if thumbKey.Valid {
+		image.ThumbnailObjectKey = thumbKey.String
+	}
+	if url.Valid {
+		image.URL = url.String
+	}
+	if thumbURL.Valid {
+		image.ThumbnailURL = thumbURL.String
+	}
+	return &p, &image, nil
+}
+
+func scanAboutImage(row imageScanner, item *domain.AboutImage) (*domain.Image, error) {
+	var image domain.Image
+	var objectKey, thumbKey, url, thumbURL sql.NullString
+	if err := row.Scan(&item.ID, &item.ImageID, &item.SortOrder, &item.CreatedAt, &image.ID, &image.AlbumID, &objectKey, &thumbKey, &url, &thumbURL, &image.FileName, &image.FileSize, &image.MimeType, &image.CreatedAt); err != nil {
+		return nil, fmt.Errorf("scan about image: %w", err)
+	}
+	if objectKey.Valid {
+		image.ObjectKey = objectKey.String
+	}
+	if thumbKey.Valid {
+		image.ThumbnailObjectKey = thumbKey.String
+	}
+	if url.Valid {
+		image.URL = url.String
+	}
+	if thumbURL.Valid {
+		image.ThumbnailURL = thumbURL.String
+	}
+	return &image, nil
 }
 
 func nullString(s string) sql.NullString {

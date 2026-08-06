@@ -15,6 +15,9 @@ const PostPage = lazy(() => import('./pages/PostPage').then(({ PostPage }) => ({
 const AlbumsPage = lazy(() => import('./pages/AlbumsPage').then(({ AlbumsPage }) => ({ default: AlbumsPage })))
 const SearchPage = lazy(() => import('./pages/SearchPage').then(({ SearchPage }) => ({ default: SearchPage })))
 const MePage = lazy(() => import('./pages/MePage').then(({ MePage }) => ({ default: MePage })))
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
+const ContentManagerPage = lazy(() => import('./pages/ContentManagerPage'))
 const SakuraParticles = lazy(() => import('./components/SakuraParticles').then(({ SakuraParticles }) => ({ default: SakuraParticles })))
 const LoginModal = lazy(() => import('./components/LoginModal').then(({ LoginModal }) => ({ default: LoginModal })))
 const SettingsDrawer = lazy(() => import('./components/SettingsDrawer').then(({ SettingsDrawer }) => ({ default: SettingsDrawer })))
@@ -174,6 +177,9 @@ function App() {
                 <Route path="/albums" element={<AlbumsPage />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/me" element={<MePage />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/manage/content" element={<ContentManagerPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

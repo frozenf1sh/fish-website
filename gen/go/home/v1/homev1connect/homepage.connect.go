@@ -32,6 +32,10 @@ const (
 	AlbumServiceName = "home.v1.AlbumService"
 	// SettingsServiceName is the fully-qualified name of the SettingsService service.
 	SettingsServiceName = "home.v1.SettingsService"
+	// ProjectServiceName is the fully-qualified name of the ProjectService service.
+	ProjectServiceName = "home.v1.ProjectService"
+	// AboutServiceName is the fully-qualified name of the AboutService service.
+	AboutServiceName = "home.v1.AboutService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -117,6 +121,35 @@ const (
 	// SettingsServiceUpdateSettingsProcedure is the fully-qualified name of the SettingsService's
 	// UpdateSettings RPC.
 	SettingsServiceUpdateSettingsProcedure = "/home.v1.SettingsService/UpdateSettings"
+	// ProjectServiceListProjectsProcedure is the fully-qualified name of the ProjectService's
+	// ListProjects RPC.
+	ProjectServiceListProjectsProcedure = "/home.v1.ProjectService/ListProjects"
+	// ProjectServiceGetProjectProcedure is the fully-qualified name of the ProjectService's GetProject
+	// RPC.
+	ProjectServiceGetProjectProcedure = "/home.v1.ProjectService/GetProject"
+	// ProjectServiceCreateProjectProcedure is the fully-qualified name of the ProjectService's
+	// CreateProject RPC.
+	ProjectServiceCreateProjectProcedure = "/home.v1.ProjectService/CreateProject"
+	// ProjectServiceUpdateProjectProcedure is the fully-qualified name of the ProjectService's
+	// UpdateProject RPC.
+	ProjectServiceUpdateProjectProcedure = "/home.v1.ProjectService/UpdateProject"
+	// ProjectServiceDeleteProjectProcedure is the fully-qualified name of the ProjectService's
+	// DeleteProject RPC.
+	ProjectServiceDeleteProjectProcedure = "/home.v1.ProjectService/DeleteProject"
+	// ProjectServiceReorderProjectsProcedure is the fully-qualified name of the ProjectService's
+	// ReorderProjects RPC.
+	ProjectServiceReorderProjectsProcedure = "/home.v1.ProjectService/ReorderProjects"
+	// AboutServiceGetAboutProcedure is the fully-qualified name of the AboutService's GetAbout RPC.
+	AboutServiceGetAboutProcedure = "/home.v1.AboutService/GetAbout"
+	// AboutServiceAddAboutImageProcedure is the fully-qualified name of the AboutService's
+	// AddAboutImage RPC.
+	AboutServiceAddAboutImageProcedure = "/home.v1.AboutService/AddAboutImage"
+	// AboutServiceRemoveAboutImageProcedure is the fully-qualified name of the AboutService's
+	// RemoveAboutImage RPC.
+	AboutServiceRemoveAboutImageProcedure = "/home.v1.AboutService/RemoveAboutImage"
+	// AboutServiceReorderAboutImagesProcedure is the fully-qualified name of the AboutService's
+	// ReorderAboutImages RPC.
+	AboutServiceReorderAboutImagesProcedure = "/home.v1.AboutService/ReorderAboutImages"
 )
 
 // AuthServiceClient is a client for the home.v1.AuthService service.
@@ -1149,4 +1182,352 @@ func (UnimplementedSettingsServiceHandler) GetSettings(context.Context, *connect
 
 func (UnimplementedSettingsServiceHandler) UpdateSettings(context.Context, *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.SettingsService.UpdateSettings is not implemented"))
+}
+
+// ProjectServiceClient is a client for the home.v1.ProjectService service.
+type ProjectServiceClient interface {
+	ListProjects(context.Context, *connect.Request[v1.ListProjectsRequest]) (*connect.Response[v1.ListProjectsResponse], error)
+	GetProject(context.Context, *connect.Request[v1.GetProjectRequest]) (*connect.Response[v1.GetProjectResponse], error)
+	CreateProject(context.Context, *connect.Request[v1.CreateProjectRequest]) (*connect.Response[v1.CreateProjectResponse], error)
+	UpdateProject(context.Context, *connect.Request[v1.UpdateProjectRequest]) (*connect.Response[v1.UpdateProjectResponse], error)
+	DeleteProject(context.Context, *connect.Request[v1.DeleteProjectRequest]) (*connect.Response[v1.DeleteProjectResponse], error)
+	ReorderProjects(context.Context, *connect.Request[v1.ReorderProjectsRequest]) (*connect.Response[v1.ReorderProjectsResponse], error)
+}
+
+// NewProjectServiceClient constructs a client for the home.v1.ProjectService service. By default,
+// it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and
+// sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC()
+// or connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewProjectServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ProjectServiceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	projectServiceMethods := v1.File_home_v1_homepage_proto.Services().ByName("ProjectService").Methods()
+	return &projectServiceClient{
+		listProjects: connect.NewClient[v1.ListProjectsRequest, v1.ListProjectsResponse](
+			httpClient,
+			baseURL+ProjectServiceListProjectsProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("ListProjects")),
+			connect.WithClientOptions(opts...),
+		),
+		getProject: connect.NewClient[v1.GetProjectRequest, v1.GetProjectResponse](
+			httpClient,
+			baseURL+ProjectServiceGetProjectProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("GetProject")),
+			connect.WithClientOptions(opts...),
+		),
+		createProject: connect.NewClient[v1.CreateProjectRequest, v1.CreateProjectResponse](
+			httpClient,
+			baseURL+ProjectServiceCreateProjectProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("CreateProject")),
+			connect.WithClientOptions(opts...),
+		),
+		updateProject: connect.NewClient[v1.UpdateProjectRequest, v1.UpdateProjectResponse](
+			httpClient,
+			baseURL+ProjectServiceUpdateProjectProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("UpdateProject")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteProject: connect.NewClient[v1.DeleteProjectRequest, v1.DeleteProjectResponse](
+			httpClient,
+			baseURL+ProjectServiceDeleteProjectProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("DeleteProject")),
+			connect.WithClientOptions(opts...),
+		),
+		reorderProjects: connect.NewClient[v1.ReorderProjectsRequest, v1.ReorderProjectsResponse](
+			httpClient,
+			baseURL+ProjectServiceReorderProjectsProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("ReorderProjects")),
+			connect.WithClientOptions(opts...),
+		),
+	}
+}
+
+// projectServiceClient implements ProjectServiceClient.
+type projectServiceClient struct {
+	listProjects    *connect.Client[v1.ListProjectsRequest, v1.ListProjectsResponse]
+	getProject      *connect.Client[v1.GetProjectRequest, v1.GetProjectResponse]
+	createProject   *connect.Client[v1.CreateProjectRequest, v1.CreateProjectResponse]
+	updateProject   *connect.Client[v1.UpdateProjectRequest, v1.UpdateProjectResponse]
+	deleteProject   *connect.Client[v1.DeleteProjectRequest, v1.DeleteProjectResponse]
+	reorderProjects *connect.Client[v1.ReorderProjectsRequest, v1.ReorderProjectsResponse]
+}
+
+// ListProjects calls home.v1.ProjectService.ListProjects.
+func (c *projectServiceClient) ListProjects(ctx context.Context, req *connect.Request[v1.ListProjectsRequest]) (*connect.Response[v1.ListProjectsResponse], error) {
+	return c.listProjects.CallUnary(ctx, req)
+}
+
+// GetProject calls home.v1.ProjectService.GetProject.
+func (c *projectServiceClient) GetProject(ctx context.Context, req *connect.Request[v1.GetProjectRequest]) (*connect.Response[v1.GetProjectResponse], error) {
+	return c.getProject.CallUnary(ctx, req)
+}
+
+// CreateProject calls home.v1.ProjectService.CreateProject.
+func (c *projectServiceClient) CreateProject(ctx context.Context, req *connect.Request[v1.CreateProjectRequest]) (*connect.Response[v1.CreateProjectResponse], error) {
+	return c.createProject.CallUnary(ctx, req)
+}
+
+// UpdateProject calls home.v1.ProjectService.UpdateProject.
+func (c *projectServiceClient) UpdateProject(ctx context.Context, req *connect.Request[v1.UpdateProjectRequest]) (*connect.Response[v1.UpdateProjectResponse], error) {
+	return c.updateProject.CallUnary(ctx, req)
+}
+
+// DeleteProject calls home.v1.ProjectService.DeleteProject.
+func (c *projectServiceClient) DeleteProject(ctx context.Context, req *connect.Request[v1.DeleteProjectRequest]) (*connect.Response[v1.DeleteProjectResponse], error) {
+	return c.deleteProject.CallUnary(ctx, req)
+}
+
+// ReorderProjects calls home.v1.ProjectService.ReorderProjects.
+func (c *projectServiceClient) ReorderProjects(ctx context.Context, req *connect.Request[v1.ReorderProjectsRequest]) (*connect.Response[v1.ReorderProjectsResponse], error) {
+	return c.reorderProjects.CallUnary(ctx, req)
+}
+
+// ProjectServiceHandler is an implementation of the home.v1.ProjectService service.
+type ProjectServiceHandler interface {
+	ListProjects(context.Context, *connect.Request[v1.ListProjectsRequest]) (*connect.Response[v1.ListProjectsResponse], error)
+	GetProject(context.Context, *connect.Request[v1.GetProjectRequest]) (*connect.Response[v1.GetProjectResponse], error)
+	CreateProject(context.Context, *connect.Request[v1.CreateProjectRequest]) (*connect.Response[v1.CreateProjectResponse], error)
+	UpdateProject(context.Context, *connect.Request[v1.UpdateProjectRequest]) (*connect.Response[v1.UpdateProjectResponse], error)
+	DeleteProject(context.Context, *connect.Request[v1.DeleteProjectRequest]) (*connect.Response[v1.DeleteProjectResponse], error)
+	ReorderProjects(context.Context, *connect.Request[v1.ReorderProjectsRequest]) (*connect.Response[v1.ReorderProjectsResponse], error)
+}
+
+// NewProjectServiceHandler builds an HTTP handler from the service implementation. It returns the
+// path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewProjectServiceHandler(svc ProjectServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	projectServiceMethods := v1.File_home_v1_homepage_proto.Services().ByName("ProjectService").Methods()
+	projectServiceListProjectsHandler := connect.NewUnaryHandler(
+		ProjectServiceListProjectsProcedure,
+		svc.ListProjects,
+		connect.WithSchema(projectServiceMethods.ByName("ListProjects")),
+		connect.WithHandlerOptions(opts...),
+	)
+	projectServiceGetProjectHandler := connect.NewUnaryHandler(
+		ProjectServiceGetProjectProcedure,
+		svc.GetProject,
+		connect.WithSchema(projectServiceMethods.ByName("GetProject")),
+		connect.WithHandlerOptions(opts...),
+	)
+	projectServiceCreateProjectHandler := connect.NewUnaryHandler(
+		ProjectServiceCreateProjectProcedure,
+		svc.CreateProject,
+		connect.WithSchema(projectServiceMethods.ByName("CreateProject")),
+		connect.WithHandlerOptions(opts...),
+	)
+	projectServiceUpdateProjectHandler := connect.NewUnaryHandler(
+		ProjectServiceUpdateProjectProcedure,
+		svc.UpdateProject,
+		connect.WithSchema(projectServiceMethods.ByName("UpdateProject")),
+		connect.WithHandlerOptions(opts...),
+	)
+	projectServiceDeleteProjectHandler := connect.NewUnaryHandler(
+		ProjectServiceDeleteProjectProcedure,
+		svc.DeleteProject,
+		connect.WithSchema(projectServiceMethods.ByName("DeleteProject")),
+		connect.WithHandlerOptions(opts...),
+	)
+	projectServiceReorderProjectsHandler := connect.NewUnaryHandler(
+		ProjectServiceReorderProjectsProcedure,
+		svc.ReorderProjects,
+		connect.WithSchema(projectServiceMethods.ByName("ReorderProjects")),
+		connect.WithHandlerOptions(opts...),
+	)
+	return "/home.v1.ProjectService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ProjectServiceListProjectsProcedure:
+			projectServiceListProjectsHandler.ServeHTTP(w, r)
+		case ProjectServiceGetProjectProcedure:
+			projectServiceGetProjectHandler.ServeHTTP(w, r)
+		case ProjectServiceCreateProjectProcedure:
+			projectServiceCreateProjectHandler.ServeHTTP(w, r)
+		case ProjectServiceUpdateProjectProcedure:
+			projectServiceUpdateProjectHandler.ServeHTTP(w, r)
+		case ProjectServiceDeleteProjectProcedure:
+			projectServiceDeleteProjectHandler.ServeHTTP(w, r)
+		case ProjectServiceReorderProjectsProcedure:
+			projectServiceReorderProjectsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+// UnimplementedProjectServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedProjectServiceHandler struct{}
+
+func (UnimplementedProjectServiceHandler) ListProjects(context.Context, *connect.Request[v1.ListProjectsRequest]) (*connect.Response[v1.ListProjectsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.ProjectService.ListProjects is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) GetProject(context.Context, *connect.Request[v1.GetProjectRequest]) (*connect.Response[v1.GetProjectResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.ProjectService.GetProject is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) CreateProject(context.Context, *connect.Request[v1.CreateProjectRequest]) (*connect.Response[v1.CreateProjectResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.ProjectService.CreateProject is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) UpdateProject(context.Context, *connect.Request[v1.UpdateProjectRequest]) (*connect.Response[v1.UpdateProjectResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.ProjectService.UpdateProject is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) DeleteProject(context.Context, *connect.Request[v1.DeleteProjectRequest]) (*connect.Response[v1.DeleteProjectResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.ProjectService.DeleteProject is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) ReorderProjects(context.Context, *connect.Request[v1.ReorderProjectsRequest]) (*connect.Response[v1.ReorderProjectsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.ProjectService.ReorderProjects is not implemented"))
+}
+
+// AboutServiceClient is a client for the home.v1.AboutService service.
+type AboutServiceClient interface {
+	GetAbout(context.Context, *connect.Request[v1.GetAboutRequest]) (*connect.Response[v1.GetAboutResponse], error)
+	AddAboutImage(context.Context, *connect.Request[v1.AddAboutImageRequest]) (*connect.Response[v1.AddAboutImageResponse], error)
+	RemoveAboutImage(context.Context, *connect.Request[v1.RemoveAboutImageRequest]) (*connect.Response[v1.RemoveAboutImageResponse], error)
+	ReorderAboutImages(context.Context, *connect.Request[v1.ReorderAboutImagesRequest]) (*connect.Response[v1.ReorderAboutImagesResponse], error)
+}
+
+// NewAboutServiceClient constructs a client for the home.v1.AboutService service. By default, it
+// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
+// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
+// connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewAboutServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AboutServiceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	aboutServiceMethods := v1.File_home_v1_homepage_proto.Services().ByName("AboutService").Methods()
+	return &aboutServiceClient{
+		getAbout: connect.NewClient[v1.GetAboutRequest, v1.GetAboutResponse](
+			httpClient,
+			baseURL+AboutServiceGetAboutProcedure,
+			connect.WithSchema(aboutServiceMethods.ByName("GetAbout")),
+			connect.WithClientOptions(opts...),
+		),
+		addAboutImage: connect.NewClient[v1.AddAboutImageRequest, v1.AddAboutImageResponse](
+			httpClient,
+			baseURL+AboutServiceAddAboutImageProcedure,
+			connect.WithSchema(aboutServiceMethods.ByName("AddAboutImage")),
+			connect.WithClientOptions(opts...),
+		),
+		removeAboutImage: connect.NewClient[v1.RemoveAboutImageRequest, v1.RemoveAboutImageResponse](
+			httpClient,
+			baseURL+AboutServiceRemoveAboutImageProcedure,
+			connect.WithSchema(aboutServiceMethods.ByName("RemoveAboutImage")),
+			connect.WithClientOptions(opts...),
+		),
+		reorderAboutImages: connect.NewClient[v1.ReorderAboutImagesRequest, v1.ReorderAboutImagesResponse](
+			httpClient,
+			baseURL+AboutServiceReorderAboutImagesProcedure,
+			connect.WithSchema(aboutServiceMethods.ByName("ReorderAboutImages")),
+			connect.WithClientOptions(opts...),
+		),
+	}
+}
+
+// aboutServiceClient implements AboutServiceClient.
+type aboutServiceClient struct {
+	getAbout           *connect.Client[v1.GetAboutRequest, v1.GetAboutResponse]
+	addAboutImage      *connect.Client[v1.AddAboutImageRequest, v1.AddAboutImageResponse]
+	removeAboutImage   *connect.Client[v1.RemoveAboutImageRequest, v1.RemoveAboutImageResponse]
+	reorderAboutImages *connect.Client[v1.ReorderAboutImagesRequest, v1.ReorderAboutImagesResponse]
+}
+
+// GetAbout calls home.v1.AboutService.GetAbout.
+func (c *aboutServiceClient) GetAbout(ctx context.Context, req *connect.Request[v1.GetAboutRequest]) (*connect.Response[v1.GetAboutResponse], error) {
+	return c.getAbout.CallUnary(ctx, req)
+}
+
+// AddAboutImage calls home.v1.AboutService.AddAboutImage.
+func (c *aboutServiceClient) AddAboutImage(ctx context.Context, req *connect.Request[v1.AddAboutImageRequest]) (*connect.Response[v1.AddAboutImageResponse], error) {
+	return c.addAboutImage.CallUnary(ctx, req)
+}
+
+// RemoveAboutImage calls home.v1.AboutService.RemoveAboutImage.
+func (c *aboutServiceClient) RemoveAboutImage(ctx context.Context, req *connect.Request[v1.RemoveAboutImageRequest]) (*connect.Response[v1.RemoveAboutImageResponse], error) {
+	return c.removeAboutImage.CallUnary(ctx, req)
+}
+
+// ReorderAboutImages calls home.v1.AboutService.ReorderAboutImages.
+func (c *aboutServiceClient) ReorderAboutImages(ctx context.Context, req *connect.Request[v1.ReorderAboutImagesRequest]) (*connect.Response[v1.ReorderAboutImagesResponse], error) {
+	return c.reorderAboutImages.CallUnary(ctx, req)
+}
+
+// AboutServiceHandler is an implementation of the home.v1.AboutService service.
+type AboutServiceHandler interface {
+	GetAbout(context.Context, *connect.Request[v1.GetAboutRequest]) (*connect.Response[v1.GetAboutResponse], error)
+	AddAboutImage(context.Context, *connect.Request[v1.AddAboutImageRequest]) (*connect.Response[v1.AddAboutImageResponse], error)
+	RemoveAboutImage(context.Context, *connect.Request[v1.RemoveAboutImageRequest]) (*connect.Response[v1.RemoveAboutImageResponse], error)
+	ReorderAboutImages(context.Context, *connect.Request[v1.ReorderAboutImagesRequest]) (*connect.Response[v1.ReorderAboutImagesResponse], error)
+}
+
+// NewAboutServiceHandler builds an HTTP handler from the service implementation. It returns the
+// path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewAboutServiceHandler(svc AboutServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	aboutServiceMethods := v1.File_home_v1_homepage_proto.Services().ByName("AboutService").Methods()
+	aboutServiceGetAboutHandler := connect.NewUnaryHandler(
+		AboutServiceGetAboutProcedure,
+		svc.GetAbout,
+		connect.WithSchema(aboutServiceMethods.ByName("GetAbout")),
+		connect.WithHandlerOptions(opts...),
+	)
+	aboutServiceAddAboutImageHandler := connect.NewUnaryHandler(
+		AboutServiceAddAboutImageProcedure,
+		svc.AddAboutImage,
+		connect.WithSchema(aboutServiceMethods.ByName("AddAboutImage")),
+		connect.WithHandlerOptions(opts...),
+	)
+	aboutServiceRemoveAboutImageHandler := connect.NewUnaryHandler(
+		AboutServiceRemoveAboutImageProcedure,
+		svc.RemoveAboutImage,
+		connect.WithSchema(aboutServiceMethods.ByName("RemoveAboutImage")),
+		connect.WithHandlerOptions(opts...),
+	)
+	aboutServiceReorderAboutImagesHandler := connect.NewUnaryHandler(
+		AboutServiceReorderAboutImagesProcedure,
+		svc.ReorderAboutImages,
+		connect.WithSchema(aboutServiceMethods.ByName("ReorderAboutImages")),
+		connect.WithHandlerOptions(opts...),
+	)
+	return "/home.v1.AboutService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case AboutServiceGetAboutProcedure:
+			aboutServiceGetAboutHandler.ServeHTTP(w, r)
+		case AboutServiceAddAboutImageProcedure:
+			aboutServiceAddAboutImageHandler.ServeHTTP(w, r)
+		case AboutServiceRemoveAboutImageProcedure:
+			aboutServiceRemoveAboutImageHandler.ServeHTTP(w, r)
+		case AboutServiceReorderAboutImagesProcedure:
+			aboutServiceReorderAboutImagesHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+// UnimplementedAboutServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedAboutServiceHandler struct{}
+
+func (UnimplementedAboutServiceHandler) GetAbout(context.Context, *connect.Request[v1.GetAboutRequest]) (*connect.Response[v1.GetAboutResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AboutService.GetAbout is not implemented"))
+}
+
+func (UnimplementedAboutServiceHandler) AddAboutImage(context.Context, *connect.Request[v1.AddAboutImageRequest]) (*connect.Response[v1.AddAboutImageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AboutService.AddAboutImage is not implemented"))
+}
+
+func (UnimplementedAboutServiceHandler) RemoveAboutImage(context.Context, *connect.Request[v1.RemoveAboutImageRequest]) (*connect.Response[v1.RemoveAboutImageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AboutService.RemoveAboutImage is not implemented"))
+}
+
+func (UnimplementedAboutServiceHandler) ReorderAboutImages(context.Context, *connect.Request[v1.ReorderAboutImagesRequest]) (*connect.Response[v1.ReorderAboutImagesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AboutService.ReorderAboutImages is not implemented"))
 }

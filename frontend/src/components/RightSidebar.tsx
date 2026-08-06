@@ -8,8 +8,8 @@ const navItems = [
   { name: '搜索', icon: '🔎', path: '/search', enabled: true },
   { name: '相册', icon: '📸', path: '/albums', enabled: true },
   { name: '博客', icon: '📝', path: '/blog', enabled: true },
-  { name: '项目', icon: '💻', path: '/projects', enabled: false },
-  { name: '关于', icon: '🌟', path: '/about', enabled: false },
+  { name: '项目', icon: '💻', path: '/projects', enabled: true },
+  { name: '关于', icon: '🌟', path: '/about', enabled: true },
 ]
 
 export function RightSidebar() {

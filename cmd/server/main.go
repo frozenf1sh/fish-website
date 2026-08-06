@@ -73,6 +73,8 @@ func (s *Server) Start(ctx context.Context) error {
 			homev1connect.BlogServiceName,
 			homev1connect.AlbumServiceName,
 			homev1connect.SettingsServiceName,
+			homev1connect.ProjectServiceName,
+			homev1connect.AboutServiceName,
 		)
 		mux.Handle(grpcreflect.NewHandlerV1(reflector))
 		mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
@@ -90,6 +92,8 @@ func (s *Server) Start(ctx context.Context) error {
 	mux.Handle(homev1connect.NewBlogServiceHandler(s.handler, opts...))
 	mux.Handle(homev1connect.NewAlbumServiceHandler(s.handler, opts...))
 	mux.Handle(homev1connect.NewSettingsServiceHandler(s.handler, opts...))
+	mux.Handle(homev1connect.NewProjectServiceHandler(s.handler, opts...))
+	mux.Handle(homev1connect.NewAboutServiceHandler(s.handler, opts...))
 
 	// CORS configuration
 	logger.Debug("configuring CORS middleware")

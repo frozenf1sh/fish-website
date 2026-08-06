@@ -3589,6 +3589,1062 @@ func (x *UpdateSettingsResponse) GetSettings() *Settings {
 	return nil
 }
 
+type Project struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Summary       string                 `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
+	LinkUrl       string                 `protobuf:"bytes,4,opt,name=link_url,json=linkUrl,proto3" json:"link_url,omitempty"`
+	CoverImage    *Image                 `protobuf:"bytes,5,opt,name=cover_image,json=coverImage,proto3" json:"cover_image,omitempty"`
+	SortOrder     int32                  `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Project) Reset() {
+	*x = Project{}
+	mi := &file_home_v1_homepage_proto_msgTypes[63]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Project) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Project) ProtoMessage() {}
+
+func (x *Project) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[63]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Project.ProtoReflect.Descriptor instead.
+func (*Project) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{63}
+}
+
+func (x *Project) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Project) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Project) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *Project) GetLinkUrl() string {
+	if x != nil {
+		return x.LinkUrl
+	}
+	return ""
+}
+
+func (x *Project) GetCoverImage() *Image {
+	if x != nil {
+		return x.CoverImage
+	}
+	return nil
+}
+
+func (x *Project) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *Project) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Project) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type ListProjectsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectsRequest) Reset() {
+	*x = ListProjectsRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[64]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectsRequest) ProtoMessage() {}
+
+func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[64]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
+func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{64}
+}
+
+type ListProjectsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Projects      []*Project             `protobuf:"bytes,1,rep,name=projects,proto3" json:"projects,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectsResponse) Reset() {
+	*x = ListProjectsResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[65]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectsResponse) ProtoMessage() {}
+
+func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[65]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
+func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{65}
+}
+
+func (x *ListProjectsResponse) GetProjects() []*Project {
+	if x != nil {
+		return x.Projects
+	}
+	return nil
+}
+
+type GetProjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProjectRequest) Reset() {
+	*x = GetProjectRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProjectRequest) ProtoMessage() {}
+
+func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProjectRequest.ProtoReflect.Descriptor instead.
+func (*GetProjectRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *GetProjectRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetProjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Project       *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProjectResponse) Reset() {
+	*x = GetProjectResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[67]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProjectResponse) ProtoMessage() {}
+
+func (x *GetProjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[67]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProjectResponse.ProtoReflect.Descriptor instead.
+func (*GetProjectResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{67}
+}
+
+func (x *GetProjectResponse) GetProject() *Project {
+	if x != nil {
+		return x.Project
+	}
+	return nil
+}
+
+type CreateProjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Summary       string                 `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`
+	LinkUrl       string                 `protobuf:"bytes,3,opt,name=link_url,json=linkUrl,proto3" json:"link_url,omitempty"`
+	CoverImageId  string                 `protobuf:"bytes,4,opt,name=cover_image_id,json=coverImageId,proto3" json:"cover_image_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateProjectRequest) Reset() {
+	*x = CreateProjectRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateProjectRequest) ProtoMessage() {}
+
+func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
+func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{68}
+}
+
+func (x *CreateProjectRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CreateProjectRequest) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *CreateProjectRequest) GetLinkUrl() string {
+	if x != nil {
+		return x.LinkUrl
+	}
+	return ""
+}
+
+func (x *CreateProjectRequest) GetCoverImageId() string {
+	if x != nil {
+		return x.CoverImageId
+	}
+	return ""
+}
+
+type CreateProjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Project       *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateProjectResponse) Reset() {
+	*x = CreateProjectResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateProjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateProjectResponse) ProtoMessage() {}
+
+func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateProjectResponse.ProtoReflect.Descriptor instead.
+func (*CreateProjectResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *CreateProjectResponse) GetProject() *Project {
+	if x != nil {
+		return x.Project
+	}
+	return nil
+}
+
+type UpdateProjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Summary       string                 `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
+	LinkUrl       string                 `protobuf:"bytes,4,opt,name=link_url,json=linkUrl,proto3" json:"link_url,omitempty"`
+	CoverImageId  string                 `protobuf:"bytes,5,opt,name=cover_image_id,json=coverImageId,proto3" json:"cover_image_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProjectRequest) Reset() {
+	*x = UpdateProjectRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProjectRequest) ProtoMessage() {}
+
+func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProjectRequest.ProtoReflect.Descriptor instead.
+func (*UpdateProjectRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *UpdateProjectRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateProjectRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *UpdateProjectRequest) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *UpdateProjectRequest) GetLinkUrl() string {
+	if x != nil {
+		return x.LinkUrl
+	}
+	return ""
+}
+
+func (x *UpdateProjectRequest) GetCoverImageId() string {
+	if x != nil {
+		return x.CoverImageId
+	}
+	return ""
+}
+
+type UpdateProjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Project       *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProjectResponse) Reset() {
+	*x = UpdateProjectResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProjectResponse) ProtoMessage() {}
+
+func (x *UpdateProjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProjectResponse.ProtoReflect.Descriptor instead.
+func (*UpdateProjectResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *UpdateProjectResponse) GetProject() *Project {
+	if x != nil {
+		return x.Project
+	}
+	return nil
+}
+
+type DeleteProjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteProjectRequest) Reset() {
+	*x = DeleteProjectRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteProjectRequest) ProtoMessage() {}
+
+func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteProjectRequest.ProtoReflect.Descriptor instead.
+func (*DeleteProjectRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *DeleteProjectRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type DeleteProjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteProjectResponse) Reset() {
+	*x = DeleteProjectResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteProjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteProjectResponse) ProtoMessage() {}
+
+func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteProjectResponse.ProtoReflect.Descriptor instead.
+func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{73}
+}
+
+type ReorderProjectsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectIds    []string               `protobuf:"bytes,1,rep,name=project_ids,json=projectIds,proto3" json:"project_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReorderProjectsRequest) Reset() {
+	*x = ReorderProjectsRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReorderProjectsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReorderProjectsRequest) ProtoMessage() {}
+
+func (x *ReorderProjectsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReorderProjectsRequest.ProtoReflect.Descriptor instead.
+func (*ReorderProjectsRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{74}
+}
+
+func (x *ReorderProjectsRequest) GetProjectIds() []string {
+	if x != nil {
+		return x.ProjectIds
+	}
+	return nil
+}
+
+type ReorderProjectsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReorderProjectsResponse) Reset() {
+	*x = ReorderProjectsResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[75]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReorderProjectsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReorderProjectsResponse) ProtoMessage() {}
+
+func (x *ReorderProjectsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[75]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReorderProjectsResponse.ProtoReflect.Descriptor instead.
+func (*ReorderProjectsResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{75}
+}
+
+type AboutImage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Image         *Image                 `protobuf:"bytes,2,opt,name=image,proto3" json:"image,omitempty"`
+	SortOrder     int32                  `protobuf:"varint,3,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AboutImage) Reset() {
+	*x = AboutImage{}
+	mi := &file_home_v1_homepage_proto_msgTypes[76]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AboutImage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AboutImage) ProtoMessage() {}
+
+func (x *AboutImage) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[76]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AboutImage.ProtoReflect.Descriptor instead.
+func (*AboutImage) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{76}
+}
+
+func (x *AboutImage) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *AboutImage) GetImage() *Image {
+	if x != nil {
+		return x.Image
+	}
+	return nil
+}
+
+func (x *AboutImage) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+type GetAboutRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAboutRequest) Reset() {
+	*x = GetAboutRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[77]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAboutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAboutRequest) ProtoMessage() {}
+
+func (x *GetAboutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[77]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAboutRequest.ProtoReflect.Descriptor instead.
+func (*GetAboutRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{77}
+}
+
+type GetAboutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Settings      *Settings              `protobuf:"bytes,1,opt,name=settings,proto3" json:"settings,omitempty"`
+	Images        []*AboutImage          `protobuf:"bytes,2,rep,name=images,proto3" json:"images,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAboutResponse) Reset() {
+	*x = GetAboutResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAboutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAboutResponse) ProtoMessage() {}
+
+func (x *GetAboutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAboutResponse.ProtoReflect.Descriptor instead.
+func (*GetAboutResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{78}
+}
+
+func (x *GetAboutResponse) GetSettings() *Settings {
+	if x != nil {
+		return x.Settings
+	}
+	return nil
+}
+
+func (x *GetAboutResponse) GetImages() []*AboutImage {
+	if x != nil {
+		return x.Images
+	}
+	return nil
+}
+
+type AddAboutImageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImageId       string                 `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddAboutImageRequest) Reset() {
+	*x = AddAboutImageRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[79]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddAboutImageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddAboutImageRequest) ProtoMessage() {}
+
+func (x *AddAboutImageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[79]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddAboutImageRequest.ProtoReflect.Descriptor instead.
+func (*AddAboutImageRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{79}
+}
+
+func (x *AddAboutImageRequest) GetImageId() string {
+	if x != nil {
+		return x.ImageId
+	}
+	return ""
+}
+
+type AddAboutImageResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Image         *AboutImage            `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddAboutImageResponse) Reset() {
+	*x = AddAboutImageResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[80]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddAboutImageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddAboutImageResponse) ProtoMessage() {}
+
+func (x *AddAboutImageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[80]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddAboutImageResponse.ProtoReflect.Descriptor instead.
+func (*AddAboutImageResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{80}
+}
+
+func (x *AddAboutImageResponse) GetImage() *AboutImage {
+	if x != nil {
+		return x.Image
+	}
+	return nil
+}
+
+type RemoveAboutImageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveAboutImageRequest) Reset() {
+	*x = RemoveAboutImageRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[81]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveAboutImageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveAboutImageRequest) ProtoMessage() {}
+
+func (x *RemoveAboutImageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[81]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveAboutImageRequest.ProtoReflect.Descriptor instead.
+func (*RemoveAboutImageRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{81}
+}
+
+func (x *RemoveAboutImageRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type RemoveAboutImageResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveAboutImageResponse) Reset() {
+	*x = RemoveAboutImageResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[82]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveAboutImageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveAboutImageResponse) ProtoMessage() {}
+
+func (x *RemoveAboutImageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[82]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveAboutImageResponse.ProtoReflect.Descriptor instead.
+func (*RemoveAboutImageResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{82}
+}
+
+type ReorderAboutImagesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImageIds      []string               `protobuf:"bytes,1,rep,name=image_ids,json=imageIds,proto3" json:"image_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReorderAboutImagesRequest) Reset() {
+	*x = ReorderAboutImagesRequest{}
+	mi := &file_home_v1_homepage_proto_msgTypes[83]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReorderAboutImagesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReorderAboutImagesRequest) ProtoMessage() {}
+
+func (x *ReorderAboutImagesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[83]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReorderAboutImagesRequest.ProtoReflect.Descriptor instead.
+func (*ReorderAboutImagesRequest) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{83}
+}
+
+func (x *ReorderAboutImagesRequest) GetImageIds() []string {
+	if x != nil {
+		return x.ImageIds
+	}
+	return nil
+}
+
+type ReorderAboutImagesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReorderAboutImagesResponse) Reset() {
+	*x = ReorderAboutImagesResponse{}
+	mi := &file_home_v1_homepage_proto_msgTypes[84]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReorderAboutImagesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReorderAboutImagesResponse) ProtoMessage() {}
+
+func (x *ReorderAboutImagesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_home_v1_homepage_proto_msgTypes[84]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReorderAboutImagesResponse.ProtoReflect.Descriptor instead.
+func (*ReorderAboutImagesResponse) Descriptor() ([]byte, []int) {
+	return file_home_v1_homepage_proto_rawDescGZIP(), []int{84}
+}
+
 var File_home_v1_homepage_proto protoreflect.FileDescriptor
 
 const file_home_v1_homepage_proto_rawDesc = "" +
@@ -3845,7 +4901,69 @@ const file_home_v1_homepage_proto_rawDesc = "" +
 	"\vupdate_mask\x18\x02 \x03(\tR\n" +
 	"updateMask\"G\n" +
 	"\x16UpdateSettingsResponse\x12-\n" +
-	"\bsettings\x18\x01 \x01(\v2\x11.home.v1.SettingsR\bsettings*g\n" +
+	"\bsettings\x18\x01 \x01(\v2\x11.home.v1.SettingsR\bsettings\"\xaa\x02\n" +
+	"\aProject\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
+	"\asummary\x18\x03 \x01(\tR\asummary\x12\x19\n" +
+	"\blink_url\x18\x04 \x01(\tR\alinkUrl\x12/\n" +
+	"\vcover_image\x18\x05 \x01(\v2\x0e.home.v1.ImageR\n" +
+	"coverImage\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\x06 \x01(\x05R\tsortOrder\x129\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x15\n" +
+	"\x13ListProjectsRequest\"D\n" +
+	"\x14ListProjectsResponse\x12,\n" +
+	"\bprojects\x18\x01 \x03(\v2\x10.home.v1.ProjectR\bprojects\"#\n" +
+	"\x11GetProjectRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"@\n" +
+	"\x12GetProjectResponse\x12*\n" +
+	"\aproject\x18\x01 \x01(\v2\x10.home.v1.ProjectR\aproject\"\x87\x01\n" +
+	"\x14CreateProjectRequest\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x18\n" +
+	"\asummary\x18\x02 \x01(\tR\asummary\x12\x19\n" +
+	"\blink_url\x18\x03 \x01(\tR\alinkUrl\x12$\n" +
+	"\x0ecover_image_id\x18\x04 \x01(\tR\fcoverImageId\"C\n" +
+	"\x15CreateProjectResponse\x12*\n" +
+	"\aproject\x18\x01 \x01(\v2\x10.home.v1.ProjectR\aproject\"\x97\x01\n" +
+	"\x14UpdateProjectRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
+	"\asummary\x18\x03 \x01(\tR\asummary\x12\x19\n" +
+	"\blink_url\x18\x04 \x01(\tR\alinkUrl\x12$\n" +
+	"\x0ecover_image_id\x18\x05 \x01(\tR\fcoverImageId\"C\n" +
+	"\x15UpdateProjectResponse\x12*\n" +
+	"\aproject\x18\x01 \x01(\v2\x10.home.v1.ProjectR\aproject\"&\n" +
+	"\x14DeleteProjectRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x17\n" +
+	"\x15DeleteProjectResponse\"9\n" +
+	"\x16ReorderProjectsRequest\x12\x1f\n" +
+	"\vproject_ids\x18\x01 \x03(\tR\n" +
+	"projectIds\"\x19\n" +
+	"\x17ReorderProjectsResponse\"a\n" +
+	"\n" +
+	"AboutImage\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
+	"\x05image\x18\x02 \x01(\v2\x0e.home.v1.ImageR\x05image\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\x03 \x01(\x05R\tsortOrder\"\x11\n" +
+	"\x0fGetAboutRequest\"n\n" +
+	"\x10GetAboutResponse\x12-\n" +
+	"\bsettings\x18\x01 \x01(\v2\x11.home.v1.SettingsR\bsettings\x12+\n" +
+	"\x06images\x18\x02 \x03(\v2\x13.home.v1.AboutImageR\x06images\"1\n" +
+	"\x14AddAboutImageRequest\x12\x19\n" +
+	"\bimage_id\x18\x01 \x01(\tR\aimageId\"B\n" +
+	"\x15AddAboutImageResponse\x12)\n" +
+	"\x05image\x18\x01 \x01(\v2\x13.home.v1.AboutImageR\x05image\")\n" +
+	"\x17RemoveAboutImageRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x1a\n" +
+	"\x18RemoveAboutImageResponse\"8\n" +
+	"\x19ReorderAboutImagesRequest\x12\x1b\n" +
+	"\timage_ids\x18\x01 \x03(\tR\bimageIds\"\x1c\n" +
+	"\x1aReorderAboutImagesResponse*g\n" +
 	"\rArticleStatus\x12\x1e\n" +
 	"\x1aARTICLE_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ARTICLE_STATUS_DRAFT\x10\x01\x12\x1c\n" +
@@ -3889,7 +5007,20 @@ const file_home_v1_homepage_proto_rawDesc = "" +
 	"\vDeleteAlbum\x12\x1b.home.v1.DeleteAlbumRequest\x1a\x1c.home.v1.DeleteAlbumResponse2\xae\x01\n" +
 	"\x0fSettingsService\x12H\n" +
 	"\vGetSettings\x12\x1b.home.v1.GetSettingsRequest\x1a\x1c.home.v1.GetSettingsResponse\x12Q\n" +
-	"\x0eUpdateSettings\x12\x1e.home.v1.UpdateSettingsRequest\x1a\x1f.home.v1.UpdateSettingsResponseB:Z8github.com/frozenfish/fish-website/gen/go/home/v1;homev1b\x06proto3"
+	"\x0eUpdateSettings\x12\x1e.home.v1.UpdateSettingsRequest\x1a\x1f.home.v1.UpdateSettingsResponse2\xea\x03\n" +
+	"\x0eProjectService\x12K\n" +
+	"\fListProjects\x12\x1c.home.v1.ListProjectsRequest\x1a\x1d.home.v1.ListProjectsResponse\x12E\n" +
+	"\n" +
+	"GetProject\x12\x1a.home.v1.GetProjectRequest\x1a\x1b.home.v1.GetProjectResponse\x12N\n" +
+	"\rCreateProject\x12\x1d.home.v1.CreateProjectRequest\x1a\x1e.home.v1.CreateProjectResponse\x12N\n" +
+	"\rUpdateProject\x12\x1d.home.v1.UpdateProjectRequest\x1a\x1e.home.v1.UpdateProjectResponse\x12N\n" +
+	"\rDeleteProject\x12\x1d.home.v1.DeleteProjectRequest\x1a\x1e.home.v1.DeleteProjectResponse\x12T\n" +
+	"\x0fReorderProjects\x12\x1f.home.v1.ReorderProjectsRequest\x1a .home.v1.ReorderProjectsResponse2\xd7\x02\n" +
+	"\fAboutService\x12?\n" +
+	"\bGetAbout\x12\x18.home.v1.GetAboutRequest\x1a\x19.home.v1.GetAboutResponse\x12N\n" +
+	"\rAddAboutImage\x12\x1d.home.v1.AddAboutImageRequest\x1a\x1e.home.v1.AddAboutImageResponse\x12W\n" +
+	"\x10RemoveAboutImage\x12 .home.v1.RemoveAboutImageRequest\x1a!.home.v1.RemoveAboutImageResponse\x12]\n" +
+	"\x12ReorderAboutImages\x12\".home.v1.ReorderAboutImagesRequest\x1a#.home.v1.ReorderAboutImagesResponseB:Z8github.com/frozenfish/fish-website/gen/go/home/v1;homev1b\x06proto3"
 
 var (
 	file_home_v1_homepage_proto_rawDescOnce sync.Once
@@ -3904,7 +5035,7 @@ func file_home_v1_homepage_proto_rawDescGZIP() []byte {
 }
 
 var file_home_v1_homepage_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_home_v1_homepage_proto_msgTypes = make([]protoimpl.MessageInfo, 64)
+var file_home_v1_homepage_proto_msgTypes = make([]protoimpl.MessageInfo, 86)
 var file_home_v1_homepage_proto_goTypes = []any{
 	(ArticleStatus)(0),                     // 0: home.v1.ArticleStatus
 	(*LoginRequest)(nil),                   // 1: home.v1.LoginRequest
@@ -3970,21 +5101,43 @@ var file_home_v1_homepage_proto_goTypes = []any{
 	(*GetSettingsResponse)(nil),            // 61: home.v1.GetSettingsResponse
 	(*UpdateSettingsRequest)(nil),          // 62: home.v1.UpdateSettingsRequest
 	(*UpdateSettingsResponse)(nil),         // 63: home.v1.UpdateSettingsResponse
-	nil,                                    // 64: home.v1.UploadImageRequestResponse.HeadersEntry
-	(*timestamppb.Timestamp)(nil),          // 65: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),                  // 66: google.protobuf.Empty
+	(*Project)(nil),                        // 64: home.v1.Project
+	(*ListProjectsRequest)(nil),            // 65: home.v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),           // 66: home.v1.ListProjectsResponse
+	(*GetProjectRequest)(nil),              // 67: home.v1.GetProjectRequest
+	(*GetProjectResponse)(nil),             // 68: home.v1.GetProjectResponse
+	(*CreateProjectRequest)(nil),           // 69: home.v1.CreateProjectRequest
+	(*CreateProjectResponse)(nil),          // 70: home.v1.CreateProjectResponse
+	(*UpdateProjectRequest)(nil),           // 71: home.v1.UpdateProjectRequest
+	(*UpdateProjectResponse)(nil),          // 72: home.v1.UpdateProjectResponse
+	(*DeleteProjectRequest)(nil),           // 73: home.v1.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),          // 74: home.v1.DeleteProjectResponse
+	(*ReorderProjectsRequest)(nil),         // 75: home.v1.ReorderProjectsRequest
+	(*ReorderProjectsResponse)(nil),        // 76: home.v1.ReorderProjectsResponse
+	(*AboutImage)(nil),                     // 77: home.v1.AboutImage
+	(*GetAboutRequest)(nil),                // 78: home.v1.GetAboutRequest
+	(*GetAboutResponse)(nil),               // 79: home.v1.GetAboutResponse
+	(*AddAboutImageRequest)(nil),           // 80: home.v1.AddAboutImageRequest
+	(*AddAboutImageResponse)(nil),          // 81: home.v1.AddAboutImageResponse
+	(*RemoveAboutImageRequest)(nil),        // 82: home.v1.RemoveAboutImageRequest
+	(*RemoveAboutImageResponse)(nil),       // 83: home.v1.RemoveAboutImageResponse
+	(*ReorderAboutImagesRequest)(nil),      // 84: home.v1.ReorderAboutImagesRequest
+	(*ReorderAboutImagesResponse)(nil),     // 85: home.v1.ReorderAboutImagesResponse
+	nil,                                    // 86: home.v1.UploadImageRequestResponse.HeadersEntry
+	(*timestamppb.Timestamp)(nil),          // 87: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                  // 88: google.protobuf.Empty
 }
 var file_home_v1_homepage_proto_depIdxs = []int32{
-	65, // 0: home.v1.LoginResponse.expires_at:type_name -> google.protobuf.Timestamp
-	65, // 1: home.v1.Post.created_at:type_name -> google.protobuf.Timestamp
-	65, // 2: home.v1.Post.updated_at:type_name -> google.protobuf.Timestamp
+	87, // 0: home.v1.LoginResponse.expires_at:type_name -> google.protobuf.Timestamp
+	87, // 1: home.v1.Post.created_at:type_name -> google.protobuf.Timestamp
+	87, // 2: home.v1.Post.updated_at:type_name -> google.protobuf.Timestamp
 	5,  // 3: home.v1.CreatePostResponse.post:type_name -> home.v1.Post
 	5,  // 4: home.v1.ListPostsResponse.posts:type_name -> home.v1.Post
 	5,  // 5: home.v1.GetPostResponse.post:type_name -> home.v1.Post
 	5,  // 6: home.v1.UpdatePostResponse.post:type_name -> home.v1.Post
 	16, // 7: home.v1.Folder.children:type_name -> home.v1.Folder
-	65, // 8: home.v1.Article.created_at:type_name -> google.protobuf.Timestamp
-	65, // 9: home.v1.Article.updated_at:type_name -> google.protobuf.Timestamp
+	87, // 8: home.v1.Article.created_at:type_name -> google.protobuf.Timestamp
+	87, // 9: home.v1.Article.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 10: home.v1.Article.status:type_name -> home.v1.ArticleStatus
 	0,  // 11: home.v1.CreateArticleRequest.status:type_name -> home.v1.ArticleStatus
 	17, // 12: home.v1.CreateArticleResponse.article:type_name -> home.v1.Article
@@ -3996,86 +5149,117 @@ var file_home_v1_homepage_proto_depIdxs = []int32{
 	17, // 18: home.v1.GetArticleResponse.article:type_name -> home.v1.Article
 	16, // 19: home.v1.CreateFolderResponse.folder:type_name -> home.v1.Folder
 	16, // 20: home.v1.UpdateFolderResponse.folder:type_name -> home.v1.Folder
-	65, // 21: home.v1.Album.created_at:type_name -> google.protobuf.Timestamp
-	65, // 22: home.v1.Image.created_at:type_name -> google.protobuf.Timestamp
+	87, // 21: home.v1.Album.created_at:type_name -> google.protobuf.Timestamp
+	87, // 22: home.v1.Image.created_at:type_name -> google.protobuf.Timestamp
 	34, // 23: home.v1.CreateAlbumResponse.album:type_name -> home.v1.Album
 	34, // 24: home.v1.ListAlbumsResponse.albums:type_name -> home.v1.Album
 	34, // 25: home.v1.GetAlbumResponse.album:type_name -> home.v1.Album
 	35, // 26: home.v1.GetAlbumResponse.images:type_name -> home.v1.Image
-	64, // 27: home.v1.UploadImageRequestResponse.headers:type_name -> home.v1.UploadImageRequestResponse.HeadersEntry
-	65, // 28: home.v1.UploadImageRequestResponse.expires_at:type_name -> google.protobuf.Timestamp
+	86, // 27: home.v1.UploadImageRequestResponse.headers:type_name -> home.v1.UploadImageRequestResponse.HeadersEntry
+	87, // 28: home.v1.UploadImageRequestResponse.expires_at:type_name -> google.protobuf.Timestamp
 	35, // 29: home.v1.ConfirmImageUploadResponse.image:type_name -> home.v1.Image
 	34, // 30: home.v1.UpdateAlbumResponse.album:type_name -> home.v1.Album
 	50, // 31: home.v1.AnalyzeImageReferencesResponse.references:type_name -> home.v1.ImageReference
-	65, // 32: home.v1.RepairImageReferencesResponse.repaired_at:type_name -> google.protobuf.Timestamp
-	65, // 33: home.v1.DeleteImagesResponse.scheduled_delete_at:type_name -> google.protobuf.Timestamp
-	65, // 34: home.v1.Settings.updated_at:type_name -> google.protobuf.Timestamp
+	87, // 32: home.v1.RepairImageReferencesResponse.repaired_at:type_name -> google.protobuf.Timestamp
+	87, // 33: home.v1.DeleteImagesResponse.scheduled_delete_at:type_name -> google.protobuf.Timestamp
+	87, // 34: home.v1.Settings.updated_at:type_name -> google.protobuf.Timestamp
 	60, // 35: home.v1.GetSettingsResponse.settings:type_name -> home.v1.Settings
 	60, // 36: home.v1.UpdateSettingsRequest.settings:type_name -> home.v1.Settings
 	60, // 37: home.v1.UpdateSettingsResponse.settings:type_name -> home.v1.Settings
-	1,  // 38: home.v1.AuthService.Login:input_type -> home.v1.LoginRequest
-	3,  // 39: home.v1.AuthService.Refresh:input_type -> home.v1.RefreshRequest
-	4,  // 40: home.v1.AuthService.Logout:input_type -> home.v1.LogoutRequest
-	6,  // 41: home.v1.PostService.CreatePost:input_type -> home.v1.CreatePostRequest
-	8,  // 42: home.v1.PostService.ListPosts:input_type -> home.v1.ListPostsRequest
-	10, // 43: home.v1.PostService.GetPost:input_type -> home.v1.GetPostRequest
-	12, // 44: home.v1.PostService.UpdatePost:input_type -> home.v1.UpdatePostRequest
-	14, // 45: home.v1.PostService.DeletePost:input_type -> home.v1.DeletePostRequest
-	18, // 46: home.v1.BlogService.CreateArticle:input_type -> home.v1.CreateArticleRequest
-	20, // 47: home.v1.BlogService.UpdateArticle:input_type -> home.v1.UpdateArticleRequest
-	22, // 48: home.v1.BlogService.DeleteArticle:input_type -> home.v1.DeleteArticleRequest
-	24, // 49: home.v1.BlogService.ListArticles:input_type -> home.v1.ListArticlesRequest
-	26, // 50: home.v1.BlogService.GetArticle:input_type -> home.v1.GetArticleRequest
-	28, // 51: home.v1.BlogService.CreateFolder:input_type -> home.v1.CreateFolderRequest
-	30, // 52: home.v1.BlogService.UpdateFolder:input_type -> home.v1.UpdateFolderRequest
-	32, // 53: home.v1.BlogService.DeleteFolder:input_type -> home.v1.DeleteFolderRequest
-	36, // 54: home.v1.AlbumService.CreateAlbum:input_type -> home.v1.CreateAlbumRequest
-	38, // 55: home.v1.AlbumService.ListAlbums:input_type -> home.v1.ListAlbumsRequest
-	40, // 56: home.v1.AlbumService.GetAlbum:input_type -> home.v1.GetAlbumRequest
-	42, // 57: home.v1.AlbumService.UploadImageRequest:input_type -> home.v1.UploadImageRequestRequest
-	44, // 58: home.v1.AlbumService.ConfirmImageUpload:input_type -> home.v1.ConfirmImageUploadRequest
-	46, // 59: home.v1.AlbumService.UpdateAlbum:input_type -> home.v1.UpdateAlbumRequest
-	48, // 60: home.v1.AlbumService.MoveImages:input_type -> home.v1.MoveImagesRequest
-	51, // 61: home.v1.AlbumService.AnalyzeImageReferences:input_type -> home.v1.AnalyzeImageReferencesRequest
-	53, // 62: home.v1.AlbumService.RepairImageReferences:input_type -> home.v1.RepairImageReferencesRequest
-	55, // 63: home.v1.AlbumService.DeleteImages:input_type -> home.v1.DeleteImagesRequest
-	57, // 64: home.v1.AlbumService.DeleteAlbum:input_type -> home.v1.DeleteAlbumRequest
-	59, // 65: home.v1.SettingsService.GetSettings:input_type -> home.v1.GetSettingsRequest
-	62, // 66: home.v1.SettingsService.UpdateSettings:input_type -> home.v1.UpdateSettingsRequest
-	2,  // 67: home.v1.AuthService.Login:output_type -> home.v1.LoginResponse
-	2,  // 68: home.v1.AuthService.Refresh:output_type -> home.v1.LoginResponse
-	66, // 69: home.v1.AuthService.Logout:output_type -> google.protobuf.Empty
-	7,  // 70: home.v1.PostService.CreatePost:output_type -> home.v1.CreatePostResponse
-	9,  // 71: home.v1.PostService.ListPosts:output_type -> home.v1.ListPostsResponse
-	11, // 72: home.v1.PostService.GetPost:output_type -> home.v1.GetPostResponse
-	13, // 73: home.v1.PostService.UpdatePost:output_type -> home.v1.UpdatePostResponse
-	15, // 74: home.v1.PostService.DeletePost:output_type -> home.v1.DeletePostResponse
-	19, // 75: home.v1.BlogService.CreateArticle:output_type -> home.v1.CreateArticleResponse
-	21, // 76: home.v1.BlogService.UpdateArticle:output_type -> home.v1.UpdateArticleResponse
-	23, // 77: home.v1.BlogService.DeleteArticle:output_type -> home.v1.DeleteArticleResponse
-	25, // 78: home.v1.BlogService.ListArticles:output_type -> home.v1.ListArticlesResponse
-	27, // 79: home.v1.BlogService.GetArticle:output_type -> home.v1.GetArticleResponse
-	29, // 80: home.v1.BlogService.CreateFolder:output_type -> home.v1.CreateFolderResponse
-	31, // 81: home.v1.BlogService.UpdateFolder:output_type -> home.v1.UpdateFolderResponse
-	33, // 82: home.v1.BlogService.DeleteFolder:output_type -> home.v1.DeleteFolderResponse
-	37, // 83: home.v1.AlbumService.CreateAlbum:output_type -> home.v1.CreateAlbumResponse
-	39, // 84: home.v1.AlbumService.ListAlbums:output_type -> home.v1.ListAlbumsResponse
-	41, // 85: home.v1.AlbumService.GetAlbum:output_type -> home.v1.GetAlbumResponse
-	43, // 86: home.v1.AlbumService.UploadImageRequest:output_type -> home.v1.UploadImageRequestResponse
-	45, // 87: home.v1.AlbumService.ConfirmImageUpload:output_type -> home.v1.ConfirmImageUploadResponse
-	47, // 88: home.v1.AlbumService.UpdateAlbum:output_type -> home.v1.UpdateAlbumResponse
-	49, // 89: home.v1.AlbumService.MoveImages:output_type -> home.v1.MoveImagesResponse
-	52, // 90: home.v1.AlbumService.AnalyzeImageReferences:output_type -> home.v1.AnalyzeImageReferencesResponse
-	54, // 91: home.v1.AlbumService.RepairImageReferences:output_type -> home.v1.RepairImageReferencesResponse
-	56, // 92: home.v1.AlbumService.DeleteImages:output_type -> home.v1.DeleteImagesResponse
-	58, // 93: home.v1.AlbumService.DeleteAlbum:output_type -> home.v1.DeleteAlbumResponse
-	61, // 94: home.v1.SettingsService.GetSettings:output_type -> home.v1.GetSettingsResponse
-	63, // 95: home.v1.SettingsService.UpdateSettings:output_type -> home.v1.UpdateSettingsResponse
-	67, // [67:96] is the sub-list for method output_type
-	38, // [38:67] is the sub-list for method input_type
-	38, // [38:38] is the sub-list for extension type_name
-	38, // [38:38] is the sub-list for extension extendee
-	0,  // [0:38] is the sub-list for field type_name
+	35, // 38: home.v1.Project.cover_image:type_name -> home.v1.Image
+	87, // 39: home.v1.Project.created_at:type_name -> google.protobuf.Timestamp
+	87, // 40: home.v1.Project.updated_at:type_name -> google.protobuf.Timestamp
+	64, // 41: home.v1.ListProjectsResponse.projects:type_name -> home.v1.Project
+	64, // 42: home.v1.GetProjectResponse.project:type_name -> home.v1.Project
+	64, // 43: home.v1.CreateProjectResponse.project:type_name -> home.v1.Project
+	64, // 44: home.v1.UpdateProjectResponse.project:type_name -> home.v1.Project
+	35, // 45: home.v1.AboutImage.image:type_name -> home.v1.Image
+	60, // 46: home.v1.GetAboutResponse.settings:type_name -> home.v1.Settings
+	77, // 47: home.v1.GetAboutResponse.images:type_name -> home.v1.AboutImage
+	77, // 48: home.v1.AddAboutImageResponse.image:type_name -> home.v1.AboutImage
+	1,  // 49: home.v1.AuthService.Login:input_type -> home.v1.LoginRequest
+	3,  // 50: home.v1.AuthService.Refresh:input_type -> home.v1.RefreshRequest
+	4,  // 51: home.v1.AuthService.Logout:input_type -> home.v1.LogoutRequest
+	6,  // 52: home.v1.PostService.CreatePost:input_type -> home.v1.CreatePostRequest
+	8,  // 53: home.v1.PostService.ListPosts:input_type -> home.v1.ListPostsRequest
+	10, // 54: home.v1.PostService.GetPost:input_type -> home.v1.GetPostRequest
+	12, // 55: home.v1.PostService.UpdatePost:input_type -> home.v1.UpdatePostRequest
+	14, // 56: home.v1.PostService.DeletePost:input_type -> home.v1.DeletePostRequest
+	18, // 57: home.v1.BlogService.CreateArticle:input_type -> home.v1.CreateArticleRequest
+	20, // 58: home.v1.BlogService.UpdateArticle:input_type -> home.v1.UpdateArticleRequest
+	22, // 59: home.v1.BlogService.DeleteArticle:input_type -> home.v1.DeleteArticleRequest
+	24, // 60: home.v1.BlogService.ListArticles:input_type -> home.v1.ListArticlesRequest
+	26, // 61: home.v1.BlogService.GetArticle:input_type -> home.v1.GetArticleRequest
+	28, // 62: home.v1.BlogService.CreateFolder:input_type -> home.v1.CreateFolderRequest
+	30, // 63: home.v1.BlogService.UpdateFolder:input_type -> home.v1.UpdateFolderRequest
+	32, // 64: home.v1.BlogService.DeleteFolder:input_type -> home.v1.DeleteFolderRequest
+	36, // 65: home.v1.AlbumService.CreateAlbum:input_type -> home.v1.CreateAlbumRequest
+	38, // 66: home.v1.AlbumService.ListAlbums:input_type -> home.v1.ListAlbumsRequest
+	40, // 67: home.v1.AlbumService.GetAlbum:input_type -> home.v1.GetAlbumRequest
+	42, // 68: home.v1.AlbumService.UploadImageRequest:input_type -> home.v1.UploadImageRequestRequest
+	44, // 69: home.v1.AlbumService.ConfirmImageUpload:input_type -> home.v1.ConfirmImageUploadRequest
+	46, // 70: home.v1.AlbumService.UpdateAlbum:input_type -> home.v1.UpdateAlbumRequest
+	48, // 71: home.v1.AlbumService.MoveImages:input_type -> home.v1.MoveImagesRequest
+	51, // 72: home.v1.AlbumService.AnalyzeImageReferences:input_type -> home.v1.AnalyzeImageReferencesRequest
+	53, // 73: home.v1.AlbumService.RepairImageReferences:input_type -> home.v1.RepairImageReferencesRequest
+	55, // 74: home.v1.AlbumService.DeleteImages:input_type -> home.v1.DeleteImagesRequest
+	57, // 75: home.v1.AlbumService.DeleteAlbum:input_type -> home.v1.DeleteAlbumRequest
+	59, // 76: home.v1.SettingsService.GetSettings:input_type -> home.v1.GetSettingsRequest
+	62, // 77: home.v1.SettingsService.UpdateSettings:input_type -> home.v1.UpdateSettingsRequest
+	65, // 78: home.v1.ProjectService.ListProjects:input_type -> home.v1.ListProjectsRequest
+	67, // 79: home.v1.ProjectService.GetProject:input_type -> home.v1.GetProjectRequest
+	69, // 80: home.v1.ProjectService.CreateProject:input_type -> home.v1.CreateProjectRequest
+	71, // 81: home.v1.ProjectService.UpdateProject:input_type -> home.v1.UpdateProjectRequest
+	73, // 82: home.v1.ProjectService.DeleteProject:input_type -> home.v1.DeleteProjectRequest
+	75, // 83: home.v1.ProjectService.ReorderProjects:input_type -> home.v1.ReorderProjectsRequest
+	78, // 84: home.v1.AboutService.GetAbout:input_type -> home.v1.GetAboutRequest
+	80, // 85: home.v1.AboutService.AddAboutImage:input_type -> home.v1.AddAboutImageRequest
+	82, // 86: home.v1.AboutService.RemoveAboutImage:input_type -> home.v1.RemoveAboutImageRequest
+	84, // 87: home.v1.AboutService.ReorderAboutImages:input_type -> home.v1.ReorderAboutImagesRequest
+	2,  // 88: home.v1.AuthService.Login:output_type -> home.v1.LoginResponse
+	2,  // 89: home.v1.AuthService.Refresh:output_type -> home.v1.LoginResponse
+	88, // 90: home.v1.AuthService.Logout:output_type -> google.protobuf.Empty
+	7,  // 91: home.v1.PostService.CreatePost:output_type -> home.v1.CreatePostResponse
+	9,  // 92: home.v1.PostService.ListPosts:output_type -> home.v1.ListPostsResponse
+	11, // 93: home.v1.PostService.GetPost:output_type -> home.v1.GetPostResponse
+	13, // 94: home.v1.PostService.UpdatePost:output_type -> home.v1.UpdatePostResponse
+	15, // 95: home.v1.PostService.DeletePost:output_type -> home.v1.DeletePostResponse
+	19, // 96: home.v1.BlogService.CreateArticle:output_type -> home.v1.CreateArticleResponse
+	21, // 97: home.v1.BlogService.UpdateArticle:output_type -> home.v1.UpdateArticleResponse
+	23, // 98: home.v1.BlogService.DeleteArticle:output_type -> home.v1.DeleteArticleResponse
+	25, // 99: home.v1.BlogService.ListArticles:output_type -> home.v1.ListArticlesResponse
+	27, // 100: home.v1.BlogService.GetArticle:output_type -> home.v1.GetArticleResponse
+	29, // 101: home.v1.BlogService.CreateFolder:output_type -> home.v1.CreateFolderResponse
+	31, // 102: home.v1.BlogService.UpdateFolder:output_type -> home.v1.UpdateFolderResponse
+	33, // 103: home.v1.BlogService.DeleteFolder:output_type -> home.v1.DeleteFolderResponse
+	37, // 104: home.v1.AlbumService.CreateAlbum:output_type -> home.v1.CreateAlbumResponse
+	39, // 105: home.v1.AlbumService.ListAlbums:output_type -> home.v1.ListAlbumsResponse
+	41, // 106: home.v1.AlbumService.GetAlbum:output_type -> home.v1.GetAlbumResponse
+	43, // 107: home.v1.AlbumService.UploadImageRequest:output_type -> home.v1.UploadImageRequestResponse
+	45, // 108: home.v1.AlbumService.ConfirmImageUpload:output_type -> home.v1.ConfirmImageUploadResponse
+	47, // 109: home.v1.AlbumService.UpdateAlbum:output_type -> home.v1.UpdateAlbumResponse
+	49, // 110: home.v1.AlbumService.MoveImages:output_type -> home.v1.MoveImagesResponse
+	52, // 111: home.v1.AlbumService.AnalyzeImageReferences:output_type -> home.v1.AnalyzeImageReferencesResponse
+	54, // 112: home.v1.AlbumService.RepairImageReferences:output_type -> home.v1.RepairImageReferencesResponse
+	56, // 113: home.v1.AlbumService.DeleteImages:output_type -> home.v1.DeleteImagesResponse
+	58, // 114: home.v1.AlbumService.DeleteAlbum:output_type -> home.v1.DeleteAlbumResponse
+	61, // 115: home.v1.SettingsService.GetSettings:output_type -> home.v1.GetSettingsResponse
+	63, // 116: home.v1.SettingsService.UpdateSettings:output_type -> home.v1.UpdateSettingsResponse
+	66, // 117: home.v1.ProjectService.ListProjects:output_type -> home.v1.ListProjectsResponse
+	68, // 118: home.v1.ProjectService.GetProject:output_type -> home.v1.GetProjectResponse
+	70, // 119: home.v1.ProjectService.CreateProject:output_type -> home.v1.CreateProjectResponse
+	72, // 120: home.v1.ProjectService.UpdateProject:output_type -> home.v1.UpdateProjectResponse
+	74, // 121: home.v1.ProjectService.DeleteProject:output_type -> home.v1.DeleteProjectResponse
+	76, // 122: home.v1.ProjectService.ReorderProjects:output_type -> home.v1.ReorderProjectsResponse
+	79, // 123: home.v1.AboutService.GetAbout:output_type -> home.v1.GetAboutResponse
+	81, // 124: home.v1.AboutService.AddAboutImage:output_type -> home.v1.AddAboutImageResponse
+	83, // 125: home.v1.AboutService.RemoveAboutImage:output_type -> home.v1.RemoveAboutImageResponse
+	85, // 126: home.v1.AboutService.ReorderAboutImages:output_type -> home.v1.ReorderAboutImagesResponse
+	88, // [88:127] is the sub-list for method output_type
+	49, // [49:88] is the sub-list for method input_type
+	49, // [49:49] is the sub-list for extension type_name
+	49, // [49:49] is the sub-list for extension extendee
+	0,  // [0:49] is the sub-list for field type_name
 }
 
 func init() { file_home_v1_homepage_proto_init() }
@@ -4089,9 +5273,9 @@ func file_home_v1_homepage_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_home_v1_homepage_proto_rawDesc), len(file_home_v1_homepage_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   64,
+			NumMessages:   86,
 			NumExtensions: 0,
-			NumServices:   5,
+			NumServices:   7,
 		},
 		GoTypes:           file_home_v1_homepage_proto_goTypes,
 		DependencyIndexes: file_home_v1_homepage_proto_depIdxs,

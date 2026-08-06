@@ -79,6 +79,28 @@ type Settings struct {
 	UpdatedAt              time.Time
 }
 
+// Project is a public project showcase item.
+type Project struct {
+	ID           string
+	Title        string
+	Summary      string
+	LinkURL      string
+	CoverImageID string
+	CoverImage   *Image
+	SortOrder    int
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+// AboutImage is an ordered photo attached to the public about page.
+type AboutImage struct {
+	ID        string
+	ImageID   string
+	Image     *Image
+	SortOrder int
+	CreatedAt time.Time
+}
+
 // ImageReferenceRecord stores aggregated references for one image.
 type ImageReferenceRecord struct {
 	ImageID            string
