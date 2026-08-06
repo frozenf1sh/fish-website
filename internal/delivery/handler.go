@@ -111,7 +111,13 @@ func (h *Handler) Refresh(ctx context.Context, req *connect.Request[homev1.Refre
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&homev1.LoginResponse{Token: token, ExpiresAt: timestamppb.New(expiresAt)}), nil
+	newRefreshToken, _, err := h.authenticator.IssueRefreshToken()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	response := connect.NewResponse(&homev1.LoginResponse{Token: token, ExpiresAt: timestamppb.New(expiresAt)})
+	setRefreshCookie(response.Header(), newRefreshToken, isSecureRequest(req.Header()))
+	return response, nil
 }
 
 // Logout removes the browser refresh cookie. Access tokens remain short-lived
