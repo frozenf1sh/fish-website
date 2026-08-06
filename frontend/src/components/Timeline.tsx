@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { MarkdownViewer } from './MarkdownViewer'
 import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
 import { showToast } from '../lib/toast'
+
+const MarkdownViewer = lazy(() => import('./MarkdownViewer').then(({ MarkdownViewer }) => ({ default: MarkdownViewer })))
 
 type TimelineItemType = 'post' | 'system' | 'blog' | 'album'
 
@@ -114,7 +115,9 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
           </div>
 
           <div className="mb-3 sm:mb-4">
-            <MarkdownViewer content={item.content} />
+            <Suspense fallback={<p className="text-white/65 text-sm whitespace-pre-wrap break-words">{item.content}</p>}>
+              <MarkdownViewer content={item.content} />
+            </Suspense>
           </div>
 
           {item.images && item.images.length > 0 && (

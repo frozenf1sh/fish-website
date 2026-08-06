@@ -28,7 +28,7 @@ export function Layout() {
 
   return (
     <div className="min-h-screen">
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 backdrop-blur-xl border-b border-white/20 bg-black/20">
+      <div className="xl:hidden fixed top-0 left-0 right-0 z-40 px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 backdrop-blur-xl border-b border-white/20 bg-black/20">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate('/')}
@@ -51,7 +51,7 @@ export function Layout() {
         </div>
       </div>
 
-      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 pb-24 lg:pb-6 pt-20 lg:pt-6">
+      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 pb-24 xl:pb-6 pt-20 xl:pt-6">
         <div className="grid gap-4 xl:gap-6 xl:grid-cols-[minmax(240px,280px)_minmax(0,1fr)_minmax(240px,280px)] items-start">
           {/* 左栏与右栏保持同一固定轨道宽度 */}
           <motion.aside
@@ -85,7 +85,7 @@ export function Layout() {
       </div>
 
       {/* 移动端底部导航 */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl border-t border-white/20 bg-black/30 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+      <div className="xl:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl border-t border-white/20 bg-black/30 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
         <div className="grid grid-cols-5 gap-1 items-center px-2 pt-2">
           {mobileTabs.map(({ icon, label, path }) => {
             const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)

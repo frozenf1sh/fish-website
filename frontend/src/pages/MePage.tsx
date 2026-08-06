@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 
 export function MePage() {
+  const navigate = useNavigate()
   const { settings, isLoggedIn, setShowLoginModal, setShowSettingsDrawer, logout } = useStore()
 
   const displayName = settings?.displayName || (isLoggedIn ? '已登录用户' : '访客')
@@ -9,7 +11,7 @@ export function MePage() {
   const avatarUrl = settings?.avatarUrl
 
   return (
-    <div className="space-y-4 p-4 sm:p-6 pb-24 lg:pb-6">
+    <div className="space-y-4 p-4 sm:p-6 pb-24 xl:pb-6">
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -57,8 +59,10 @@ export function MePage() {
             {isLoggedIn ? '退出登录' : '登录'}
           </button>
           <button
+            type="button"
+            disabled={!isLoggedIn}
             onClick={() => setShowSettingsDrawer(true)}
-            className="px-3 py-2.5 rounded-xl border border-white/25 text-white text-sm bg-white/10 hover:bg-white/20"
+            className="px-3 py-2.5 rounded-xl border border-white/25 text-white text-sm bg-white/10 hover:bg-white/20 disabled:opacity-45 disabled:cursor-not-allowed"
           >
             设置
           </button>
@@ -73,17 +77,13 @@ export function MePage() {
       >
         <h3 className="text-sm uppercase tracking-wide text-white/60 mb-3">更多</h3>
         <div className="space-y-2">
+          <p className="text-white/55 text-sm leading-6">关于和项目展示正在规划中，后续会接入可配置内容模块。</p>
           <button
-            disabled
-            className="w-full text-left px-3 py-2.5 rounded-xl border border-white/15 text-white/50 text-sm bg-white/5 cursor-not-allowed"
+            type="button"
+            onClick={() => navigate('/blog')}
+            className="w-full text-left px-3 py-2.5 rounded-xl border border-white/15 text-white/75 text-sm bg-white/5 hover:bg-white/10 transition-colors"
           >
-            关于（待实现）
-          </button>
-          <button
-            disabled
-            className="w-full text-left px-3 py-2.5 rounded-xl border border-white/15 text-white/50 text-sm bg-white/5 cursor-not-allowed"
-          >
-            项目（待实现）
+            先去看看博客 →
           </button>
         </div>
       </motion.section>

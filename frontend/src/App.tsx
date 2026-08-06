@@ -1,19 +1,23 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { SakuraParticles } from './components/SakuraParticles'
 import { Layout } from './components/Layout'
-import { LoginModal } from './components/LoginModal'
-import { SettingsDrawer } from './components/SettingsDrawer'
 import { HomePage } from './pages/HomePage'
-import { BlogPage } from './pages/BlogPage'
-import { PostPage } from './pages/PostPage'
-import { AlbumsPage } from './pages/AlbumsPage'
-import { SearchPage } from './pages/SearchPage'
-import { MePage } from './pages/MePage'
 import { ToastCenter } from './components/ToastCenter'
+import { LoadingSpinner } from './components/LoadingSpinner'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { showToast } from './lib/toast'
 import { useStore } from './store/useStore'
 import { readSiteBehaviorConfig } from './utils/siteConfig'
+
+// Keep the initial route small. Rich editing and media screens are loaded only when visited.
+const BlogPage = lazy(() => import('./pages/BlogPage').then(({ BlogPage }) => ({ default: BlogPage })))
+const PostPage = lazy(() => import('./pages/PostPage').then(({ PostPage }) => ({ default: PostPage })))
+const AlbumsPage = lazy(() => import('./pages/AlbumsPage').then(({ AlbumsPage }) => ({ default: AlbumsPage })))
+const SearchPage = lazy(() => import('./pages/SearchPage').then(({ SearchPage }) => ({ default: SearchPage })))
+const MePage = lazy(() => import('./pages/MePage').then(({ MePage }) => ({ default: MePage })))
+const SakuraParticles = lazy(() => import('./components/SakuraParticles').then(({ SakuraParticles }) => ({ default: SakuraParticles })))
+const LoginModal = lazy(() => import('./components/LoginModal').then(({ LoginModal }) => ({ default: LoginModal })))
+const SettingsDrawer = lazy(() => import('./components/SettingsDrawer').then(({ SettingsDrawer }) => ({ default: SettingsDrawer })))
 
 function App() {
   const location = useLocation()
@@ -151,35 +155,51 @@ function App() {
       )}
 
       {/* 樱花粒子背景 */}
-      <SakuraParticles enabled={sakuraEnabled} />
+      {sakuraEnabled && (
+        <Suspense fallback={null}>
+          <SakuraParticles />
+        </Suspense>
+      )}
 
       {/* 主内容 */}
       <div className="main-content relative z-10">
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="/blog/:articleId" element={<BlogPage />} />
-            <Route path="/post/:postId" element={<PostPage />} />
-            <Route path="/albums" element={<AlbumsPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/me" element={<MePage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <ErrorBoundary>
+          <Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center"><LoadingSpinner text="正在打开页面…" /></div>}>
+            <Routes>
+              <Route element={<Layout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blog/:articleId" element={<BlogPage />} />
+                <Route path="/post/:postId" element={<PostPage />} />
+                <Route path="/albums" element={<AlbumsPage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/me" element={<MePage />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </div>
 
       {/* 登录弹窗 */}
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-      />
+      {(showLoginModal || showSettingsDrawer) && (
+        <Suspense fallback={null}>
+          {showLoginModal && (
+            <LoginModal
+              isOpen
+              onClose={() => setShowLoginModal(false)}
+            />
+          )}
 
-      {/* 设置面板 */}
-      <SettingsDrawer
-        isOpen={showSettingsDrawer}
-        onClose={() => setShowSettingsDrawer(false)}
-      />
+          {/* 设置面板 */}
+          {showSettingsDrawer && (
+            <SettingsDrawer
+              isOpen
+              onClose={() => setShowSettingsDrawer(false)}
+            />
+          )}
+        </Suspense>
+      )}
       <ToastCenter />
     </div>
     </>

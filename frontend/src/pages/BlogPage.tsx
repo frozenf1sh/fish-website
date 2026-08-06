@@ -9,23 +9,8 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { BlogFolderTree } from '../components/BlogFolderTree'
 import { showToast } from '../lib/toast'
 import { compressImage } from '../utils/imageCompressor'
-
-interface BlogArticle {
-  id: string
-  title: string
-  content: string
-  folderId: string
-  tags: string[]
-  status: 'draft' | 'published'
-  createdAt?: { toDate?: () => Date }
-  updatedAt?: { toDate?: () => Date }
-}
-
-interface FolderNode {
-  id: string
-  name: string
-  children?: FolderNode[]
-}
+import { withTimeout } from '../shared/api/async'
+import type { BlogArticle, FolderNode } from '../shared/domain/content'
 
 type PreviewMode = 'split' | 'edit' | 'preview'
 type ToolbarAction =
@@ -97,6 +82,7 @@ export function BlogPage() {
   const [movePath, setMovePath] = useState<string[]>([ROOT_FOLDER_ID])
   const [isManaging, setIsManaging] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const articleRequestIdRef = useRef(0)
 
   const articleMap = useMemo(() => {
     const map = new Map<string, BlogArticle>()
@@ -171,6 +157,7 @@ export function BlogPage() {
   const loadArticles = async (options?: { reset?: boolean; pageToken?: string }) => {
     const reset = options?.reset ?? false
     const requestPageToken = options?.pageToken ?? ''
+    const requestId = ++articleRequestIdRef.current
 
     if (reset) {
       setIsLoading(true)
@@ -186,10 +173,8 @@ export function BlogPage() {
         folderId,
         status: 'published',
       })
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('BLOG_LIST_TIMEOUT')), BLOG_LIST_TIMEOUT_MS)
-      })
-      const response = await Promise.race([listPromise, timeoutPromise])
+      const response = await withTimeout(listPromise, BLOG_LIST_TIMEOUT_MS, 'BLOG_LIST_TIMEOUT')
+      if (requestId !== articleRequestIdRef.current) return
 
       const newArticles = (response.articles || []) as BlogArticle[]
       setFolderTree(normalizeFolders((response.folders || []) as FolderNode[]))
@@ -207,10 +192,12 @@ export function BlogPage() {
         setHasMore(false)
       }
     } finally {
-      if (reset) {
-        setIsLoading(false)
-      } else {
-        setIsLoadingMore(false)
+      if (requestId === articleRequestIdRef.current) {
+        if (reset) {
+          setIsLoading(false)
+        } else {
+          setIsLoadingMore(false)
+        }
       }
     }
   }

@@ -7,42 +7,11 @@ import { clients } from '../lib/connect'
 import { showToast } from '../lib/toast'
 import { compressImage } from '../utils/imageCompressor'
 import { useStore } from '../store/useStore'
-
-interface Album {
-  id: string
-  name: string
-  description: string
-  isPublic: boolean
-  createdAt: { toDate?: () => Date }
-}
-
-interface AlbumImage {
-  id: string
-  albumId: string
-  url: string
-  thumbnailUrl?: string
-  fileName: string
-  fileSize: number
-  mimeType: string
-  createdAt: { toDate?: () => Date }
-}
+import type { Album, AlbumImage, ImageReferenceItem } from '../shared/domain/content'
 
 interface AlbumCardMeta {
   count: number
   coverUrl: string
-}
-
-interface ImageReferenceItem {
-  imageId: string
-  url: string
-  fileName: string
-  referenceCount: number
-  postReferenceCount: number
-  blogReferenceCount: number
-  avatarReferenceCount: number
-  backgroundReferenceCount: number
-  faviconReferenceCount: number
-  safeToDelete: boolean
 }
 
 const RECYCLE_BIN_ALBUM_ID = 'recycle-bin'
@@ -107,6 +76,8 @@ export function AlbumsPage() {
   const [isDeletingAlbum, setIsDeletingAlbum] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const albumListRequestIdRef = useRef(0)
+  const albumDetailRequestIdRef = useRef(0)
 
   const sortedAlbums = useMemo(() => {
     const rank = (id: string) => {
@@ -153,7 +124,7 @@ export function AlbumsPage() {
   }
 
   const hydrateAlbumCardMeta = async (list: Album[]) => {
-    const entries = await Promise.all(
+    return Promise.all(
       list.map(async (album) => {
         try {
           const detail = await clients.album.getAlbum({ albumId: album.id })
@@ -164,17 +135,11 @@ export function AlbumsPage() {
         }
       }),
     )
-    setAlbumCardMeta((prev) => {
-      const next = { ...prev }
-      for (const [id, meta] of entries) {
-        next[id] = meta
-      }
-      return next
-    })
   }
 
   useEffect(() => {
     const loadAlbums = async () => {
+      const requestId = ++albumListRequestIdRef.current
       setIsLoadingAlbums(true)
       try {
         const response = await clients.album.listAlbums({ pageSize: 100, onlyPublic: !isLoggedIn })
@@ -189,16 +154,19 @@ export function AlbumsPage() {
             // Ignore and keep current list if recycle bin cannot be fetched.
           }
         }
+        const entries = await hydrateAlbumCardMeta(loadedAlbums)
+        if (requestId !== albumListRequestIdRef.current) return
         setAlbums(loadedAlbums)
-        await hydrateAlbumCardMeta(loadedAlbums)
+        setAlbumCardMeta((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
         setSelectedAlbumId((prev) => {
           if (!prev) return ''
           return loadedAlbums.some((item) => item.id === prev) ? prev : ''
         })
       } catch (err) {
+        if (requestId !== albumListRequestIdRef.current) return
         console.error('Failed to load albums:', err)
       } finally {
-        setIsLoadingAlbums(false)
+        if (requestId === albumListRequestIdRef.current) setIsLoadingAlbums(false)
       }
     }
 
@@ -214,17 +182,20 @@ export function AlbumsPage() {
     }
 
     const loadAlbumDetail = async () => {
+      const requestId = ++albumDetailRequestIdRef.current
       setIsLoadingAlbumDetail(true)
       try {
         const response = await clients.album.getAlbum({ albumId: selectedAlbumId })
+        if (requestId !== albumDetailRequestIdRef.current) return
         setSelectedAlbum((response.album as Album | null) || null)
         setAlbumImages((response.images as AlbumImage[]) || [])
       } catch (err) {
+        if (requestId !== albumDetailRequestIdRef.current) return
         console.error('Failed to load album details:', err)
         setSelectedAlbum(null)
         setAlbumImages([])
       } finally {
-        setIsLoadingAlbumDetail(false)
+        if (requestId === albumDetailRequestIdRef.current) setIsLoadingAlbumDetail(false)
       }
     }
 
