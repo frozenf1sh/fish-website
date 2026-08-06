@@ -50,8 +50,8 @@ jobs:
 
       - name: Install build tools
         run: |
-          apt-get update
-          apt-get install -y --no-install-recommends make
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends make
 
       - name: Verify generated API contracts
         run: make generate-check lint
