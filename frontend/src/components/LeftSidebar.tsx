@@ -2,12 +2,49 @@ import { motion } from 'framer-motion'
 import { useStore } from '../store/useStore'
 import { BlogFolderTree } from './BlogFolderTree'
 
+type SocialIconKind = 'github' | 'xiaohongshu' | 'douyin' | 'bilibili'
+
 const socialLinks = [
-  { name: 'GitHub', icon: '🐱', key: 'githubUrl', color: 'from-gray-400 to-gray-600' },
-  { name: '小红书', icon: '📕', key: 'twitterUrl', color: 'from-rose-400 to-red-500' },
-  { name: '抖音', icon: '🎵', key: 'douyinUrl', color: 'from-cyan-400 to-indigo-500' },
-  { name: 'Bilibili', icon: '📺', key: 'bilibiliUrl', color: 'from-pink-400 to-rose-400' },
+  { name: 'GitHub', icon: 'github', key: 'githubUrl', color: 'from-gray-400 to-gray-600' },
+  { name: '小红书', icon: 'xiaohongshu', key: 'twitterUrl', color: 'from-rose-400 to-red-500' },
+  { name: '抖音', icon: 'douyin', key: 'douyinUrl', color: 'from-cyan-400 to-indigo-500' },
+  { name: 'Bilibili', icon: 'bilibili', key: 'bilibiliUrl', color: 'from-pink-400 to-rose-400' },
 ] as const
+
+function SocialIcon({ kind }: { kind: SocialIconKind }) {
+  if (kind === 'github') {
+    return (
+      <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current" aria-hidden="true">
+        <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.33-1.76-1.33-1.76-1.09-.75.08-.74.08-.74 1.2.08 1.84 1.23 1.84 1.23 1.07 1.84 2.8 1.31 3.49 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 7.08c1.02 0 2.05.14 3.01.42 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.62-2.81 5.64-5.49 5.94.43.37.81 1.1.81 2.22v3.28c0 .32.22.69.83.57A12 12 0 0 0 12 .5Z" />
+      </svg>
+    )
+  }
+
+  if (kind === 'xiaohongshu') {
+    return (
+      <svg viewBox="0 0 24 24" className="w-6 h-6" aria-hidden="true">
+        <rect x="2" y="2" width="20" height="20" rx="6" fill="#e54858" />
+        <path d="M7.2 8.2h2.1v7.6H7.2zm4 0h2.1v7.6h-2.1zm-4 3h6.1v1.8H7.2zm9.2-3h1.5a1.8 1.8 0 0 1 1.8 1.8v5.8h-2.1v-5.5h-1.2z" fill="white" />
+      </svg>
+    )
+  }
+
+  if (kind === 'douyin') {
+    return (
+      <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M14 4v10.2a4.3 4.3 0 1 1-3.1-4.13" stroke="#25f4ee" transform="translate(-1 0)" />
+        <path d="M14 4v10.2a4.3 4.3 0 1 1-3.1-4.13" stroke="#fe2c55" transform="translate(1 0)" />
+        <path d="M14 4c.5 2.1 1.8 3.5 4 4" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 8.5h16v10H4zM6.5 8.5V6h11v2.5M8 13h.01M16 13h.01M8 16h8" />
+    </svg>
+  )
+}
 
 export function LeftSidebar() {
   const {
@@ -103,7 +140,7 @@ export function LeftSidebar() {
                 }`}
                 title={link.name}
               >
-                <span className="text-lg">{link.icon}</span>
+                <SocialIcon kind={link.icon} />
               </motion.a>
                 )
               })()

@@ -51,33 +51,33 @@ export function Layout() {
         </div>
       </div>
 
-      <div className="max-w-[1800px] mx-auto px-0 sm:px-4 pb-24 lg:pb-6 pt-20 lg:pt-6">
-        <div className="flex gap-0 lg:gap-6">
-          {/* 左栏 - 25% */}
+      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 pb-24 lg:pb-6 pt-20 lg:pt-6">
+        <div className="grid gap-4 xl:gap-6 xl:grid-cols-[minmax(240px,280px)_minmax(0,1fr)_minmax(240px,280px)] items-start">
+          {/* 左栏与右栏保持同一固定轨道宽度 */}
           <motion.aside
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="hidden lg:block lg:w-[20%] lg:min-w-[260px]"
+            className="hidden xl:block min-w-0"
           >
             <LeftSidebar />
           </motion.aside>
 
-          {/* 中栏 - 45% */}
+          {/* 中栏自适应剩余空间 */}
           <motion.main
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="flex-1 min-w-0 w-full lg:basis-[68%] lg:max-w-[68%] xl:basis-[61%] xl:max-w-[61%] 2xl:basis-[48%] 2xl:max-w-[48%] border-x border-white/10"
+            className="min-w-0 w-full border-x border-white/10"
           >
             <Outlet />
           </motion.main>
 
-          {/* 右栏 - 30% */}
+          {/* 右栏在常见桌面宽度（>=1280px）显示，并与左栏等宽 */}
           <motion.aside
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="hidden 2xl:block 2xl:w-[24%] 2xl:min-w-[320px]"
+            className="hidden xl:block min-w-0"
           >
             <RightSidebar />
           </motion.aside>
