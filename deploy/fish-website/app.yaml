@@ -152,7 +152,7 @@ spec:
             - {name: R2_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
             - {name: R2_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
             - {name: R2_USE_SSL, value: "true"}
-            - {name: CORS_ALLOWED_ORIGINS, value: "https://frozenf1sh.top,https://fish.frozenf1sh.top"}
+            - {name: CORS_ALLOWED_ORIGINS, value: "https://frozenf1sh.top"}
             - {name: ENABLE_REFLECTION, value: "false"}
             - {name: MIGRATE_ONLY, value: "true"}
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}
@@ -249,7 +249,7 @@ spec:
             - {name: R2_BUCKET, valueFrom: {secretKeyRef: {name: r2, key: bucket}}}
             - {name: R2_PUBLIC_BASE_URL, valueFrom: {secretKeyRef: {name: r2, key: public-base-url}}}
             - {name: R2_USE_SSL, value: "true"}
-            - {name: CORS_ALLOWED_ORIGINS, value: "https://frozenf1sh.top,https://fish.frozenf1sh.top"}
+            - {name: CORS_ALLOWED_ORIGINS, value: "https://frozenf1sh.top"}
             - {name: ENABLE_REFLECTION, value: "false"}
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}
             - {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: application, key: jwt-secret}}}
