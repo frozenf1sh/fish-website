@@ -22,6 +22,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedImages, setSelectedImages] = useState<UploadedImage[]>([])
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const { settings } = useStore()
@@ -124,6 +125,8 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
       })
       setContent('')
       setSelectedImages([])
+      setIsExpanded(false)
+      setShowEmojiPicker(false)
       onPostCreated?.()
     } catch (err) {
       console.error('Failed to create post:', err)
@@ -153,9 +156,12 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onFocus={() => setIsExpanded(true)}
               placeholder="在想些什么呢？"
-              className="w-full bg-transparent text-white/90 placeholder-white/40 resize-none outline-none text-base sm:text-lg leading-relaxed min-h-[72px] sm:min-h-[80px]"
-              rows={3}
+              aria-label="发布新动态"
+              aria-expanded={isExpanded}
+              className={`w-full bg-transparent text-white/90 placeholder-white/40 resize-none outline-none text-base sm:text-lg leading-relaxed transition-[min-height] duration-200 ${isExpanded ? 'min-h-[88px] sm:min-h-[104px]' : 'min-h-[40px] sm:min-h-[44px]'}`}
+              rows={isExpanded ? 3 : 1}
               disabled={isSubmitting}
             />
 
@@ -191,7 +197,15 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-white/20">
+            <AnimatePresence initial={false}>
+            {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -6 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-white/20 overflow-visible"
+            >
               <div className="flex gap-3">
                 <input
                   ref={fileInputRef}
@@ -260,7 +274,9 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
                   </>
                 )}
               </button>
-            </div>
+            </motion.div>
+            )}
+            </AnimatePresence>
           </div>
         </div>
       </form>

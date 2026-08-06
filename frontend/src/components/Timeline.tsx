@@ -1,10 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
 import { showToast } from '../lib/toast'
+import { ImageLightbox } from './ImageLightbox'
 
 const MarkdownViewer = lazy(() => import('./MarkdownViewer').then(({ MarkdownViewer }) => ({ default: MarkdownViewer })))
 
@@ -222,38 +222,7 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
         </div>
       </div>
 
-      {createPortal(
-        <AnimatePresence>
-          {selectedImage && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm cursor-zoom-out"
-              onClick={(e) => {
-                e.stopPropagation()
-                setSelectedImage(null)
-              }}
-            >
-              <motion.img
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                src={selectedImage}
-                alt="Enlarged"
-                className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSelectedImage(null)
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+      <ImageLightbox src={selectedImage} alt="放大动态图片" onClose={() => setSelectedImage(null)} />
     </motion.div>
   )
 }

@@ -130,11 +130,15 @@ export function LeftSidebar() {
                 href={href || undefined}
                 target="_blank"
                 rel="noopener noreferrer"
-                initial={{ scale: 0, rotate: -10 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.3 + index * 0.1, type: 'spring' }}
-                whileHover={{ scale: 1.2, rotate: 10, y: -5 }}
-                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{
+                  opacity: { delay: 0.3 + index * 0.1, duration: 0.2 },
+                  scale: { duration: 0.14, ease: 'easeOut' },
+                  y: { duration: 0.14, ease: 'easeOut' },
+                }}
                 className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${link.color} flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all ${
                   !href ? 'opacity-30' : ''
                 }`}

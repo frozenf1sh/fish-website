@@ -7,6 +7,7 @@ import { MarkdownViewer } from '../components/MarkdownViewer'
 import { showToast } from '../lib/toast'
 import { compressImage } from '../utils/imageCompressor'
 import { useStore } from '../store/useStore'
+import { ImageLightbox } from '../components/ImageLightbox'
 
 interface PostDetail {
   id: string
@@ -41,6 +42,7 @@ export function PostPage() {
   const [content, setContent] = useState('')
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [imageRatios, setImageRatios] = useState<Record<string, number>>({})
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const dragIndexRef = useRef<number | null>(null)
@@ -212,7 +214,8 @@ export function PostPage() {
                     <img
                       src={singleImageUrl}
                       alt="post-0"
-                      className={`w-full h-full ${singleImageNeedsCrop ? 'object-cover' : 'object-contain'}`}
+                      className={`w-full h-full cursor-zoom-in ${singleImageNeedsCrop ? 'object-cover' : 'object-contain'}`}
+                      onClick={() => setSelectedImage(singleImageUrl)}
                       onLoad={(e) => {
                         const target = e.currentTarget
                         if (!target.naturalWidth || !target.naturalHeight) return
@@ -224,7 +227,13 @@ export function PostPage() {
                 ) : (
                   <div className={`grid gap-3 ${getGridColsClass()}`}>
                     {displayImages.map((url, idx) => (
-                      <img key={`${url}-${idx}`} src={url} alt={`post-${idx}`} className="w-full aspect-square object-cover rounded-2xl border border-white/15" />
+                      <img
+                        key={`${url}-${idx}`}
+                        src={url}
+                        alt={`post-${idx}`}
+                        className="w-full aspect-square object-cover rounded-2xl border border-white/15 cursor-zoom-in"
+                        onClick={() => setSelectedImage(url)}
+                      />
                     ))}
                   </div>
                 )}
@@ -323,6 +332,7 @@ export function PostPage() {
           </button>
         </div>
       </motion.div>
+      <ImageLightbox src={selectedImage} alt="放大动态图片" onClose={() => setSelectedImage(null)} />
     </div>
   )
 }

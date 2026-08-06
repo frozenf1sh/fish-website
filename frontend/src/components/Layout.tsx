@@ -51,8 +51,8 @@ export function Layout() {
         </div>
       </div>
 
-      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 pb-24 xl:pb-6 pt-20 xl:pt-6">
-        <div className="grid gap-4 xl:gap-6 xl:grid-cols-[minmax(240px,280px)_minmax(0,1fr)_minmax(240px,280px)] items-start">
+      <div className="max-w-[1480px] mx-auto px-4 sm:px-6 pb-24 xl:pb-6 pt-20 xl:pt-6">
+        <div className="grid gap-4 xl:gap-6 xl:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_minmax(220px,260px)] items-start">
           {/* 左栏与右栏保持同一固定轨道宽度 */}
           <motion.aside
             initial={{ opacity: 0 }}
