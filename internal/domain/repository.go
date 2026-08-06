@@ -60,7 +60,8 @@ type ObjectStore interface {
 
 // ImageReferenceRepository tracks and analyzes image usage references.
 type ImageReferenceRepository interface {
-	AdjustByURLs(ctx context.Context, urls []string, source string, delta int) error
+	ReplaceSourceReferences(ctx context.Context, sourceType, sourceID string, urls []string) error
+	RemoveSourceReferences(ctx context.Context, sourceType, sourceID string) error
 	AnalyzeByAlbum(ctx context.Context, albumID string) ([]*ImageReferenceRecord, error)
 	RepairConsistency(ctx context.Context) (*ImageReferenceRepairResult, error)
 }

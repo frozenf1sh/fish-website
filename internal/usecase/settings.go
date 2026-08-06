@@ -88,42 +88,21 @@ func (u *SettingsUsecase) UpdateSettings(ctx context.Context, settings *domain.S
 	}
 
 	if oldAvatarURL != current.AvatarURL {
-		if oldAvatarURL != "" {
-			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{oldAvatarURL}, "avatar", -1); err != nil {
-				return nil, fmt.Errorf("decrement avatar reference: %w", err)
-			}
-		}
-		if current.AvatarURL != "" {
-			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{current.AvatarURL}, "avatar", 1); err != nil {
-				return nil, fmt.Errorf("increment avatar reference: %w", err)
-			}
+		if err := u.imageRefRepo.ReplaceSourceReferences(ctx, "avatar", "settings:1", []string{current.AvatarURL}); err != nil {
+			return nil, fmt.Errorf("replace avatar reference: %w", err)
 		}
 	}
 
 	if oldBackgroundURL != current.BackgroundImageURL {
-		if oldBackgroundURL != "" {
-			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{oldBackgroundURL}, "background", -1); err != nil {
-				return nil, fmt.Errorf("decrement background reference: %w", err)
-			}
-		}
-		if current.BackgroundImageURL != "" {
-			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{current.BackgroundImageURL}, "background", 1); err != nil {
-				return nil, fmt.Errorf("increment background reference: %w", err)
-			}
+		if err := u.imageRefRepo.ReplaceSourceReferences(ctx, "background", "settings:1", []string{current.BackgroundImageURL}); err != nil {
+			return nil, fmt.Errorf("replace background reference: %w", err)
 		}
 	}
 
 	newFaviconURL := extractCustomLinkURL(current.CustomLinks, "siteFaviconUrl")
 	if oldFaviconURL != newFaviconURL {
-		if oldFaviconURL != "" {
-			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{oldFaviconURL}, "favicon", -1); err != nil {
-				return nil, fmt.Errorf("decrement favicon reference: %w", err)
-			}
-		}
-		if newFaviconURL != "" {
-			if err := u.imageRefRepo.AdjustByURLs(ctx, []string{newFaviconURL}, "favicon", 1); err != nil {
-				return nil, fmt.Errorf("increment favicon reference: %w", err)
-			}
+		if err := u.imageRefRepo.ReplaceSourceReferences(ctx, "favicon", "settings:1", []string{newFaviconURL}); err != nil {
+			return nil, fmt.Errorf("replace favicon reference: %w", err)
 		}
 	}
 

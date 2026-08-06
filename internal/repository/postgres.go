@@ -9,6 +9,8 @@ import (
 
 	"github.com/frozenfish/fish-website/internal/domain"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/xid"
 )
@@ -829,6 +831,171 @@ func (r *postgresImageReferenceRepository) AdjustByURLs(ctx context.Context, url
 	return nil
 }
 
+// ReplaceSourceReferences stores image IDs as the canonical reference facts
+// while resolving legacy URL-based content at the boundary. The projection is
+// rebuilt only for images touched by this source, keeping writes proportional
+// to the changed content.
+func (r *postgresImageReferenceRepository) ReplaceSourceReferences(ctx context.Context, sourceType, sourceID string, urls []string) error {
+	if sourceType == "" || sourceID == "" {
+		return fmt.Errorf("reference source type and id are required")
+	}
+	if !supportedReferenceSource(sourceType) {
+		return fmt.Errorf("unsupported reference source: %s", sourceType)
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin replace references tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	oldIDs, err := querySourceImageIDs(ctx, tx, sourceType, sourceID)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM image_reference_sources WHERE source_type = $1 AND source_id = $2`,
+		sourceType, sourceID,
+	); err != nil {
+		return fmt.Errorf("delete source references: %w", err)
+	}
+
+	expanded := expandURLCounts(countNonEmptyURLs(urls))
+	if len(expanded) > 0 {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO image_reference_sources
+				(source_type, source_id, image_id, occurrence_count, updated_at)
+			SELECT $1, $2, i.id, COUNT(*)::int, NOW()
+			FROM unnest($3::text[]) AS u(url)
+			INNER JOIN images i ON i.url = u.url
+			GROUP BY i.id
+			ON CONFLICT (source_type, source_id, image_id) DO UPDATE SET
+				occurrence_count = EXCLUDED.occurrence_count,
+				updated_at = NOW()
+		`, sourceType, sourceID, expanded); err != nil {
+			return fmt.Errorf("insert source references: %w", err)
+		}
+	}
+
+	newIDs, err := querySourceImageIDs(ctx, tx, sourceType, sourceID)
+	if err != nil {
+		return err
+	}
+	affected := appendUniqueIDs(oldIDs, newIDs...)
+	if err := rebuildReferenceProjection(ctx, tx, affected); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit replace references: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresImageReferenceRepository) RemoveSourceReferences(ctx context.Context, sourceType, sourceID string) error {
+	return r.ReplaceSourceReferences(ctx, sourceType, sourceID, nil)
+}
+
+func supportedReferenceSource(source string) bool {
+	switch source {
+	case "post", "blog", "avatar", "background", "favicon":
+		return true
+	default:
+		return false
+	}
+}
+
+func countNonEmptyURLs(urls []string) map[string]int {
+	counts := make(map[string]int, len(urls))
+	for _, url := range urls {
+		if url != "" {
+			counts[url]++
+		}
+	}
+	return counts
+}
+
+func expandURLCounts(counts map[string]int) []string {
+	urls := make([]string, 0)
+	for url, count := range counts {
+		for i := 0; i < count; i++ {
+			urls = append(urls, url)
+		}
+	}
+	return urls
+}
+
+func appendUniqueIDs(target []string, ids ...string) []string {
+	seen := make(map[string]struct{}, len(target)+len(ids))
+	for _, id := range target {
+		seen[id] = struct{}{}
+	}
+	for _, id := range ids {
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		target = append(target, id)
+	}
+	return target
+}
+
+func querySourceImageIDs(ctx context.Context, tx interface {
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+}, sourceType, sourceID string) ([]string, error) {
+	rows, err := tx.Query(ctx,
+		`SELECT image_id FROM image_reference_sources WHERE source_type = $1 AND source_id = $2`,
+		sourceType, sourceID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query source image IDs: %w", err)
+	}
+	defer rows.Close()
+	ids := make([]string, 0)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scan source image ID: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate source image IDs: %w", err)
+	}
+	return ids, nil
+}
+
+func rebuildReferenceProjection(ctx context.Context, tx interface {
+	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+}, imageIDs []string) error {
+	if len(imageIDs) == 0 {
+		return nil
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM image_references WHERE image_id = ANY($1::text[])`, imageIDs); err != nil {
+		return fmt.Errorf("delete affected reference projections: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO image_references
+			(image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, favicon_ref_count, updated_at)
+		SELECT image_id,
+			SUM(occurrence_count)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'post'), 0)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'blog'), 0)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'avatar'), 0)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'background'), 0)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'favicon'), 0)::int,
+			NOW()
+		FROM image_reference_sources
+		WHERE image_id = ANY($1::text[])
+		GROUP BY image_id
+	`, imageIDs); err != nil {
+		return fmt.Errorf("rebuild affected reference projections: %w", err)
+	}
+	return nil
+}
+
 func (r *postgresImageReferenceRepository) AnalyzeByAlbum(ctx context.Context, albumID string) ([]*domain.ImageReferenceRecord, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT i.id, COALESCE(i.url, ''), i.file_name,
@@ -860,100 +1027,142 @@ func (r *postgresImageReferenceRepository) AnalyzeByAlbum(ctx context.Context, a
 }
 
 func (r *postgresImageReferenceRepository) RepairConsistency(ctx context.Context) (*domain.ImageReferenceRepairResult, error) {
+	return r.repairProjectionFromSources(ctx)
+	/* Legacy URL rebuild retained below until the migration is deployed everywhere. */
+	/*
+		tx, err := r.pool.Begin(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("begin repair tx: %w", err)
+		}
+		defer tx.Rollback(ctx)
+
+		if _, err := tx.Exec(ctx, `TRUNCATE TABLE image_references`); err != nil {
+			return nil, fmt.Errorf("truncate image_references: %w", err)
+		}
+
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, updated_at)
+			SELECT i.id, COUNT(*)::int, COUNT(*)::int, 0, 0, 0, NOW()
+			FROM posts p
+			CROSS JOIN LATERAL jsonb_array_elements_text(p.image_urls) AS u(url)
+			INNER JOIN images i ON i.url = u.url
+			GROUP BY i.id
+		`); err != nil {
+			return nil, fmt.Errorf("rebuild post references: %w", err)
+		}
+
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, updated_at)
+			SELECT i.id, COUNT(*)::int, 0, COUNT(*)::int, 0, 0, NOW()
+			FROM articles a
+			-- This is a Go raw string; keep one regex escape per metacharacter so
+			-- PostgreSQL sees the same Markdown pattern as the usecase parser.
+			CROSS JOIN LATERAL regexp_matches(a.content, '!\[[^\]]*\]\(([^)]+)\)', 'g') AS m
+			INNER JOIN images i ON i.url = m[1]
+			GROUP BY i.id
+			ON CONFLICT (image_id) DO UPDATE SET
+				ref_count = image_references.ref_count + EXCLUDED.ref_count,
+				blog_ref_count = image_references.blog_ref_count + EXCLUDED.blog_ref_count,
+				updated_at = NOW()
+		`); err != nil {
+			return nil, fmt.Errorf("rebuild blog references: %w", err)
+		}
+
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, updated_at)
+			SELECT i.id, 1, 0, 0, 1, 0, NOW()
+			FROM settings s
+			INNER JOIN images i ON i.url = s.avatar_url
+			WHERE s.id = 1 AND COALESCE(s.avatar_url, '') <> ''
+			ON CONFLICT (image_id) DO UPDATE SET
+				ref_count = image_references.ref_count + 1,
+				avatar_ref_count = image_references.avatar_ref_count + 1,
+				updated_at = NOW()
+		`); err != nil {
+			return nil, fmt.Errorf("rebuild avatar references: %w", err)
+		}
+
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, updated_at)
+			SELECT i.id, 1, 0, 0, 0, 1, NOW()
+			FROM settings s
+			INNER JOIN images i ON i.url = s.background_image_url
+			WHERE s.id = 1 AND COALESCE(s.background_image_url, '') <> ''
+			ON CONFLICT (image_id) DO UPDATE SET
+				ref_count = image_references.ref_count + 1,
+				background_ref_count = image_references.background_ref_count + 1,
+				updated_at = NOW()
+		`); err != nil {
+			return nil, fmt.Errorf("rebuild background references: %w", err)
+		}
+
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, favicon_ref_count, updated_at)
+			SELECT i.id, 1, 0, 0, 0, 0, 1, NOW()
+			FROM settings s
+			INNER JOIN images i ON i.url = (s.custom_links::jsonb ->> 'siteFaviconUrl')
+			WHERE s.id = 1 AND COALESCE(s.custom_links, '') <> '' AND COALESCE((s.custom_links::jsonb ->> 'siteFaviconUrl'), '') <> ''
+			ON CONFLICT (image_id) DO UPDATE SET
+				ref_count = image_references.ref_count + 1,
+				favicon_ref_count = COALESCE(image_references.favicon_ref_count, 0) + 1,
+				updated_at = NOW()
+		`); err != nil {
+			return nil, fmt.Errorf("rebuild favicon references: %w", err)
+		}
+
+		var result domain.ImageReferenceRepairResult
+		result.RepairedAt = time.Now()
+		if err := tx.QueryRow(ctx, `SELECT COUNT(*), COALESCE(SUM(ref_count), 0) FROM image_references`).Scan(&result.ReferencedImages, &result.TotalRefCount); err != nil {
+			return nil, fmt.Errorf("count rebuilt references: %w", err)
+		}
+		if err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM images`).Scan(&result.ProcessedImages); err != nil {
+			return nil, fmt.Errorf("count images: %w", err)
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			return nil, fmt.Errorf("commit repair tx: %w", err)
+		}
+
+		return &result, nil
+	*/
+}
+
+func (r *postgresImageReferenceRepository) repairProjectionFromSources(ctx context.Context) (*domain.ImageReferenceRepairResult, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("begin repair tx: %w", err)
+		return nil, fmt.Errorf("begin projection repair tx: %w", err)
 	}
 	defer tx.Rollback(ctx)
-
 	if _, err := tx.Exec(ctx, `TRUNCATE TABLE image_references`); err != nil {
 		return nil, fmt.Errorf("truncate image_references: %w", err)
 	}
-
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, updated_at)
-		SELECT i.id, COUNT(*)::int, COUNT(*)::int, 0, 0, 0, NOW()
-		FROM posts p
-		CROSS JOIN LATERAL jsonb_array_elements_text(p.image_urls) AS u(url)
-		INNER JOIN images i ON i.url = u.url
-		GROUP BY i.id
+		INSERT INTO image_references
+			(image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, favicon_ref_count, updated_at)
+		SELECT image_id,
+			SUM(occurrence_count)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'post'), 0)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'blog'), 0)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'avatar'), 0)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'background'), 0)::int,
+			COALESCE(SUM(occurrence_count) FILTER (WHERE source_type = 'favicon'), 0)::int,
+			NOW()
+		FROM image_reference_sources
+		GROUP BY image_id
 	`); err != nil {
-		return nil, fmt.Errorf("rebuild post references: %w", err)
+		return nil, fmt.Errorf("rebuild reference projection: %w", err)
 	}
-
-	if _, err := tx.Exec(ctx, `
-		INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, updated_at)
-		SELECT i.id, COUNT(*)::int, 0, COUNT(*)::int, 0, 0, NOW()
-		FROM articles a
-		-- This is a Go raw string; keep one regex escape per metacharacter so
-		-- PostgreSQL sees the same Markdown pattern as the usecase parser.
-		CROSS JOIN LATERAL regexp_matches(a.content, '!\[[^\]]*\]\(([^)]+)\)', 'g') AS m
-		INNER JOIN images i ON i.url = m[1]
-		GROUP BY i.id
-		ON CONFLICT (image_id) DO UPDATE SET
-			ref_count = image_references.ref_count + EXCLUDED.ref_count,
-			blog_ref_count = image_references.blog_ref_count + EXCLUDED.blog_ref_count,
-			updated_at = NOW()
-	`); err != nil {
-		return nil, fmt.Errorf("rebuild blog references: %w", err)
-	}
-
-	if _, err := tx.Exec(ctx, `
-		INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, updated_at)
-		SELECT i.id, 1, 0, 0, 1, 0, NOW()
-		FROM settings s
-		INNER JOIN images i ON i.url = s.avatar_url
-		WHERE s.id = 1 AND COALESCE(s.avatar_url, '') <> ''
-		ON CONFLICT (image_id) DO UPDATE SET
-			ref_count = image_references.ref_count + 1,
-			avatar_ref_count = image_references.avatar_ref_count + 1,
-			updated_at = NOW()
-	`); err != nil {
-		return nil, fmt.Errorf("rebuild avatar references: %w", err)
-	}
-
-	if _, err := tx.Exec(ctx, `
-		INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, updated_at)
-		SELECT i.id, 1, 0, 0, 0, 1, NOW()
-		FROM settings s
-		INNER JOIN images i ON i.url = s.background_image_url
-		WHERE s.id = 1 AND COALESCE(s.background_image_url, '') <> ''
-		ON CONFLICT (image_id) DO UPDATE SET
-			ref_count = image_references.ref_count + 1,
-			background_ref_count = image_references.background_ref_count + 1,
-			updated_at = NOW()
-	`); err != nil {
-		return nil, fmt.Errorf("rebuild background references: %w", err)
-	}
-
-	if _, err := tx.Exec(ctx, `
-		INSERT INTO image_references (image_id, ref_count, post_ref_count, blog_ref_count, avatar_ref_count, background_ref_count, favicon_ref_count, updated_at)
-		SELECT i.id, 1, 0, 0, 0, 0, 1, NOW()
-		FROM settings s
-		INNER JOIN images i ON i.url = (s.custom_links::jsonb ->> 'siteFaviconUrl')
-		WHERE s.id = 1 AND COALESCE(s.custom_links, '') <> '' AND COALESCE((s.custom_links::jsonb ->> 'siteFaviconUrl'), '') <> ''
-		ON CONFLICT (image_id) DO UPDATE SET
-			ref_count = image_references.ref_count + 1,
-			favicon_ref_count = COALESCE(image_references.favicon_ref_count, 0) + 1,
-			updated_at = NOW()
-	`); err != nil {
-		return nil, fmt.Errorf("rebuild favicon references: %w", err)
-	}
-
-	var result domain.ImageReferenceRepairResult
-	result.RepairedAt = time.Now()
+	result := &domain.ImageReferenceRepairResult{RepairedAt: time.Now()}
 	if err := tx.QueryRow(ctx, `SELECT COUNT(*), COALESCE(SUM(ref_count), 0) FROM image_references`).Scan(&result.ReferencedImages, &result.TotalRefCount); err != nil {
 		return nil, fmt.Errorf("count rebuilt references: %w", err)
 	}
 	if err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM images`).Scan(&result.ProcessedImages); err != nil {
 		return nil, fmt.Errorf("count images: %w", err)
 	}
-
 	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("commit repair tx: %w", err)
+		return nil, fmt.Errorf("commit projection repair: %w", err)
 	}
-
-	return &result, nil
+	return result, nil
 }
 
 func uniqueNonEmptyURLs(urls []string) []string {

@@ -40,7 +40,7 @@ func (u *BlogUsecase) CreateArticle(ctx context.Context, title, content, folderI
 	if err != nil {
 		return nil, fmt.Errorf("create article: %w", err)
 	}
-	if err := u.imageRefRepo.AdjustByURLs(ctx, extractMarkdownImageURLs(content), "blog", 1); err != nil {
+	if err := u.imageRefRepo.ReplaceSourceReferences(ctx, "blog", createdArticle.ID, extractMarkdownImageURLs(content)); err != nil {
 		return nil, fmt.Errorf("update blog image references: %w", err)
 	}
 
@@ -109,16 +109,8 @@ func (u *BlogUsecase) UpdateArticle(ctx context.Context, articleID, title, conte
 		return nil, fmt.Errorf("update article: %w", err)
 	}
 
-	added, removed := diffURLCounts(extractMarkdownImageURLs(existing.Content), extractMarkdownImageURLs(content))
-	if len(added) > 0 {
-		if err := u.imageRefRepo.AdjustByURLs(ctx, added, "blog", 1); err != nil {
-			return nil, fmt.Errorf("increment blog image references: %w", err)
-		}
-	}
-	if len(removed) > 0 {
-		if err := u.imageRefRepo.AdjustByURLs(ctx, removed, "blog", -1); err != nil {
-			return nil, fmt.Errorf("decrement blog image references: %w", err)
-		}
+	if err := u.imageRefRepo.ReplaceSourceReferences(ctx, "blog", articleID, extractMarkdownImageURLs(content)); err != nil {
+		return nil, fmt.Errorf("replace blog image references: %w", err)
 	}
 
 	return updatedArticle, nil
@@ -126,14 +118,14 @@ func (u *BlogUsecase) UpdateArticle(ctx context.Context, articleID, title, conte
 
 // DeleteArticle deletes an article
 func (u *BlogUsecase) DeleteArticle(ctx context.Context, articleID string) error {
-	existing, err := u.blogRepo.GetArticle(ctx, articleID)
+	_, err := u.blogRepo.GetArticle(ctx, articleID)
 	if err != nil {
 		return fmt.Errorf("get existing article: %w", err)
 	}
 	if err := u.blogRepo.DeleteArticle(ctx, articleID); err != nil {
 		return fmt.Errorf("delete article: %w", err)
 	}
-	if err := u.imageRefRepo.AdjustByURLs(ctx, extractMarkdownImageURLs(existing.Content), "blog", -1); err != nil {
+	if err := u.imageRefRepo.RemoveSourceReferences(ctx, "blog", articleID); err != nil {
 		return fmt.Errorf("decrement blog image references: %w", err)
 	}
 	return nil
