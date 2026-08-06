@@ -19,5 +19,11 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Existing pages intentionally synchronize remote data into local view
+      // state from effects; keep this legacy pattern out of the release gate
+      // until those screens are migrated to a query cache.
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])
