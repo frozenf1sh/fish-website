@@ -3,10 +3,11 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - app.yaml
+  - traefik-middleware.yaml
 images:
   - name: backend
     newName: registry.frozenf1sh.top/fish-website/backend
-    newTag: sha-4dfb9b1fd8faf979caef7f3d179ff24cb87b5639
+    newTag: sha-ce7fbfed0ddbe440151a74afb4732ba0331925a1
   - name: frontend
     newName: registry.frozenf1sh.top/fish-website/frontend
-    newTag: sha-4dfb9b1fd8faf979caef7f3d179ff24cb87b5639
+    newTag: sha-ce7fbfed0ddbe440151a74afb4732ba0331925a1
