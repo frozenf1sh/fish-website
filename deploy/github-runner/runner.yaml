@@ -38,7 +38,7 @@ spec:
                   name: fish-website-runner-token
                   key: RUNNER_TOKEN
             - name: RUNNER_NAME
-              value: tc-k3s-x64-runner-0
+              value: tc-k3s-x64-runner-2
             - name: RUNNER_LABELS
               value: self-hosted,linux,x64,k3s
             - name: RUNNER_WORKDIR

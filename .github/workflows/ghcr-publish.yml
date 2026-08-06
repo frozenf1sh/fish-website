@@ -48,25 +48,28 @@ jobs:
         with:
           version: "1.72.0"
 
-      - name: Install build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends make
-
       - name: Verify generated API contracts
-        run: make generate-check lint
+        run: |
+          buf generate
+          git diff --exit-code -- gen frontend/src/gen
+          buf lint
 
       - name: Test backend
-        run: make test
+        run: go test ./cmd/... ./internal/... ./pkg/... ./db/... ./gen/...
 
       - name: Install web dependencies reproducibly
         run: npm --prefix frontend ci
 
       - name: Verify web application
-        run: make web-lint web-build
+        run: |
+          npm --prefix frontend run lint
+          npm --prefix frontend run build
 
       - name: Validate Kubernetes manifests
-        run: make kustomize
+        run: |
+          kubectl kustomize deploy/fish-website >/dev/null
+          kubectl kustomize deploy/fish-website-dev >/dev/null
+          kubectl kustomize deploy/registry >/dev/null
 
   docker:
     name: Build ${{ matrix.name }} image
