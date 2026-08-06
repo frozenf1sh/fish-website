@@ -5,16 +5,15 @@ package home.v1;
 option go_package = "github.com/frozenfish/fish-website/gen/go/home/v1;homev1";
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
 
 // AuthService handles user authentication
 service AuthService {
   // Login authenticates a user with password and returns a token
   rpc Login(LoginRequest) returns (LoginResponse);
   // Refresh exchanges the HttpOnly refresh cookie for a new access token.
-  rpc Refresh(RefreshRequest) returns (LoginResponse);
+  rpc Refresh(RefreshRequest) returns (RefreshResponse);
   // Logout clears the refresh cookie for this browser.
-  rpc Logout(LogoutRequest) returns (google.protobuf.Empty);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
 }
 
 // PostService handles twitter-style timeline posts
@@ -115,7 +114,9 @@ message LoginResponse {
 }
 
 message RefreshRequest {}
+message RefreshResponse { string token = 1; google.protobuf.Timestamp expires_at = 2; }
 message LogoutRequest {}
+message LogoutResponse {}
 
 // Post messages
 message Post {

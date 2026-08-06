@@ -9,7 +9,6 @@ import (
 	context "context"
 	errors "errors"
 	v1 "github.com/frozenfish/fish-website/gen/go/home/v1"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"
 )
@@ -157,9 +156,9 @@ type AuthServiceClient interface {
 	// Login authenticates a user with password and returns a token
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
 	// Refresh exchanges the HttpOnly refresh cookie for a new access token.
-	Refresh(context.Context, *connect.Request[v1.RefreshRequest]) (*connect.Response[v1.LoginResponse], error)
+	Refresh(context.Context, *connect.Request[v1.RefreshRequest]) (*connect.Response[v1.RefreshResponse], error)
 	// Logout clears the refresh cookie for this browser.
-	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[emptypb.Empty], error)
+	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)
 }
 
 // NewAuthServiceClient constructs a client for the home.v1.AuthService service. By default, it uses
@@ -179,13 +178,13 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("Login")),
 			connect.WithClientOptions(opts...),
 		),
-		refresh: connect.NewClient[v1.RefreshRequest, v1.LoginResponse](
+		refresh: connect.NewClient[v1.RefreshRequest, v1.RefreshResponse](
 			httpClient,
 			baseURL+AuthServiceRefreshProcedure,
 			connect.WithSchema(authServiceMethods.ByName("Refresh")),
 			connect.WithClientOptions(opts...),
 		),
-		logout: connect.NewClient[v1.LogoutRequest, emptypb.Empty](
+		logout: connect.NewClient[v1.LogoutRequest, v1.LogoutResponse](
 			httpClient,
 			baseURL+AuthServiceLogoutProcedure,
 			connect.WithSchema(authServiceMethods.ByName("Logout")),
@@ -197,8 +196,8 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 // authServiceClient implements AuthServiceClient.
 type authServiceClient struct {
 	login   *connect.Client[v1.LoginRequest, v1.LoginResponse]
-	refresh *connect.Client[v1.RefreshRequest, v1.LoginResponse]
-	logout  *connect.Client[v1.LogoutRequest, emptypb.Empty]
+	refresh *connect.Client[v1.RefreshRequest, v1.RefreshResponse]
+	logout  *connect.Client[v1.LogoutRequest, v1.LogoutResponse]
 }
 
 // Login calls home.v1.AuthService.Login.
@@ -207,12 +206,12 @@ func (c *authServiceClient) Login(ctx context.Context, req *connect.Request[v1.L
 }
 
 // Refresh calls home.v1.AuthService.Refresh.
-func (c *authServiceClient) Refresh(ctx context.Context, req *connect.Request[v1.RefreshRequest]) (*connect.Response[v1.LoginResponse], error) {
+func (c *authServiceClient) Refresh(ctx context.Context, req *connect.Request[v1.RefreshRequest]) (*connect.Response[v1.RefreshResponse], error) {
 	return c.refresh.CallUnary(ctx, req)
 }
 
 // Logout calls home.v1.AuthService.Logout.
-func (c *authServiceClient) Logout(ctx context.Context, req *connect.Request[v1.LogoutRequest]) (*connect.Response[emptypb.Empty], error) {
+func (c *authServiceClient) Logout(ctx context.Context, req *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error) {
 	return c.logout.CallUnary(ctx, req)
 }
 
@@ -221,9 +220,9 @@ type AuthServiceHandler interface {
 	// Login authenticates a user with password and returns a token
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
 	// Refresh exchanges the HttpOnly refresh cookie for a new access token.
-	Refresh(context.Context, *connect.Request[v1.RefreshRequest]) (*connect.Response[v1.LoginResponse], error)
+	Refresh(context.Context, *connect.Request[v1.RefreshRequest]) (*connect.Response[v1.RefreshResponse], error)
 	// Logout clears the refresh cookie for this browser.
-	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[emptypb.Empty], error)
+	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)
 }
 
 // NewAuthServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -272,11 +271,11 @@ func (UnimplementedAuthServiceHandler) Login(context.Context, *connect.Request[v
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AuthService.Login is not implemented"))
 }
 
-func (UnimplementedAuthServiceHandler) Refresh(context.Context, *connect.Request[v1.RefreshRequest]) (*connect.Response[v1.LoginResponse], error) {
+func (UnimplementedAuthServiceHandler) Refresh(context.Context, *connect.Request[v1.RefreshRequest]) (*connect.Response[v1.RefreshResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AuthService.Refresh is not implemented"))
 }
 
-func (UnimplementedAuthServiceHandler) Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[emptypb.Empty], error) {
+func (UnimplementedAuthServiceHandler) Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AuthService.Logout is not implemented"))
 }
 

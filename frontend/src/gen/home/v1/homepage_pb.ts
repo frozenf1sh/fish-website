@@ -152,6 +152,49 @@ export class RefreshRequest extends Message<RefreshRequest> {
 }
 
 /**
+ * @generated from message home.v1.RefreshResponse
+ */
+export class RefreshResponse extends Message<RefreshResponse> {
+  /**
+   * @generated from field: string token = 1;
+   */
+  token = "";
+
+  /**
+   * @generated from field: google.protobuf.Timestamp expires_at = 2;
+   */
+  expiresAt?: Timestamp;
+
+  constructor(data?: PartialMessage<RefreshResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.RefreshResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "expires_at", kind: "message", T: Timestamp },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RefreshResponse {
+    return new RefreshResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RefreshResponse {
+    return new RefreshResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RefreshResponse {
+    return new RefreshResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: RefreshResponse | PlainMessage<RefreshResponse> | undefined, b: RefreshResponse | PlainMessage<RefreshResponse> | undefined): boolean {
+    return proto3.util.equals(RefreshResponse, a, b);
+  }
+}
+
+/**
  * @generated from message home.v1.LogoutRequest
  */
 export class LogoutRequest extends Message<LogoutRequest> {
@@ -179,6 +222,37 @@ export class LogoutRequest extends Message<LogoutRequest> {
 
   static equals(a: LogoutRequest | PlainMessage<LogoutRequest> | undefined, b: LogoutRequest | PlainMessage<LogoutRequest> | undefined): boolean {
     return proto3.util.equals(LogoutRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.LogoutResponse
+ */
+export class LogoutResponse extends Message<LogoutResponse> {
+  constructor(data?: PartialMessage<LogoutResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.LogoutResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LogoutResponse {
+    return new LogoutResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LogoutResponse {
+    return new LogoutResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LogoutResponse {
+    return new LogoutResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: LogoutResponse | PlainMessage<LogoutResponse> | undefined, b: LogoutResponse | PlainMessage<LogoutResponse> | undefined): boolean {
+    return proto3.util.equals(LogoutResponse, a, b);
   }
 }
 
