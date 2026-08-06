@@ -23,18 +23,6 @@ patches:
   - target:
       group: apps
       version: v1
-      kind: StatefulSet
-      name: minio
-    patch: |-
-      apiVersion: apps/v1
-      kind: StatefulSet
-      metadata:
-        name: minio
-      spec:
-        replicas: 0
-  - target:
-      group: apps
-      version: v1
       kind: Deployment
       name: backend
     patch: |-
