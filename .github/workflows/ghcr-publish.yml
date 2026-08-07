@@ -69,6 +69,11 @@ jobs:
           npm --prefix frontend run lint
           npm --prefix frontend run build
 
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.33.0
+
       - name: Validate Kubernetes manifests
         run: |
           kubectl kustomize deploy/fish-website >/dev/null
