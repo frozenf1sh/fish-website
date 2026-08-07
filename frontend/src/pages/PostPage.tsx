@@ -5,9 +5,9 @@ import { clients } from '../lib/connect'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { MarkdownViewer } from '../components/MarkdownViewer'
 import { showToast } from '../lib/toast'
-import { compressImage } from '../utils/imageCompressor'
 import { useStore } from '../store/useStore'
 import { ImageLightbox } from '../components/ImageLightbox'
+import { MediaPickerDialog } from '../components/MediaPickerDialog'
 
 interface PostDetail {
   id: string
@@ -44,7 +44,7 @@ export function PostPage() {
   const [imageRatios, setImageRatios] = useState<Record<string, number>>({})
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [showMediaPicker, setShowMediaPicker] = useState(false)
   const dragIndexRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -73,51 +73,6 @@ export function PostPage() {
   }, [postId])
 
   const shareUrl = typeof window === 'undefined' ? `/post/${postId}` : `${window.location.origin}/post/${postId}`
-
-  const uploadWithRetry = async (url: string, file: File, headers: Record<string, string>, retries = 2) => {
-    let lastError: unknown
-    for (let i = 0; i <= retries; i += 1) {
-      try {
-        const res = await fetch(url, { method: 'PUT', body: file, headers })
-        if (!res.ok) throw new Error(`upload failed ${res.status}`)
-        return
-      } catch (err) {
-        lastError = err
-      }
-    }
-    throw lastError
-  }
-
-  const handleUploadImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    if (!files.length) return
-    if (fileInputRef.current) fileInputRef.current.value = ''
-
-    try {
-      const appended: string[] = []
-      for (const file of files) {
-        const compressed = await compressImage(file)
-        const req = await clients.album.uploadImageRequest({
-          albumId: 'default',
-          fileName: compressed.name,
-          mimeType: compressed.type,
-          fileSize: compressed.size,
-        })
-        const headers: Record<string, string> = typeof req.headers === 'object' ? { ...req.headers } : {}
-        if (compressed.type && !headers['Content-Type']) headers['Content-Type'] = compressed.type
-        await uploadWithRetry(req.uploadUrl, compressed, headers)
-        const conf = await clients.album.confirmImageUpload({ imageId: req.imageId, uploadUrl: req.uploadUrl })
-        if (conf.image?.url) appended.push(conf.image.url)
-      }
-      if (appended.length) {
-        setImageUrls((prev) => [...prev, ...appended])
-        showToast({ type: 'success', message: `已新增 ${appended.length} 张图片` })
-      }
-    } catch (err) {
-      console.error('upload post images failed', err)
-      showToast({ type: 'error', message: '上传图片失败' })
-    }
-  }
 
   const handleSave = async () => {
     if (!postId) return
@@ -250,8 +205,7 @@ export function PostPage() {
 
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex gap-2">
-                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUploadImages} />
-                <button onClick={() => fileInputRef.current?.click()} className="px-3 py-2 rounded-xl border border-white/20 text-white/85 hover:bg-white/10">上传图片</button>
+                <button onClick={() => setShowMediaPicker(true)} className="px-3 py-2 rounded-xl border border-white/20 text-white/85 hover:bg-white/10">图片资源</button>
               </div>
               <p className="text-white/55 text-sm">拖拽图片卡片可调整顺序，点右上角可删除</p>
             </div>
@@ -332,6 +286,7 @@ export function PostPage() {
           </button>
         </div>
       </motion.div>
+      <MediaPickerDialog open={showMediaPicker} onClose={() => setShowMediaPicker(false)} onConfirm={(images) => setImageUrls((current) => [...current, ...images.map((image) => image.url)])} />
       <ImageLightbox src={selectedImage} alt="放大动态图片" onClose={() => setSelectedImage(null)} />
     </div>
   )

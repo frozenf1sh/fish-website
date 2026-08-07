@@ -21,6 +21,18 @@ const getApiBaseUrl = () => {
   return '/api'
 }
 
+const REQUEST_TIMEOUT_MS = 12000
+
+function withRequestTimeout<T>(request: Promise<T>, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), timeoutMs)
+  })
+  return Promise.race([request, timeout]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer)
+  })
+}
+
 const transport = createConnectTransport({
   baseUrl: getApiBaseUrl(),
   credentials: 'include',
@@ -31,14 +43,14 @@ const transport = createConnectTransport({
         req.header.set('Authorization', `Bearer ${token}`)
       }
       try {
-        return await next(req)
+        return await withRequestTimeout(next(req))
       } catch (err) {
         const connectErr = ConnectError.from(err)
         if (connectErr.code === Code.Unauthenticated && !req.url.endsWith('/Refresh')) {
           const refreshed = await refreshAccessToken()
           if (refreshed) {
             req.header.set('Authorization', `Bearer ${refreshed}`)
-            return next(req)
+            return withRequestTimeout(next(req))
           }
         }
         throw err
@@ -84,7 +96,7 @@ let refreshPromise: Promise<string | null> | null = null
 
 async function refreshAccessToken(): Promise<string | null> {
   if (refreshPromise) return refreshPromise
-  refreshPromise = authClient.refresh({}).then((response) => {
+  refreshPromise = withRequestTimeout(authClient.refresh({})).then((response) => {
     setAuthToken(response.token)
     return response.token
   }).catch(() => {

@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { MediaPickerDialog } from '../components/MediaPickerDialog'
 import { clients } from '../lib/connect'
 import { showToast } from '../lib/toast'
-import { compressImage } from '../utils/imageCompressor'
 import { useStore } from '../store/useStore'
 import type { Album, AlbumImage, ImageReferenceItem } from '../shared/domain/content'
 
@@ -70,13 +70,13 @@ export function AlbumsPage() {
   const [isLoadingAlbums, setIsLoadingAlbums] = useState(true)
   const [isLoadingAlbumDetail, setIsLoadingAlbumDetail] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
+  const [showMediaPicker, setShowMediaPicker] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isMoving, setIsMoving] = useState(false)
   const [isSavingAlbumEdit, setIsSavingAlbumEdit] = useState(false)
   const [isDeletingAlbum, setIsDeletingAlbum] = useState(false)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadedImageIdsRef = useRef<string[]>([])
   const albumListRequestIdRef = useRef(0)
   const albumDetailRequestIdRef = useRef(0)
 
@@ -103,26 +103,6 @@ export function AlbumsPage() {
     }
     return map
   }, [referenceItems])
-
-  const uploadWithRetry = async (url: string, file: File, headers: Record<string, string>, retries = 2) => {
-    let lastError: unknown
-    for (let i = 0; i <= retries; i += 1) {
-      try {
-        const res = await fetch(url, {
-          method: 'PUT',
-          headers,
-          body: file,
-        })
-        if (!res.ok) {
-          throw new Error(`upload failed with status ${res.status}`)
-        }
-        return
-      } catch (err) {
-        lastError = err
-      }
-    }
-    throw lastError
-  }
 
   const hydrateAlbumCardMeta = async (list: Album[]) => {
     return Promise.all(
@@ -282,65 +262,6 @@ export function AlbumsPage() {
     }
   }
 
-  const handleUploadImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    if (!selectedAlbumId || files.length === 0) return
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-
-    setIsUploading(true)
-    try {
-      const uploadedImageIds: string[] = []
-
-      for (const file of files) {
-        const compressedFile = await compressImage(file)
-
-        const req = await clients.album.uploadImageRequest({
-          albumId: selectedAlbumId,
-          fileName: compressedFile.name,
-          mimeType: compressedFile.type,
-          fileSize: compressedFile.size,
-        })
-
-        const headers: Record<string, string> = typeof req.headers === 'object' ? { ...req.headers } : {}
-        if (compressedFile.type && !headers['Content-Type']) {
-          headers['Content-Type'] = compressedFile.type
-        }
-
-        await uploadWithRetry(req.uploadUrl, compressedFile, headers)
-
-        const confirm = await clients.album.confirmImageUpload({
-          imageId: req.imageId,
-          uploadUrl: req.uploadUrl,
-        })
-
-        if (!confirm.image) continue
-        uploadedImageIds.push(confirm.image.id)
-      }
-
-      if (uploadedImageIds.length > 0) {
-        const albumName = selectedAlbum?.name || '未命名相册'
-        const content = `📸 更新了相册《${albumName}》，上传了 ${uploadedImageIds.length} 张照片`
-        await clients.post.createPost({
-          content,
-          imageIds: uploadedImageIds,
-        })
-      }
-
-      const refreshed = await clients.album.getAlbum({ albumId: selectedAlbumId })
-      setSelectedAlbum((refreshed.album as Album | null) || null)
-      setAlbumImages((refreshed.images as AlbumImage[]) || [])
-      setSelectedImageIds([])
-    } catch (err) {
-      console.error('Failed to upload image:', err)
-      showToast({ type: 'error', message: '上传图片失败，请稍后重试' })
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
   const formatTime = (d: Date) =>
     d.toLocaleString('zh-CN', {
       month: '2-digit',
@@ -348,6 +269,28 @@ export function AlbumsPage() {
       hour: '2-digit',
       minute: '2-digit',
     })
+
+  const handleMediaConfirm = async () => {
+    if (!selectedAlbumId) return
+    try {
+      const uploadedImageIds = uploadedImageIdsRef.current
+      if (uploadedImageIds.length > 0) {
+        const albumName = selectedAlbum?.name || '未命名相册'
+        await clients.post.createPost({
+          content: `📸 更新了相册《${albumName}》，上传了 ${uploadedImageIds.length} 张照片`,
+          imageIds: uploadedImageIds,
+        })
+      }
+      const refreshed = await clients.album.getAlbum({ albumId: selectedAlbumId })
+      setSelectedAlbum((refreshed.album as Album | null) || null)
+      setAlbumImages((refreshed.images as AlbumImage[]) || [])
+      setSelectedImageIds([])
+      uploadedImageIdsRef.current = []
+    } catch (error) {
+      console.error('Failed to refresh uploaded images:', error)
+      showToast({ type: 'error', message: '图片已上传，但相册刷新失败，请稍后重试' })
+    }
+  }
 
   const toggleImageSelection = (imageId: string) => {
     setSelectedImageIds((prev) =>
@@ -625,21 +568,15 @@ export function AlbumsPage() {
                 </button>
                 {isLoggedIn && (
                   <>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleUploadImages}
-                      disabled={isUploading}
-                    />
                     <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading || isDeleting}
+                      onClick={() => {
+                        uploadedImageIdsRef.current = []
+                        setShowMediaPicker(true)
+                      }}
+                      disabled={isDeleting}
                       className="btn-primary px-4 py-2 rounded-2xl text-white disabled:opacity-50"
                     >
-                      {isUploading ? '上传中...' : '上传图片'}
+                      上传图片
                     </button>
                     {!isSpecialAlbum(selectedAlbum.id) && (
                       <button
@@ -731,9 +668,9 @@ export function AlbumsPage() {
               </div>
             </div>
 
-            {(isUploading || isLoadingAlbumDetail) && (
+            {isLoadingAlbumDetail && (
               <div className="py-3">
-                <LoadingSpinner text={isUploading ? '正在上传图片...' : '正在加载相册详情...'} />
+                <LoadingSpinner text="正在加载相册详情..." />
               </div>
             )}
 
@@ -806,6 +743,17 @@ export function AlbumsPage() {
           </div>
         )}
       </motion.div>
+
+      <MediaPickerDialog
+        open={showMediaPicker}
+        initialAlbumId={selectedAlbumId}
+        title={`上传到${selectedAlbum?.name || '相册'}`}
+        onClose={() => setShowMediaPicker(false)}
+        onUploaded={(asset) => {
+          uploadedImageIdsRef.current = [...uploadedImageIdsRef.current, asset.id]
+        }}
+        onConfirm={() => { void handleMediaConfirm() }}
+      />
 
       {createPortal(
         <AnimatePresence>

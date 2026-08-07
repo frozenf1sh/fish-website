@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LoadingSpinner } from './LoadingSpinner'
-import { compressImage } from '../utils/imageCompressor'
 import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
+import { MediaPickerDialog, type MediaAsset } from './MediaPickerDialog'
 
 interface PostComposerProps {
   onPostCreated?: () => void
@@ -23,84 +23,11 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
   const [selectedImages, setSelectedImages] = useState<UploadedImage[]>([])
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const composerRef = useRef<HTMLDivElement>(null)
+  const [showMediaPicker, setShowMediaPicker] = useState(false)
   
   const { settings } = useStore()
   const avatarUrl = settings?.avatarUrl
-
-  const uploadWithRetry = async (url: string, file: File, headers: Record<string, string>, retries = 2) => {
-    let lastError: unknown
-    for (let i = 0; i <= retries; i += 1) {
-      try {
-        const res = await fetch(url, {
-          method: 'PUT',
-          body: file,
-          headers,
-        })
-        if (!res.ok) {
-          throw new Error(`upload failed with status ${res.status}`)
-        }
-        return
-      } catch (err) {
-        lastError = err
-      }
-    }
-    throw lastError
-  }
-
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    if (files.length === 0) return
-
-    // clear input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-
-    const newImages = files.map(file => {
-      const tempId = `temp-${Date.now()}-${Math.random()}`
-      return { file, tempId }
-    })
-
-    setSelectedImages(prev => [
-      ...prev,
-      ...newImages.map(img => ({ id: img.tempId, url: URL.createObjectURL(img.file), isUploading: true }))
-    ])
-
-    for (const { file, tempId } of newImages) {
-      try {
-        const compressedFile = await compressImage(file)
-        
-        const reqRes = await clients.album.uploadImageRequest({
-          fileName: compressedFile.name,
-          mimeType: compressedFile.type,
-          fileSize: compressedFile.size,
-          albumId: 'default'
-        })
-
-        const headers: Record<string, string> = typeof reqRes.headers === 'object' ? { ...reqRes.headers } : {}
-        if (compressedFile.type && !headers['Content-Type']) {
-            headers['Content-Type'] = compressedFile.type
-        }
-        await uploadWithRetry(reqRes.uploadUrl, compressedFile, headers)
-
-        const confRes = await clients.album.confirmImageUpload({
-          imageId: reqRes.imageId,
-          uploadUrl: reqRes.uploadUrl,
-        })
-        
-        if (confRes.image) {
-          setSelectedImages(prev => prev.map(img => 
-            img.id === tempId ? { id: confRes.image!.id, url: confRes.image!.url, isUploading: false } : img
-          ))
-        }
-      } catch (err) {
-        console.error('Failed to upload image:', err)
-        setSelectedImages(prev => prev.filter(img => img.id !== tempId)) // remove failed uploads
-      }
-    }
-  }
 
   const handleRemoveImage = (idToRemove: string) => {
     setSelectedImages(prev => prev.filter(img => img.id !== idToRemove))
@@ -217,18 +144,9 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
               className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-white/20 overflow-visible"
             >
               <div className="flex gap-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  disabled={isSubmitting}
-                  onChange={handleImageSelect}
-                />
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => setShowMediaPicker(true)}
                   disabled={isSubmitting}
                   className="p-2 rounded-2xl hover:bg-white/20 text-white/70 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   title="添加图片"
@@ -290,6 +208,11 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
           </div>
         </div>
       </form>
+      <MediaPickerDialog
+        open={showMediaPicker}
+        onClose={() => setShowMediaPicker(false)}
+        onConfirm={(images: MediaAsset[]) => setSelectedImages((current) => [...current, ...images.map((image) => ({ id: image.id, url: image.url, isUploading: false }))])}
+      />
     </motion.div>
   )
 }

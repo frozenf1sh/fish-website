@@ -351,6 +351,7 @@ export function Timeline() {
   const [hasMore, setHasMore] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const mapPosts = (posts: TimelinePost[]): TimelineItem[] => {
     return posts.map((post) => {
@@ -384,24 +385,29 @@ export function Timeline() {
     })
   }
 
-  useEffect(() => {
-    const loadPosts = async () => {
-      try {
-        const response = await clients.post.listPosts({ pageSize: 12, pageToken: '' })
-        setTimelineItems(mapPosts(response.posts || []))
-        setNextPageToken(response.nextPageToken || '')
-        setHasMore(!!response.hasMore)
-      } catch (error) {
-        console.error('Failed to load posts:', error)
-        setTimelineItems([])
-        setNextPageToken('')
-        setHasMore(false)
-      } finally {
-        setIsLoading(false)
-      }
+  const loadPosts = async () => {
+    setIsLoading(true)
+    setLoadError(null)
+    try {
+      const response = await clients.post.listPosts({ pageSize: 12, pageToken: '' })
+      setTimelineItems(mapPosts(response.posts || []))
+      setNextPageToken(response.nextPageToken || '')
+      setHasMore(!!response.hasMore)
+    } catch (error) {
+      console.error('Failed to load posts:', error)
+      setTimelineItems([])
+      setNextPageToken('')
+      setHasMore(false)
+      setLoadError('动态加载失败，请检查网络后重试')
+    } finally {
+      setIsLoading(false)
     }
+  }
 
-    loadPosts()
+  useEffect(() => {
+    void loadPosts()
+    // loadPosts intentionally runs once per Timeline mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadMore = async () => {
@@ -426,6 +432,11 @@ export function Timeline() {
         {isLoading ? (
           <div className="text-center py-12 text-white/50">
             <p>加载中...</p>
+          </div>
+        ) : loadError ? (
+          <div className="py-12 text-center text-white/60">
+            <p className="mb-4">{loadError}</p>
+            <button type="button" onClick={() => { void loadPosts() }} className="glass-light rounded-full border border-white/20 px-5 py-2.5 text-white/85 hover:bg-white/10">重试加载</button>
           </div>
         ) : timelineItems.length === 0 ? (
           <div className="text-center py-12 text-white/50">

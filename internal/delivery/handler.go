@@ -296,7 +296,13 @@ func (h *Handler) ListArticles(ctx context.Context, req *connect.Request[homev1.
 		logger.String("tag", req.Msg.Tag),
 		logger.String("status", fromProtoArticleStatus(req.Msg.Status)))
 
-	articles, nextPageToken, hasMore, folders, err := h.blogUsecase.ListArticles(ctx, int(req.Msg.PageSize), req.Msg.PageToken, req.Msg.FolderId, req.Msg.Tag, fromProtoArticleStatus(req.Msg.Status))
+	status := fromProtoArticleStatus(req.Msg.Status)
+	if _, authenticated := middleware.GetUserFromContext(ctx); !authenticated {
+		// Anonymous readers can only see published content, even if they send a
+		// draft/all status filter to this public procedure.
+		status = "published"
+	}
+	articles, nextPageToken, hasMore, folders, err := h.blogUsecase.ListArticles(ctx, int(req.Msg.PageSize), req.Msg.PageToken, req.Msg.FolderId, req.Msg.Tag, status)
 	if err != nil {
 		logger.Error("ListArticles failed", logger.Err(err))
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -330,6 +336,11 @@ func (h *Handler) GetArticle(ctx context.Context, req *connect.Request[homev1.Ge
 	if err != nil {
 		logger.Error("GetArticle failed", logger.Err(err))
 		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	if article.Status == "draft" {
+		if _, authenticated := middleware.GetUserFromContext(ctx); !authenticated {
+			return nil, connect.NewError(connect.CodeNotFound, errors.New("article not found"))
+		}
 	}
 
 	logger.Debug("GetArticle successful", logger.String("article_id", article.ID))

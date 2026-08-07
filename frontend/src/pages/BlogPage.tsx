@@ -8,8 +8,8 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { BlogFolderTree } from '../components/BlogFolderTree'
 import { ArticleReader } from '../components/ArticleReader'
+import { MediaPickerDialog } from '../components/MediaPickerDialog'
 import { showToast } from '../lib/toast'
-import { compressImage } from '../utils/imageCompressor'
 import { withTimeout } from '../shared/api/async'
 import type { BlogArticle, FolderNode } from '../shared/domain/content'
 
@@ -27,6 +27,13 @@ type ToolbarAction =
   | 'codeBlock'
   | 'table'
   | 'quote'
+
+const componentTemplates = [
+  { value: 'notice', label: '提示框', description: '强调一段重要信息', template: ':::notice{tone="info"}\n在这里输入提示内容。\n:::' },
+  { value: 'details', label: '折叠面板', description: '收起较长的补充内容', template: ':::details{title="点击展开"}\n在这里输入折叠内容。\n:::' },
+  { value: 'columns', label: '双栏内容', description: '并排展示两段内容', template: ':::columns\n左栏内容\n---\n右栏内容\n:::' },
+  { value: 'gallery', label: '图片画廊', description: '批量选择图片并生成网格', template: '' },
+] as const
 
 const ROOT_FOLDER_ID = 'root'
 const BLOG_LIST_TIMEOUT_MS = 15000
@@ -68,6 +75,7 @@ export function BlogPage() {
   const manageRequested = searchParams.get('manage') === '1'
 
   const [articles, setArticles] = useState<BlogArticle[]>([])
+  const [articleFilter, setArticleFilter] = useState<'published' | 'draft' | 'all'>('published')
   const [nextPageToken, setNextPageToken] = useState('')
   const [hasMore, setHasMore] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -84,8 +92,11 @@ export function BlogPage() {
   const [isPublishing, setIsPublishing] = useState(false)
   const [previewMode, setPreviewMode] = useState<PreviewMode>('split')
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
-  const imageUploadInputRef = useRef<HTMLInputElement | null>(null)
+  const markdownImportInputRef = useRef<HTMLInputElement | null>(null)
   const [editHistory, setEditHistory] = useState<{ items: string[]; index: number }>({ items: [''], index: 0 })
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
+  const [mediaInsertMode, setMediaInsertMode] = useState<'image' | 'gallery'>('image')
+  const [saveStatus, setSaveStatus] = useState<'draft' | 'published'>('published')
 
   const [manageMode, setManageMode] = useState(manageRequested)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -169,6 +180,7 @@ export function BlogPage() {
     setTagsInput('')
     setPreviewMode('split')
     setEditHistory({ items: [''], index: 0 })
+    setSaveStatus('published')
   }
 
   const loadArticles = async (options?: { reset?: boolean; pageToken?: string }) => {
@@ -188,7 +200,7 @@ export function BlogPage() {
         pageSize: 20,
         pageToken: requestPageToken,
         folderId,
-        status: 'published',
+        status: articleFilter === 'all' ? undefined : articleFilter,
       })
       const response = await withTimeout(listPromise, BLOG_LIST_TIMEOUT_MS, 'BLOG_LIST_TIMEOUT')
       if (requestId !== articleRequestIdRef.current) return
@@ -228,7 +240,7 @@ export function BlogPage() {
     }
     loadArticles({ reset: true, pageToken: '' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [articleId, folderId])
+  }, [articleId, folderId, articleFilter])
 
   useEffect(() => {
     if (manageMode) {
@@ -248,6 +260,7 @@ export function BlogPage() {
         setTitle(article.title || '')
         setContent(article.content || '')
         setTagsInput((article.tags || []).join(', '))
+        setSaveStatus(article.status)
         setEditHistory({ items: [article.content || ''], index: 0 })
       } catch (err) {
         console.error('Failed to load editing article:', err)
@@ -537,88 +550,45 @@ export function BlogPage() {
     }
   }
 
-  const uploadWithRetry = async (url: string, file: File, headers: Record<string, string>, retries = 2) => {
-    let lastError: unknown
-    for (let i = 0; i <= retries; i += 1) {
-      try {
-        const response = await fetch(url, {
-          method: 'PUT',
-          headers,
-          body: file,
-        })
-        if (!response.ok) {
-          throw new Error(`upload failed with status ${response.status}`)
-        }
-        return
-      } catch (err) {
-        lastError = err
-      }
+  const insertImages = (images: Array<{ fileName: string; url: string }>) => {
+    if (!images.length) return
+    if (mediaInsertMode === 'gallery') {
+      insertSnippet(`:::gallery{columns="3" aspect="square" layout="grid"}\n${images.map((image) => `![${image.fileName}](${image.url})`).join('\n')}\n:::`)
+      return
     }
-    throw lastError
+    insertSnippet(images.map((image) => `![${image.fileName}](${image.url})`).join('\n'))
   }
 
-  const ensureDefaultAlbumId = async () => {
-    const albums = await clients.album.listAlbums({ pageSize: 100, onlyPublic: false })
-    const matched = (albums.albums || []).find((item) => item.name === '默认相册' || item.id === 'default')
-    if (matched?.id) return matched.id
-
-    const created = await clients.album.createAlbum({
-      name: '默认相册',
-      description: '博客图片自动上传',
-      isPublic: false,
-    })
-    if (!created.album?.id) {
-      throw new Error('default album create failed')
+  const insertComponent = (value: string) => {
+    const component = componentTemplates.find((item) => item.value === value)
+    if (!component) return
+    if (component.value === 'gallery') {
+      setMediaInsertMode('gallery')
+      setMediaPickerOpen(true)
+      return
     }
-    return created.album.id
+    insertSnippet(`${component.template}\n\n`)
   }
 
-  const handleInsertUploadedImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleImportMarkdown = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
     if (!file) return
-    if (imageUploadInputRef.current) {
-      imageUploadInputRef.current.value = ''
-    }
-
-    try {
-      showToast({ type: 'info', message: '图片上传中...' })
-      const compressed = await compressImage(file)
-      const albumId = await ensureDefaultAlbumId()
-      const uploadReq = await clients.album.uploadImageRequest({
-        albumId,
-        fileName: compressed.name,
-        mimeType: compressed.type,
-        fileSize: compressed.size,
-      })
-
-      const headers: Record<string, string> = typeof uploadReq.headers === 'object' ? { ...uploadReq.headers } : {}
-      if (compressed.type && !headers['Content-Type']) {
-        headers['Content-Type'] = compressed.type
-      }
-      await uploadWithRetry(uploadReq.uploadUrl, compressed, headers)
-
-      const confirmed = await clients.album.confirmImageUpload({
-        imageId: uploadReq.imageId,
-        uploadUrl: uploadReq.uploadUrl,
-      })
-      const imageUrl = confirmed.image?.url
-      if (!imageUrl) {
-        throw new Error('upload confirm failed')
-      }
-
-      const markdown = `\n![${file.name}](${imageUrl})\n`
-      insertSnippet(markdown)
-      showToast({ type: 'success', message: '图片已上传并插入' })
-    } catch (err) {
-      console.error('insert uploaded image failed', err)
-      showToast({ type: 'error', message: '上传图片失败，请重试' })
-    }
+    const imported = await file.text()
+    const firstHeading = imported.match(/^#\s+(.+)$/m)?.[1]?.trim()
+    if ((title.trim() || content.trim()) && !window.confirm('导入 Markdown 会覆盖当前编辑内容，确定继续吗？')) return
+    setTitle(firstHeading || title)
+    setContent(firstHeading ? imported.replace(/^#\s+.+\n?/, '').trimStart() : imported)
+    setEditHistory({ items: [firstHeading ? imported.replace(/^#\s+.+\n?/, '').trimStart() : imported], index: 0 })
+    showToast({ type: 'success', message: 'Markdown 文件已导入' })
   }
 
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim() || !content.trim()) {
-      showToast({ type: 'warning', message: '请先填写标题和正文内容' })
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null
+    const requestedStatus = submitter?.value === 'draft' ? 'draft' : 'published'
+    if (!title.trim() || (requestedStatus === 'published' && !content.trim())) {
+      showToast({ type: 'warning', message: requestedStatus === 'draft' ? '请至少填写文章标题' : '请先填写标题和正文内容' })
       return
     }
 
@@ -626,6 +596,7 @@ export function BlogPage() {
     try {
       const tags = tagsInput.split(',').map((item) => item.trim()).filter(Boolean)
       let targetID = editingArticleId
+      const wasDraft = editingArticleId && saveStatus === 'draft'
       if (editingArticleId) {
         await clients.blog.updateArticle({
           articleId: editingArticleId,
@@ -633,7 +604,7 @@ export function BlogPage() {
           content: content.trim(),
           folderId,
           tags,
-          status: 'published',
+          status: requestedStatus,
         })
       } else {
         const created = await clients.blog.createArticle({
@@ -641,29 +612,32 @@ export function BlogPage() {
           content: content.trim(),
           folderId,
           tags,
-          status: 'published',
+          status: requestedStatus,
         })
         targetID = created.article?.id || ''
-        if (targetID) {
-          try {
-            await clients.post.createPost({
-              content: `📝 发布了新博客：**${title.trim()}**\n\n${getArticlePreview(content) || '一篇新的博客文章已经发布。'}\n\n[点击阅读](${getShareUrl(targetID)})`,
-              imageIds: [],
-            })
-          } catch (timelineErr) {
-            console.warn('sync blog publish to timeline failed', timelineErr)
-          }
+      }
+
+      if (requestedStatus === 'published' && targetID && (!editingArticleId || wasDraft)) {
+        try {
+          await clients.post.createPost({
+            content: `📝 发布了新博客：**${title.trim()}**\n\n${getArticlePreview(content) || '一篇新的博客文章已经发布。'}\n\n[点击阅读](${getShareUrl(targetID)})`,
+            imageIds: [],
+          })
+        } catch (timelineErr) {
+          console.warn('sync blog publish to timeline failed', timelineErr)
         }
       }
 
       resetComposer()
       window.dispatchEvent(new Event('blog:updated'))
-      if (targetID) {
+      if (targetID && requestedStatus === 'published') {
         navigate(`/blog/${targetID}`)
+      } else if (requestedStatus === 'draft') {
+        setArticleFilter('draft')
       } else {
         await loadArticles({ reset: true, pageToken: '' })
       }
-      showToast({ type: 'success', message: editingArticleId ? '文章已更新' : '文章已创建' })
+      showToast({ type: 'success', message: requestedStatus === 'draft' ? '草稿已保存' : (editingArticleId ? '文章已更新' : '文章已发布') })
     } catch (err) {
       console.error('Failed to save article:', err)
       showToast({ type: 'error', message: editingArticleId ? '更新文章失败，请重试' : '创建文章失败，请重试' })
@@ -775,7 +749,7 @@ export function BlogPage() {
 
     return (
       <div className="pb-8 px-0 sm:px-0">
-        <form onSubmit={handlePublish} className="bg-white text-slate-900 rounded-3xl border border-slate-200 shadow-xl min-h-[80vh] overflow-hidden">
+        <form onSubmit={handlePublish} className="flex h-[calc(100dvh-1rem)] min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-xl sm:h-auto sm:min-h-[80vh]">
           <div className="px-4 sm:px-6 py-4 border-b border-slate-200 bg-slate-50">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
@@ -810,13 +784,18 @@ export function BlogPage() {
               <input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="标签，逗号分隔" className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white" />
             </div>
 
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={() => markdownImportInputRef.current?.click()} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs hover:bg-slate-100">导入 Markdown</button>
+              <select defaultValue="" onChange={(event) => { insertComponent(event.target.value); event.target.value = '' }} className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-700">
+                <option value="">组件 ▾</option>
+                {componentTemplates.map((component) => <option key={component.value} value={component.value}>{component.label} · {component.description}</option>)}
+              </select>
               <button
                 type="button"
-                onClick={() => imageUploadInputRef.current?.click()}
+                onClick={() => { setMediaInsertMode('image'); setMediaPickerOpen(true) }}
                 className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-100"
               >
-                上传图片
+                图片资源
               </button>
               {toolbar.map((item) => (
                 <button key={item.label} type="button" onClick={() => applyToolbarAction(item.action)} className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-100">
@@ -824,37 +803,31 @@ export function BlogPage() {
                 </button>
               ))}
             </div>
-            <input
-              ref={imageUploadInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleInsertUploadedImage}
-            />
+            <input ref={markdownImportInputRef} type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" className="hidden" onChange={handleImportMarkdown} />
           </div>
 
-          <div className={`min-h-[56vh] ${previewMode === 'split' ? 'grid lg:grid-cols-2' : 'grid grid-cols-1'}`}>
+          <div className={`min-h-0 flex-1 overflow-hidden ${previewMode === 'split' ? 'grid lg:grid-cols-2' : 'grid grid-cols-1'}`}>
             {(previewMode === 'edit' || previewMode === 'split') && (
-              <div className={previewMode === 'split' ? 'border-r border-slate-200' : ''}>
+              <div className={`min-h-0 overflow-hidden ${previewMode === 'split' ? 'border-r border-slate-200' : ''}`}>
                 <textarea
                   ref={textareaRef}
                   value={content}
                   onChange={(e) => applyEditorChange(e.target.value)}
                   onKeyDown={handleEditorKeyDown}
                   placeholder="在这里编写 Markdown..."
-                  className="w-full h-full min-h-[56vh] p-4 sm:p-5 resize-none focus:outline-none font-mono text-[14px] leading-6"
+                  className="h-full min-h-0 w-full resize-none overflow-y-auto p-4 font-mono text-[14px] leading-6 focus:outline-none sm:p-5"
                 />
               </div>
             )}
 
             {(previewMode === 'preview' || previewMode === 'split') && (
-              <div className="bg-slate-50 min-h-[56vh] p-4 sm:p-5 overflow-auto">
+              <div className="min-h-0 overflow-y-auto bg-slate-50 p-4 sm:p-5">
                 <MarkdownViewer theme="light" content={content || '### 预览区域\n\n开始输入 Markdown 内容...'} />
               </div>
             )}
           </div>
 
-          <div className="px-4 sm:px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-slate-50 px-4 py-4 sm:px-6">
             <button
               type="button"
               onClick={() => {
@@ -868,11 +841,11 @@ export function BlogPage() {
             >
               取消
             </button>
-            <button type="submit" disabled={isPublishing} className="px-5 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50">
-              {isPublishing ? (editingArticleId ? '更新中...' : '创建中...') : (editingArticleId ? '保存修改' : '发布文章')}
-            </button>
+            <button type="submit" name="save-draft" value="draft" disabled={isPublishing} className="rounded-xl border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-200 disabled:opacity-50">保存草稿</button>
+            <button type="submit" value="published" disabled={isPublishing} className="rounded-xl bg-slate-900 px-5 py-2 text-white hover:bg-slate-800 disabled:opacity-50">{isPublishing ? '保存中...' : (editingArticleId && saveStatus === 'published' ? '保存并发布' : '发布文章')}</button>
           </div>
         </form>
+        <MediaPickerDialog open={mediaPickerOpen} onClose={() => setMediaPickerOpen(false)} onConfirm={insertImages} />
       </div>
     )
   }
@@ -882,6 +855,16 @@ export function BlogPage() {
       <div className="lg:hidden">
         <BlogFolderTree />
       </div>
+
+      {isLoggedIn && (
+        <div className="flex justify-end">
+          <select value={articleFilter} onChange={(event) => setArticleFilter(event.target.value as 'published' | 'draft' | 'all')} className="glass-input w-auto text-sm">
+            <option value="published" className="text-slate-900">已发布</option>
+            <option value="draft" className="text-slate-900">草稿</option>
+            <option value="all" className="text-slate-900">全部文章</option>
+          </select>
+        </div>
+      )}
 
       {isLoggedIn && manageMode && (
         <div className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 space-y-3">
@@ -959,7 +942,10 @@ export function BlogPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="text-left flex-1">
-                  <h3 className="text-white text-lg sm:text-xl font-semibold mb-2">{article.title}</h3>
+                  <div className="mb-2 flex items-center gap-2">
+                    <h3 className="text-white text-lg sm:text-xl font-semibold">{article.title}</h3>
+                    {article.status === 'draft' && <span className="rounded-full border border-amber-200/25 bg-amber-300/15 px-2 py-0.5 text-xs text-amber-100">草稿</span>}
+                  </div>
                   <p className="text-white/65 text-sm mb-3 line-clamp-2 break-all [overflow-wrap:anywhere]">{article.content.replace(/#+\s?.*\n/g, '').trim()}</p>
                 </div>
                 <div className="flex items-center gap-2">

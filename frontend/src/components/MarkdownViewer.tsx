@@ -19,6 +19,27 @@ interface MarkdownViewerProps {
   theme?: 'dark' | 'light'
 }
 
+const escapeHtmlAttribute = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+const expandGalleryBlocks = (value: string) => value.replace(/:::gallery\{([^}]*)\}\n([\s\S]*?)\n:::/g, (_match, options: string, body: string) => {
+  const columns = options.match(/columns="(2|3|4|auto)"/)?.[1] || '3'
+  const aspect = options.match(/aspect="(square|auto)"/)?.[1] || 'auto'
+  const layout = options.match(/layout="(grid|masonry)"/)?.[1] || 'grid'
+  const images = [...body.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)]
+  const markup = images.map(([, alt, src]) => `<figure class="blog-gallery-item"><img src="${escapeHtmlAttribute(src)}" alt="${escapeHtmlAttribute(alt)}" /></figure>`).join('')
+  return `<div class="blog-gallery blog-gallery-columns-${columns} blog-gallery-aspect-${aspect} blog-gallery-layout-${layout}">${markup}</div>`
+})
+
+const escapeHtmlText = (value: string) => escapeHtmlAttribute(value).replace(/\n/g, '<br />')
+
+const expandComponentBlocks = (value: string) => value
+  .replace(/:::notice\{tone="(info|warning|success|danger)"\}\n([\s\S]*?)\n:::/g, (_match, tone: string, body: string) => `<div class="blog-notice blog-notice-${tone}">${escapeHtmlText(body)}</div>`)
+  .replace(/:::details\{title="([^"]*)"\}\n([\s\S]*?)\n:::/g, (_match, title: string, body: string) => `<details class="blog-details"><summary>${escapeHtmlText(title)}</summary><div>${escapeHtmlText(body)}</div></details>`)
+  .replace(/:::columns\n([\s\S]*?)\n:::/g, (_match, body: string) => {
+    const [left, right] = body.split(/\n---\n/)
+    return `<div class="blog-columns"><div>${escapeHtmlText(left || '')}</div><div>${escapeHtmlText(right || '')}</div></div>`
+  })
+
 function CodeBlock({ children, className, theme }: { children: React.ReactNode; className?: string; theme: 'dark' | 'light' }) {
   const [copied, setCopied] = useState(false)
   const text = String(children || '').replace(/\n$/, '')
@@ -68,6 +89,12 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
           remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
           rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex, rehypeSlug]}
           components={{
+          div({ className, children, ...props }) {
+            if (className?.includes('blog-gallery')) {
+              return <div className={className} {...props}>{children}</div>
+            }
+            return <div className={className} {...props}>{children}</div>
+          },
           h1({ children }) {
             return <h1 className={theme === 'dark' ? 'text-3xl font-bold text-white mt-6 mb-3' : 'text-3xl font-bold mt-6 mb-3'}>{children}</h1>
           },
@@ -129,7 +156,7 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
           },
           img({ src, alt, ...props }) {
             return (
-              <div className="my-6">
+              <figure className="my-6 blog-gallery-item">
                 <img
                   src={src}
                   alt={alt}
@@ -145,7 +172,7 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
                     {alt}
                   </p>
                 )}
-              </div>
+              </figure>
             )
           },
           a({ href, children, ...props }) {
@@ -163,7 +190,7 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
           },
           } satisfies Components}
         >
-          {content}
+          {expandGalleryBlocks(expandComponentBlocks(content))}
         </ReactMarkdown>
       </div>
 
