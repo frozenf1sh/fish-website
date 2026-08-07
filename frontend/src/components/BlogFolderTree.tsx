@@ -200,13 +200,37 @@ export function BlogFolderTree() {
       {isLoggedIn && (
         <div className="mt-4 pt-4 border-t border-white/10">
           <div className="space-y-2">
-            <button
-              onClick={() => navigate('/blog?compose=1&folder=root')}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-400/20 to-purple-400/20 text-white/85 hover:text-white hover:from-blue-400/30 hover:to-purple-400/30 transition-all border border-white/10"
-            >
-              <span>📝</span>
-              <span className="font-medium">新建文章</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams)
+                  next.set('folder', activeId)
+                  next.set('manage', searchParams.get('manage') === '1' ? '0' : '1')
+                  next.delete('compose')
+                  next.delete('edit')
+                  if (next.get('manage') === '0') next.delete('manage')
+                  navigate({ pathname: '/blog', search: next.toString() })
+                }}
+                className="min-w-0 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-white/15 bg-white/[0.06] text-white/80 hover:bg-white/12 hover:text-white transition-colors text-sm"
+              >
+                <span aria-hidden="true">☷</span>
+                <span className="truncate">{searchParams.get('manage') === '1' ? '退出管理' : '博客管理'}</span>
+              </button>
+              <button
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams)
+                  next.set('folder', activeId)
+                  next.set('compose', '1')
+                  next.delete('manage')
+                  next.delete('edit')
+                  navigate({ pathname: '/blog', search: next.toString() })
+                }}
+                className="min-w-0 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-sky-200/20 bg-gradient-to-r from-sky-400/15 to-violet-400/15 text-white/85 hover:from-sky-400/25 hover:to-violet-400/25 hover:text-white transition-colors text-sm"
+              >
+                <span aria-hidden="true">＋</span>
+                <span className="truncate">新建文章</span>
+              </button>
+            </div>
 
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 items-center min-w-0">
               <input

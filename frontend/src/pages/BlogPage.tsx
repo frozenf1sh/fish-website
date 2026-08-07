@@ -65,6 +65,7 @@ export function BlogPage() {
   const folderId = searchParams.get('folder') || ROOT_FOLDER_ID
   const composeOpen = searchParams.get('compose') === '1'
   const editingArticleId = searchParams.get('edit') || ''
+  const manageRequested = searchParams.get('manage') === '1'
 
   const [articles, setArticles] = useState<BlogArticle[]>([])
   const [nextPageToken, setNextPageToken] = useState('')
@@ -86,12 +87,19 @@ export function BlogPage() {
   const imageUploadInputRef = useRef<HTMLInputElement | null>(null)
   const [editHistory, setEditHistory] = useState<{ items: string[]; index: number }>({ items: [''], index: 0 })
 
-  const [manageMode, setManageMode] = useState(false)
+  const [manageMode, setManageMode] = useState(manageRequested)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [movePath, setMovePath] = useState<string[]>([ROOT_FOLDER_ID])
   const [isManaging, setIsManaging] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const articleRequestIdRef = useRef(0)
+
+  useEffect(() => {
+    if (manageRequested) {
+      setManageMode(true)
+      setSelectedIds([])
+    }
+  }, [manageRequested])
 
   const articleMap = useMemo(() => {
     const map = new Map<string, BlogArticle>()
@@ -874,32 +882,6 @@ export function BlogPage() {
       <div className="lg:hidden">
         <BlogFolderTree />
       </div>
-
-      {isLoggedIn && (
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => {
-              setManageMode((prev) => !prev)
-              setSelectedIds([])
-            }}
-            className={`px-4 py-2 rounded-2xl border ${manageMode ? 'bg-white/25 text-white border-white/40' : 'border-white/25 text-white/85 hover:bg-white/10'}`}
-          >
-            博客管理
-          </button>
-          <button
-            onClick={() => {
-              resetComposer()
-              const next = new URLSearchParams(searchParams)
-              next.set('compose', '1')
-              next.delete('edit')
-              setSearchParams(next)
-            }}
-            className="btn-primary px-4 py-2 rounded-2xl text-white"
-          >
-            新建文章
-          </button>
-        </div>
-      )}
 
       {isLoggedIn && manageMode && (
         <div className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 space-y-3">
