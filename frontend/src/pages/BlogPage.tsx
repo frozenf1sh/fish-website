@@ -29,9 +29,11 @@ type ToolbarAction =
   | 'quote'
 
 const componentTemplates = [
-  { value: 'notice', label: '提示框', description: '强调一段重要信息', template: ':::notice{tone="info"}\n在这里输入提示内容。\n:::' },
-  { value: 'details', label: '折叠面板', description: '收起较长的补充内容', template: ':::details{title="点击展开"}\n在这里输入折叠内容。\n:::' },
-  { value: 'columns', label: '双栏内容', description: '并排展示两段内容', template: ':::columns\n左栏内容\n---\n右栏内容\n:::' },
+  { value: 'notice', label: '提示框', description: '强调一段重要信息', template: '<div class="blog-html-block blog-notice blog-notice-info" role="note">\n  在这里输入提示内容。\n</div>' },
+  { value: 'details', label: '折叠面板', description: '收起较长的补充内容', template: '<details class="blog-html-block blog-details">\n  <summary>点击展开</summary>\n  <div>在这里输入折叠内容。</div>\n</details>' },
+  { value: 'columns', label: '双栏内容', description: '并排展示两段内容', template: '<div class="blog-html-block blog-columns">\n  <div>左栏内容</div>\n  <div>右栏内容</div>\n</div>' },
+  { value: 'hover-reveal', label: '涂黑悬浮信息', description: '移入或点击后显示文字', template: '<div class="blog-html-block blog-hover-reveal" tabindex="0">\n  <span class="blog-hover-reveal-cover">移入查看</span>\n  <span class="blog-hover-reveal-content">在这里输入隐藏文字。</span>\n</div>' },
+  { value: 'html', label: 'HTML 块', description: '插入可渲染的安全 HTML', template: '<div class="blog-html-block">\n  <p>在这里直接编写 HTML 内容。</p>\n</div>' },
   { value: 'gallery', label: '图片画廊', description: '批量选择图片并生成网格', template: '' },
 ] as const
 
@@ -808,20 +810,20 @@ export function BlogPage() {
 
           <div className={`min-h-0 flex-1 overflow-hidden ${previewMode === 'split' ? 'grid lg:grid-cols-2' : 'grid grid-cols-1'}`}>
             {(previewMode === 'edit' || previewMode === 'split') && (
-              <div className={`min-h-0 overflow-hidden ${previewMode === 'split' ? 'border-r border-slate-200' : ''}`}>
+              <div className={`min-h-0 overflow-hidden bg-white ${previewMode === 'split' ? 'border-r border-slate-200' : ''}`}>
                 <textarea
                   ref={textareaRef}
                   value={content}
                   onChange={(e) => applyEditorChange(e.target.value)}
                   onKeyDown={handleEditorKeyDown}
                   placeholder="在这里编写 Markdown..."
-                  className="h-full min-h-0 w-full resize-none overflow-y-auto p-4 font-mono text-[14px] leading-6 focus:outline-none sm:p-5"
+                  className="h-full min-h-0 w-full resize-none overflow-y-auto bg-white p-4 font-mono text-[14px] leading-6 text-slate-900 placeholder:text-slate-400 focus:outline-none sm:p-5"
                 />
               </div>
             )}
 
             {(previewMode === 'preview' || previewMode === 'split') && (
-              <div className="min-h-0 overflow-y-auto bg-slate-50 p-4 sm:p-5">
+              <div className="min-h-0 overflow-y-auto bg-white p-4 sm:p-5">
                 <MarkdownViewer theme="light" content={content || '### 预览区域\n\n开始输入 Markdown 内容...'} />
               </div>
             )}

@@ -127,6 +127,56 @@ body {
   .blog-columns > div { min-width: 0; }
   .prose-invert .blog-details > div { color: rgb(226 232 240 / 0.8); }
 
+  .blog-html-block { max-width: 100%; }
+
+  .blog-hover-reveal {
+    position: relative;
+    display: flex;
+    min-height: 6rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 1rem;
+    background: #050505;
+    color: white;
+    cursor: help;
+    isolation: isolate;
+  }
+
+  .blog-hover-reveal-cover,
+  .blog-hover-reveal-content {
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .blog-hover-reveal-cover {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    color: rgb(255 255 255 / 0.7);
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+  }
+
+  .blog-hover-reveal-content {
+    padding: 1rem;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+
+  .blog-hover-reveal:hover .blog-hover-reveal-cover,
+  .blog-hover-reveal:focus .blog-hover-reveal-cover {
+    opacity: 0;
+  }
+
+  .blog-hover-reveal:hover .blog-hover-reveal-content,
+  .blog-hover-reveal:focus .blog-hover-reveal-content {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
   @media (max-width: 640px) {
     .blog-gallery-columns-3,
     .blog-gallery-columns-4,

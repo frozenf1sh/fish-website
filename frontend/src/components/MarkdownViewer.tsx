@@ -8,7 +8,7 @@ import remarkBreaks from 'remark-breaks'
 import remarkMath from 'remark-math'
 import rehypeRaw from 'rehype-raw'
 import rehypeKatex from 'rehype-katex'
-import rehypeSanitize from 'rehype-sanitize'
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import rehypeSlug from 'rehype-slug'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -31,6 +31,16 @@ const expandGalleryBlocks = (value: string) => value.replace(/:::gallery\{([^}]*
 })
 
 const escapeHtmlText = (value: string) => escapeHtmlAttribute(value).replace(/\n/g, '<br />')
+
+// Keep raw HTML useful for authored article blocks while retaining the sanitizer's
+// protection against scripts, event handlers, unsafe URLs, and dangerous tags.
+const blogSanitizeSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    '*': [...(defaultSchema.attributes?.['*'] || []), 'className', 'style'],
+  },
+}
 
 const expandComponentBlocks = (value: string) => value
   .replace(/:::notice\{tone="(info|warning|success|danger)"\}\n([\s\S]*?)\n:::/g, (_match, tone: string, body: string) => `<div class="blog-notice blog-notice-${tone}">${escapeHtmlText(body)}</div>`)
@@ -87,7 +97,7 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
       <div className={theme === 'dark' ? 'prose prose-invert max-w-none text-white prose-p:text-white prose-headings:text-white prose-strong:text-white prose-li:text-white prose-blockquote:text-white/85 prose-code:text-pink-200' : 'prose prose-slate max-w-none'}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
-          rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex, rehypeSlug]}
+          rehypePlugins={[rehypeRaw, [rehypeSanitize, blogSanitizeSchema], rehypeKatex, rehypeSlug]}
           components={{
           div({ className, children, ...props }) {
             if (className?.includes('blog-gallery')) {
