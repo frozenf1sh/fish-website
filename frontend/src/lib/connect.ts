@@ -22,6 +22,7 @@ const getApiBaseUrl = () => {
 }
 
 const REQUEST_TIMEOUT_MS = 12000
+const ACCESS_TOKEN_REFRESH_SKEW_MS = 60 * 1000
 
 function withRequestTimeout<T>(request: Promise<T>, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -36,9 +37,13 @@ function withRequestTimeout<T>(request: Promise<T>, timeoutMs = REQUEST_TIMEOUT_
 const transport = createConnectTransport({
   baseUrl: getApiBaseUrl(),
   credentials: 'include',
-  interceptors: [
-    (next) => async (req) => {
-      const token = getAuthToken()
+    interceptors: [
+      (next) => async (req) => {
+      const isAuthProcedure = /\/AuthService\/(Login|Refresh|Logout)$/.test(req.url)
+      let token = getAuthToken()
+      if (token && !isAuthProcedure && isAccessTokenExpiring(token)) {
+        token = await refreshAccessToken()
+      }
       if (token) {
         req.header.set('Authorization', `Bearer ${token}`)
       }
@@ -46,7 +51,7 @@ const transport = createConnectTransport({
         return await withRequestTimeout(next(req))
       } catch (err) {
         const connectErr = ConnectError.from(err)
-        if (connectErr.code === Code.Unauthenticated && !req.url.endsWith('/Refresh')) {
+        if (connectErr.code === Code.Unauthenticated && !isAuthProcedure) {
           const refreshed = await refreshAccessToken()
           if (refreshed) {
             req.header.set('Authorization', `Bearer ${refreshed}`)
@@ -84,6 +89,29 @@ export function getAuthToken(): string | null {
   }
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    return JSON.parse(atob(padded)) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+export function getAccessTokenExpiresAt(token = getAuthToken()): number | null {
+  if (!token) return null
+  const exp = decodeJwtPayload(token)?.exp
+  return typeof exp === 'number' && Number.isFinite(exp) ? exp * 1000 : null
+}
+
+export function isAccessTokenExpiring(token = getAuthToken()): boolean {
+  const expiresAt = getAccessTokenExpiresAt(token)
+  return expiresAt === null || expiresAt - Date.now() <= ACCESS_TOKEN_REFRESH_SKEW_MS
+}
+
 const authClient = createPromiseClient(AuthService, transport)
 const postClient = createPromiseClient(PostService, transport)
 const blogClient = createPromiseClient(BlogService, transport)
@@ -94,18 +122,25 @@ const aboutClient = createPromiseClient(AboutService, transport)
 
 let refreshPromise: Promise<string | null> | null = null
 
-async function refreshAccessToken(): Promise<string | null> {
+export async function refreshAccessToken(): Promise<string | null> {
   if (refreshPromise) return refreshPromise
-  refreshPromise = withRequestTimeout(authClient.refresh({})).then((response) => {
-    setAuthToken(response.token)
-    return response.token
-  }).catch(() => {
-    setAuthToken(null)
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:expired'))
-    return null
-  }).finally(() => {
-    refreshPromise = null
-  })
+  refreshPromise = withRequestTimeout(authClient.refresh({}))
+    .then((response) => {
+      if (!response.token) throw new Error('Refresh returned an empty access token')
+      setAuthToken(response.token)
+      return response.token
+    })
+    .catch((error) => {
+      const connectError = ConnectError.from(error)
+      if (connectError.code === Code.Unauthenticated || connectError.code === Code.PermissionDenied) {
+        setAuthToken(null)
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:expired'))
+      }
+      return null
+    })
+    .finally(() => {
+      refreshPromise = null
+    })
   return refreshPromise
 }
 

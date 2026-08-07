@@ -1,5 +1,12 @@
 import { create } from 'zustand'
-import { clients, setAuthToken, getAuthToken } from '../lib/connect'
+import {
+  clients,
+  getAccessTokenExpiresAt,
+  getAuthToken,
+  isAccessTokenExpiring,
+  refreshAccessToken,
+  setAuthToken,
+} from '../lib/connect'
 
 export interface Settings {
   displayName: string
@@ -21,6 +28,8 @@ interface AppState {
   login: (username: string, password: string) => Promise<void>
   logout: () => void
   checkAuth: () => boolean
+  initializeSession: () => void
+  handleAuthExpired: () => void
 
   // 设置
   settings: Settings | null
@@ -54,7 +63,41 @@ const defaultSettings: Settings = {
   themeColor: '',
 }
 
-export const useStore = create<AppState>((set, get) => ({
+let authRefreshTimer: ReturnType<typeof setTimeout> | undefined
+
+export const useStore = create<AppState>((set, get) => {
+  const clearAccessTokenRefresh = () => {
+    if (authRefreshTimer !== undefined) {
+      clearTimeout(authRefreshTimer)
+      authRefreshTimer = undefined
+    }
+  }
+
+  const scheduleAccessTokenRefresh = (token: string) => {
+    clearAccessTokenRefresh()
+    const expiresAt = getAccessTokenExpiresAt(token)
+    if (expiresAt === null) {
+      void refreshAccessToken()
+      return
+    }
+
+    const delay = Math.max(1000, expiresAt - Date.now() - 60 * 1000)
+    authRefreshTimer = setTimeout(async () => {
+      const currentToken = getAuthToken()
+      if (!currentToken || currentToken !== token) return
+
+      const refreshedToken = await refreshAccessToken()
+      if (refreshedToken) {
+        set({ isLoggedIn: true, token: refreshedToken })
+        scheduleAccessTokenRefresh(refreshedToken)
+      } else if (getAuthToken() === token) {
+        // Keep the session during transient network failures and retry later.
+        authRefreshTimer = setTimeout(() => scheduleAccessTokenRefresh(token), 15 * 1000)
+      }
+    }, delay)
+  }
+
+  return {
   // 认证状态
   isLoggedIn: !!getAuthToken(),
   token: getAuthToken(),
@@ -64,6 +107,7 @@ export const useStore = create<AppState>((set, get) => ({
     const token = response.token
     setAuthToken(token)
     set({ isLoggedIn: true, token, showLoginModal: false })
+    scheduleAccessTokenRefresh(token)
     if (typeof window !== 'undefined') {
       window.location.reload()
     }
@@ -74,6 +118,7 @@ export const useStore = create<AppState>((set, get) => ({
       console.warn('Failed to clear refresh session:', error)
     })
     setAuthToken(null)
+    clearAccessTokenRefresh()
     set({ isLoggedIn: false, token: null, settings: null })
     if (typeof window !== 'undefined') {
       window.location.reload()
@@ -82,11 +127,30 @@ export const useStore = create<AppState>((set, get) => ({
 
   checkAuth: () => {
     const token = getAuthToken()
-    const isLoggedIn = !!token
+    const isLoggedIn = !!token && !isAccessTokenExpiring(token)
     if (isLoggedIn !== get().isLoggedIn) {
       set({ isLoggedIn, token })
     }
+    if (token) scheduleAccessTokenRefresh(token)
     return isLoggedIn
+  },
+
+  initializeSession: () => {
+    const token = getAuthToken()
+    if (!token) {
+      clearAccessTokenRefresh()
+      set({ isLoggedIn: false, token: null })
+      return
+    }
+
+    set({ isLoggedIn: true, token })
+    scheduleAccessTokenRefresh(token)
+  },
+
+  handleAuthExpired: () => {
+    clearAccessTokenRefresh()
+    setAuthToken(null)
+    set({ isLoggedIn: false, token: null, settings: null, showLoginModal: true })
   },
 
   // 设置
@@ -140,4 +204,5 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
   resetAvatarClickCount: () => set({ avatarClickCount: 0 }),
-}))
+  }
+})

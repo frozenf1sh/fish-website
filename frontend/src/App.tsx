@@ -31,6 +31,8 @@ function App() {
     setShowLoginModal,
     setShowSettingsDrawer,
     fetchSettings,
+    initializeSession,
+    handleAuthExpired: handleSessionExpired,
   } = useStore()
 
   const sakuraEnabled = settings?.sakuraParticlesEnabled ?? true
@@ -43,8 +45,12 @@ function App() {
   }, [fetchSettings])
 
   useEffect(() => {
+    initializeSession()
+  }, [initializeSession])
+
+  useEffect(() => {
     const handleAuthExpired = () => {
-      useStore.getState().logout()
+      handleSessionExpired()
       showToast({ type: 'warning', message: '登录已过期，请重新登录' })
     }
 
@@ -52,7 +58,7 @@ function App() {
     return () => {
       window.removeEventListener('auth:expired', handleAuthExpired)
     }
-  }, [])
+  }, [handleSessionExpired])
 
   useEffect(() => {
     const config = readSiteBehaviorConfig(settings?.customLinks)
