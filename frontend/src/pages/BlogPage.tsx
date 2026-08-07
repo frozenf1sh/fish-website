@@ -871,44 +871,35 @@ export function BlogPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-8 px-3 sm:px-0">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel rounded-3xl sm:rounded-4xl p-4 sm:p-6">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h2 className="text-xl sm:text-2xl text-white font-bold text-gradient">博客时间线</h2>
-            <p className="text-white/65 mt-1 text-sm">当前文件夹：{folderId === ROOT_FOLDER_ID ? '根目录' : folderId}</p>
-          </div>
-
-          {isLoggedIn && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setManageMode((prev) => !prev)
-                  setSelectedIds([])
-                }}
-                className={`px-4 py-2 rounded-2xl border ${manageMode ? 'bg-white/25 text-white border-white/40' : 'border-white/25 text-white/85 hover:bg-white/10'}`}
-              >
-                博客管理
-              </button>
-              <button
-                onClick={() => {
-                  resetComposer()
-                  const next = new URLSearchParams(searchParams)
-                  next.set('compose', '1')
-                  next.delete('edit')
-                  setSearchParams(next)
-                }}
-                className="btn-primary px-4 py-2 rounded-2xl text-white"
-              >
-                新建文章
-              </button>
-            </div>
-          )}
-        </div>
-      </motion.div>
-
       <div className="lg:hidden">
         <BlogFolderTree />
       </div>
+
+      {isLoggedIn && (
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => {
+              setManageMode((prev) => !prev)
+              setSelectedIds([])
+            }}
+            className={`px-4 py-2 rounded-2xl border ${manageMode ? 'bg-white/25 text-white border-white/40' : 'border-white/25 text-white/85 hover:bg-white/10'}`}
+          >
+            博客管理
+          </button>
+          <button
+            onClick={() => {
+              resetComposer()
+              const next = new URLSearchParams(searchParams)
+              next.set('compose', '1')
+              next.delete('edit')
+              setSearchParams(next)
+            }}
+            className="btn-primary px-4 py-2 rounded-2xl text-white"
+          >
+            新建文章
+          </button>
+        </div>
+      )}
 
       {isLoggedIn && manageMode && (
         <div className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 space-y-3">

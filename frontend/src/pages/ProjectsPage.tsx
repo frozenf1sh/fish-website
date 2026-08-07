@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
+import { ImageUploadButton } from '../components/ImageUploadButton'
 
 type Project = Awaited<ReturnType<typeof clients.projects.list>>[number]
-type ImageOption = { id: string; fileName: string }
 type ProjectForm = { id: string; title: string; summary: string; linkUrl: string; coverImageId: string }
 
 const emptyForm: ProjectForm = { id: '', title: '', summary: '', linkUrl: '', coverImageId: '' }
@@ -12,7 +12,6 @@ const emptyForm: ProjectForm = { id: '', title: '', summary: '', linkUrl: '', co
 export function ProjectsPage() {
   const isLoggedIn = useStore((state) => state.isLoggedIn)
   const [projects, setProjects] = useState<Project[]>([])
-  const [images, setImages] = useState<ImageOption[]>([])
   const [form, setForm] = useState<ProjectForm>(emptyForm)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -26,20 +25,6 @@ export function ProjectsPage() {
   useEffect(() => {
     loadProjects().catch(console.error).finally(() => setLoading(false))
   }, [])
-
-  useEffect(() => {
-    if (!isLoggedIn) return
-    const loadImages = async () => {
-      const albums = await clients.album.listAlbums({ pageSize: 50 })
-      const all: ImageOption[] = []
-      for (const album of albums.albums) {
-        const detail = await clients.album.getAlbum({ albumId: album.id })
-        all.push(...detail.images.map((image) => ({ id: image.id, fileName: image.fileName })))
-      }
-      setImages(all)
-    }
-    loadImages().catch(console.error)
-  }, [isLoggedIn])
 
   const saveProject = async () => {
     if (!form.title.trim() || !form.coverImageId) return
@@ -89,7 +74,7 @@ export function ProjectsPage() {
           <input className="content-input" placeholder="项目标题" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           <textarea className="content-input" placeholder="项目简介" value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} />
           <input className="content-input" placeholder="项目 URL" value={form.linkUrl} onChange={(e) => setForm({ ...form, linkUrl: e.target.value })} />
-          <select className="content-input" value={form.coverImageId} onChange={(e) => setForm({ ...form, coverImageId: e.target.value })}><option value="">选择封面图片</option>{images.map((image) => <option key={image.id} value={image.id}>{image.fileName}</option>)}</select>
+          <div className="flex flex-wrap items-center gap-3"><ImageUploadButton label="上传封面到默认相册" onUploaded={(image) => setForm((current) => ({ ...current, coverImageId: image.id }))} /><span className="text-xs text-white/50">{form.coverImageId ? '已选择封面，保存后会维护项目引用' : '请选择一张封面图片'}</span></div>
           <button type="button" disabled={isSaving} onClick={saveProject} className="btn-primary rounded-xl px-4 py-2 text-white disabled:opacity-50">{isSaving ? '保存中…' : '保存项目'}</button>
         </section>
       )}

@@ -48,6 +48,7 @@ export function AlbumsPage() {
   const [moveTargetAlbumId, setMoveTargetAlbumId] = useState('')
   const [isMoveMode, setIsMoveMode] = useState(false)
   const [isEditAlbumOpen, setIsEditAlbumOpen] = useState(false)
+  const [isCreateAlbumOpen, setIsCreateAlbumOpen] = useState(false)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editIsPublic, setEditIsPublic] = useState(false)
@@ -272,6 +273,7 @@ export function AlbumsPage() {
       setName('')
       setDescription('')
       setIsPublic(false)
+      setIsCreateAlbumOpen(false)
     } catch (err) {
       console.error('Failed to create album:', err)
       showToast({ type: 'error', message: '创建相册失败，请稍后重试' })
@@ -538,71 +540,15 @@ export function AlbumsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-panel rounded-4xl p-6"
-      >
-        <h2 className="text-2xl text-white font-bold text-gradient">相册空间</h2>
-        <p className="text-white/65 mt-2 text-sm">
-          全后端数据模式：相册列表、相册详情、图片清单全部来自后端接口；删除图片将进入回收站并在每日零点清空。
-        </p>
-      </motion.div>
-
-      {!isLoggedIn && (
-        <div className="glass-card rounded-4xl p-8 text-center text-white/75">
-          <p className="text-5xl mb-3">🌐</p>
-          <p>当前为访客模式，仅可查看公开相册</p>
-        </div>
-      )}
-
-      {isLoggedIn && (
-        <>
-          <motion.form
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            onSubmit={handleCreateAlbum}
-            className="glass-card rounded-4xl p-6 grid gap-4"
-          >
-            <div className="grid md:grid-cols-2 gap-4">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="相册名称"
-                className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white border border-white/20 focus:outline-none focus:border-white/40"
-              />
-              <input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="相册描述（可选）"
-                className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white border border-white/20 focus:outline-none focus:border-white/40"
-              />
-            </div>
-            <label className="inline-flex items-center gap-3 text-white/80 text-sm">
-              <input
-                type="checkbox"
-                checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
-                className="w-4 h-4"
-              />
-              公开相册（默认私密）
-            </label>
-            <div className="flex justify-end">
-              <button type="submit" disabled={isCreating || !name.trim()} className="btn-primary px-5 py-2 rounded-2xl text-white disabled:opacity-50">
-                {isCreating ? '创建中...' : '创建相册'}
-              </button>
-            </div>
-          </motion.form>
-
-        </>
-      )}
-
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-4xl p-6">
         {!selectedAlbumId ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h3 className="text-lg font-semibold text-white">选择相册</h3>
-              {isLoadingAlbums && <span className="text-white/60 text-sm">相册加载中...</span>}
+              <h3 className="text-lg font-semibold text-white">相册</h3>
+              <div className="flex items-center gap-3">
+                {isLoadingAlbums && <span className="text-white/60 text-sm">加载中...</span>}
+                {isLoggedIn && <button type="button" onClick={() => setIsCreateAlbumOpen(true)} className="btn-primary rounded-2xl px-4 py-2 text-sm text-white">创建相册</button>}
+              </div>
             </div>
             {sortedAlbums.length === 0 ? (
               <div className="text-center py-10 text-white/60">
@@ -860,6 +806,46 @@ export function AlbumsPage() {
           </div>
         )}
       </motion.div>
+
+      {createPortal(
+        <AnimatePresence>
+          {isCreateAlbumOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[145] bg-black/55 backdrop-blur-sm p-4 flex items-center justify-center"
+              onClick={() => !isCreating && setIsCreateAlbumOpen(false)}
+            >
+              <motion.form
+                initial={{ scale: 0.96, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.96, opacity: 0 }}
+                onSubmit={handleCreateAlbum}
+                onClick={(event) => event.stopPropagation()}
+                className="w-full max-w-lg glass-panel rounded-3xl p-5 text-white"
+              >
+                <h3 className="text-lg font-semibold">创建相册</h3>
+                <div className="mt-4 space-y-3">
+                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="相册名称" className="content-input" autoFocus />
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="相册描述（可选）" className="content-input min-h-24 resize-y" />
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+                    <div><p className="text-sm text-white/90">公开相册</p><p className="text-xs text-white/45">公开后访客也可以查看</p></div>
+                    <button type="button" role="switch" aria-checked={isPublic} onClick={() => setIsPublic((value) => !value)} className={`relative h-7 w-12 rounded-full transition-colors ${isPublic ? 'bg-sky-400/80' : 'bg-white/15'}`}>
+                      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-5 flex justify-end gap-2">
+                  <button type="button" onClick={() => setIsCreateAlbumOpen(false)} disabled={isCreating} className="rounded-2xl border border-white/25 px-4 py-2 text-white/85 hover:bg-white/10 disabled:opacity-50">取消</button>
+                  <button type="submit" disabled={isCreating || !name.trim()} className="btn-primary rounded-2xl px-4 py-2 text-white disabled:opacity-50">{isCreating ? '创建中…' : '创建相册'}</button>
+                </div>
+              </motion.form>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
 
       {createPortal(
         <AnimatePresence>
