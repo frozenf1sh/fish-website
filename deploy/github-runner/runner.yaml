@@ -21,6 +21,10 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/arch: amd64
+      hostAliases:
+        - ip: 100.68.18.1
+          hostnames:
+            - registry.frozenf1sh.top
       terminationGracePeriodSeconds: 30
       securityContext:
         seccompProfile:
