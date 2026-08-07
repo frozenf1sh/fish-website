@@ -58,6 +58,9 @@ spec:
               mountPath: /runner/_work
             - name: docker-data
               mountPath: /var/lib/docker
+            - name: registry-ca
+              mountPath: /etc/docker/certs.d/registry.frozenf1sh.top
+              readOnly: true
           startupProbe:
             exec:
               command: ["sh", "-c", "test -f /runner/.runner"]
@@ -76,3 +79,6 @@ spec:
           emptyDir: {}
         - name: docker-data
           emptyDir: {}
+        - name: registry-ca
+          configMap:
+            name: registry-frozenf1sh-top-ca
