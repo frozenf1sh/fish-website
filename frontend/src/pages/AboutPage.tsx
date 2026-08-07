@@ -34,11 +34,6 @@ export function AboutPage() {
 
   return (
     <div className="space-y-5 p-4 sm:p-6 pb-24 xl:pb-6">
-      <header>
-        <p className="text-white/50 text-xs uppercase tracking-[0.25em]">About</p>
-        <h1 className="text-2xl font-semibold text-white mt-1">关于我</h1>
-      </header>
-
       {isLoading ? (
         <section className="glass-card rounded-3xl h-24 sm:h-64 animate-pulse" aria-label="正在加载关于页" />
       ) : (

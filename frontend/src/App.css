@@ -166,6 +166,7 @@
   border: 1px solid rgba(255,255,255,.2);
   border-radius: 1rem;
   background: rgba(255,255,255,.1);
+  backdrop-filter: blur(16px) saturate(140%);
   color: white;
   padding: .75rem 1rem;
   outline: none;
@@ -175,7 +176,7 @@
 .content-input:hover { background: rgba(255,255,255,.13); }
 .content-input:focus { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.45); box-shadow: 0 0 0 3px rgba(191,219,254,.12); }
 .content-input::placeholder { color: rgba(255,255,255,.45); }
-.content-input option { color: #111827; }
+.content-input option { color: #111827; background: #e5e7eb; }
 
 .ticks {
   position: relative;

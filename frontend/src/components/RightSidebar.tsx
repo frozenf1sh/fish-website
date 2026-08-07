@@ -36,7 +36,7 @@ export function RightSidebar() {
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="搜索内容..."
-            className="w-full px-3 py-2 rounded-2xl bg-white/10 text-white placeholder-white/40 border border-white/20 focus:outline-none"
+            className="glass-input"
           />
         </motion.form>
 

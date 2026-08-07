@@ -60,13 +60,7 @@ export function ProjectsPage() {
 
   return (
     <div className="space-y-4 p-4 sm:p-6 pb-24 xl:pb-6">
-      <header className="flex items-end justify-between gap-3">
-        <div>
-          <p className="text-white/50 text-xs uppercase tracking-[0.25em]">Projects</p>
-          <h1 className="text-2xl font-semibold text-white mt-1">项目</h1>
-        </div>
-        {isLoggedIn && <button type="button" onClick={() => { setForm(emptyForm); setIsEditorOpen(true) }} className="btn-primary rounded-xl px-4 py-2 text-white">新建项目</button>}
-      </header>
+      {isLoggedIn && <div className="flex justify-end"><button type="button" onClick={() => { setForm(emptyForm); setIsEditorOpen(true) }} className="btn-primary rounded-xl px-4 py-2 text-white">新建项目</button></div>}
 
       {isLoggedIn && isEditorOpen && (
         <section className="glass-card rounded-3xl p-5 space-y-3">

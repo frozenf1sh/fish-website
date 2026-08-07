@@ -213,7 +213,7 @@ export function BlogFolderTree() {
                 value={creatingName}
                 onChange={(e) => setCreatingName(e.target.value)}
                 placeholder="在当前目录创建子文件夹"
-                className="w-full min-w-0 px-3 py-2 rounded-xl bg-white/10 text-white text-sm border border-white/20 placeholder:text-white/45"
+                className="glass-input min-w-0 text-sm"
               />
               <button
                 onClick={createChildFolder}

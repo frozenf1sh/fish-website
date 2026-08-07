@@ -122,6 +122,23 @@ body {
   .nav-item:hover {
     background: rgba(255, 255, 255, 0.2);
   }
+
+  .glass-input {
+    @apply w-full rounded-2xl border border-white/20 bg-white/10 px-3 py-2 text-white placeholder:text-white/45 backdrop-blur-md outline-none transition-colors;
+  }
+
+  .glass-input:hover {
+    @apply bg-white/15;
+  }
+
+  .glass-input:focus {
+    @apply border-white/40 bg-white/15;
+  }
+
+  .glass-input option {
+    color: #111827;
+    background: #e5e7eb;
+  }
 }
 
 #tsparticles {
