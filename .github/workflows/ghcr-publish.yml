@@ -18,6 +18,8 @@ permissions:
   contents: write
 
 env:
+  # The self-hosted runner mounts the registry CA from the cluster-managed
+  # ConfigMap before Buildx starts.
   REGISTRY: registry.frozenf1sh.top
   IMAGE_PREFIX: registry.frozenf1sh.top/fish-website
 
