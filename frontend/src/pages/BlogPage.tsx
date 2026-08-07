@@ -7,6 +7,7 @@ import { MarkdownViewer } from '../components/MarkdownViewer'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { BlogFolderTree } from '../components/BlogFolderTree'
+import { ArticleReader } from '../components/ArticleReader'
 import { showToast } from '../lib/toast'
 import { compressImage } from '../utils/imageCompressor'
 import { withTimeout } from '../shared/api/async'
@@ -46,6 +47,14 @@ const isUpdatedAfterCreated = (article: BlogArticle) => {
   if (!created || !updated) return false
   return updated.getTime()-created.getTime() > 1000
 }
+
+const getArticlePreview = (value: string) => value
+  .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+  .replace(/[`*_>#]/g, '')
+  .replace(/\[|\]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .slice(0, 220)
 
 export function BlogPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -630,7 +639,7 @@ export function BlogPage() {
         if (targetID) {
           try {
             await clients.post.createPost({
-              content: `📝 发布了新博客：**${title.trim()}**\n\n[点击阅读](${getShareUrl(targetID)})`,
+              content: `📝 发布了新博客：**${title.trim()}**\n\n${getArticlePreview(content) || '一篇新的博客文章已经发布。'}\n\n[点击阅读](${getShareUrl(targetID)})`,
               imageIds: [],
             })
           } catch (timelineErr) {
@@ -726,24 +735,15 @@ export function BlogPage() {
         ) : !sharedArticle ? (
           <div className="glass-card rounded-4xl p-8 text-center text-white/70">文章不存在或已删除</div>
         ) : (
-          <div className="bg-white text-slate-900 rounded-none sm:rounded-3xl border border-slate-200 shadow-xl p-4 sm:p-6">
-            <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-slate-200">
-              <div>
-                <h1 className="text-slate-900 text-2xl sm:text-3xl font-bold">{sharedArticle.title}</h1>
-                <p className="text-slate-500 text-sm mt-1">
-                  创建于 {formatDate(sharedArticle.createdAt)}
-                  {isUpdatedAfterCreated(sharedArticle) ? ` · 修改于 ${formatDate(sharedArticle.updatedAt)}` : ''}
-                </p>
-              </div>
-              <div className="flex gap-2">
+          <ArticleReader
+            article={sharedArticle}
+            actions={(
+              <>
                 <button onClick={() => copyShareUrl(sharedArticle.id)} className="px-3 py-2 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-100">复制链接</button>
                 <button onClick={() => navigate('/blog')} className="px-3 py-2 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-100">返回列表</button>
-              </div>
-            </div>
-            <div className="mt-5 text-slate-900">
-              <MarkdownViewer content={sharedArticle.content} theme="light" />
-            </div>
-          </div>
+              </>
+            )}
+          />
         )}
       </div>
     )
@@ -767,7 +767,7 @@ export function BlogPage() {
 
     return (
       <div className="pb-8 px-0 sm:px-0">
-        <form onSubmit={handlePublish} className="bg-white text-slate-900 rounded-none sm:rounded-3xl border border-slate-200 shadow-xl min-h-[80vh] overflow-hidden">
+        <form onSubmit={handlePublish} className="bg-white text-slate-900 rounded-3xl border border-slate-200 shadow-xl min-h-[80vh] overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-slate-200 bg-slate-50">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">

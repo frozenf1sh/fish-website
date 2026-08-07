@@ -19,6 +19,14 @@ func (u *AboutUsecase) ListImages(ctx context.Context) ([]*domain.AboutImage, er
 	return u.repo.ListImages(ctx)
 }
 
+func (u *AboutUsecase) GetFeaturedArticleID(ctx context.Context) (string, error) {
+	return u.repo.GetFeaturedArticleID(ctx)
+}
+
+func (u *AboutUsecase) SetFeaturedArticleID(ctx context.Context, articleID string) error {
+	return u.repo.SetFeaturedArticleID(ctx, articleID)
+}
+
 func (u *AboutUsecase) AddImage(ctx context.Context, imageID string) (*domain.AboutImage, error) {
 	if imageID == "" {
 		return nil, fmt.Errorf("image id is required")

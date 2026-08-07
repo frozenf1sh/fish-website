@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddAboutImageRequest, AddAboutImageResponse, AnalyzeImageReferencesRequest, AnalyzeImageReferencesResponse, ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, CreateProjectRequest, CreateProjectResponse, DeleteAlbumRequest, DeleteAlbumResponse, DeleteArticleRequest, DeleteArticleResponse, DeleteFolderRequest, DeleteFolderResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, DeletePostResponse, DeleteProjectRequest, DeleteProjectResponse, GetAboutRequest, GetAboutResponse, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetProjectRequest, GetProjectResponse, GetSettingsRequest, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, ListProjectsRequest, ListProjectsResponse, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, MoveImagesRequest, MoveImagesResponse, RefreshRequest, RefreshResponse, RemoveAboutImageRequest, RemoveAboutImageResponse, ReorderAboutImagesRequest, ReorderAboutImagesResponse, ReorderProjectsRequest, ReorderProjectsResponse, RepairImageReferencesRequest, RepairImageReferencesResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateProjectRequest, UpdateProjectResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { AddAboutImageRequest, AddAboutImageResponse, AnalyzeImageReferencesRequest, AnalyzeImageReferencesResponse, ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, CreateProjectRequest, CreateProjectResponse, DeleteAlbumRequest, DeleteAlbumResponse, DeleteArticleRequest, DeleteArticleResponse, DeleteFolderRequest, DeleteFolderResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, DeletePostResponse, DeleteProjectRequest, DeleteProjectResponse, GetAboutRequest, GetAboutResponse, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetProjectRequest, GetProjectResponse, GetSettingsRequest, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, ListProjectsRequest, ListProjectsResponse, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, MoveImagesRequest, MoveImagesResponse, RefreshRequest, RefreshResponse, RemoveAboutImageRequest, RemoveAboutImageResponse, ReorderAboutImagesRequest, ReorderAboutImagesResponse, ReorderProjectsRequest, ReorderProjectsResponse, RepairImageReferencesRequest, RepairImageReferencesResponse, UpdateAboutRequest, UpdateAboutResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateProjectRequest, UpdateProjectResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -460,6 +460,15 @@ export const AboutService = {
       name: "GetAbout",
       I: GetAboutRequest,
       O: GetAboutResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc home.v1.AboutService.UpdateAbout
+     */
+    updateAbout: {
+      name: "UpdateAbout",
+      I: UpdateAboutRequest,
+      O: UpdateAboutResponse,
       kind: MethodKind.Unary,
     },
     /**

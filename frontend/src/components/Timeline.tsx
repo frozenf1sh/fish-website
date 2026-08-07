@@ -18,6 +18,7 @@ interface TimelineItem {
   images?: string[]
   meta?: {
     title?: string
+    articleId?: string
     albumName?: string
     imageCount?: number
     readTime?: number
@@ -25,6 +26,19 @@ interface TimelineItem {
 }
 
 type TimelinePost = Awaited<ReturnType<typeof clients.post.listPosts>>['posts'][number]
+
+const getPreviewText = (content: string) => content
+  .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+  .replace(/[`*_>#]/g, '')
+  .replace(/\[|\]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const parseBlogAnnouncement = (content: string) => {
+  const match = content.match(/^📝 发布了新博客：\*\*(.+?)\*\*\n\n([\s\S]*?)(?:\n\n)?\[点击阅读\]\((\S*\/blog\/[^)]+)\)$/)
+  if (!match) return null
+  return { title: match[1], preview: getPreviewText(match[2]), articleId: match[3].slice(match[3].lastIndexOf('/blog/') + '/blog/'.length) }
+}
 
 const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number; onDelete?: (id: string) => void }) => {
   const { settings, isLoggedIn } = useStore()
@@ -256,12 +270,14 @@ const SystemCard = ({ item, index }: { item: TimelineItem; index: number }) => {
 }
 
 const BlogCard = ({ item, index }: { item: TimelineItem; index: number }) => {
+  const navigate = useNavigate()
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04 }}
       whileHover={{ scale: 1.005, y: -1 }}
+      onClick={() => navigate(`/blog/${item.id}`)}
       className="glass-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 transition-all cursor-pointer overflow-hidden relative"
     >
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 z-10"></div>
@@ -279,11 +295,21 @@ const BlogCard = ({ item, index }: { item: TimelineItem; index: number }) => {
           </h3>
         )}
         <div className="text-white/75 text-sm leading-relaxed line-clamp-3">
-          {item.content.replace(/#+.*\n/g, '').substring(0, 150)}...
+          {getPreviewText(item.content).substring(0, 180)}{getPreviewText(item.content).length > 180 ? '…' : ''}
         </div>
-        <p className="text-white/40 text-sm mt-3">
-          {item.timestamp}
-        </p>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <p className="text-white/40 text-sm">{item.timestamp}</p>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              navigate(`/blog/${item.id}`)
+            }}
+            className="inline-flex items-center gap-2 rounded-2xl bg-white/15 border border-white/25 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/25"
+          >
+            阅读文章 <span aria-hidden="true">→</span>
+          </button>
+        </div>
       </div>
     </motion.div>
   )
@@ -337,6 +363,16 @@ export function Timeline() {
           hour: '2-digit',
           minute: '2-digit'
         })
+      }
+      const blogAnnouncement = parseBlogAnnouncement(post.content)
+      if (blogAnnouncement) {
+        return {
+          id: blogAnnouncement.articleId,
+          type: 'blog',
+          timestamp: timestampStr,
+          content: blogAnnouncement.preview,
+          meta: { title: blogAnnouncement.title, articleId: blogAnnouncement.articleId },
+        }
       }
       return {
         id: post.id,

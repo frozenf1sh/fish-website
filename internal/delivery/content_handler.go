@@ -68,11 +68,22 @@ func (h *Handler) GetAbout(ctx context.Context, _ *connect.Request[homev1.GetAbo
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	featuredArticleID, err := h.aboutUsecase.GetFeaturedArticleID(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 	result := make([]*homev1.AboutImage, 0, len(images))
 	for _, image := range images {
 		result = append(result, toProtoAboutImage(image))
 	}
-	return connect.NewResponse(&homev1.GetAboutResponse{Settings: toProtoSettings(settings), Images: result}), nil
+	return connect.NewResponse(&homev1.GetAboutResponse{Settings: toProtoSettings(settings), Images: result, FeaturedArticleId: featuredArticleID}), nil
+}
+
+func (h *Handler) UpdateAbout(ctx context.Context, req *connect.Request[homev1.UpdateAboutRequest]) (*connect.Response[homev1.UpdateAboutResponse], error) {
+	if err := h.aboutUsecase.SetFeaturedArticleID(ctx, req.Msg.FeaturedArticleId); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	return connect.NewResponse(&homev1.UpdateAboutResponse{FeaturedArticleId: req.Msg.FeaturedArticleId}), nil
 }
 
 func (h *Handler) AddAboutImage(ctx context.Context, req *connect.Request[homev1.AddAboutImageRequest]) (*connect.Response[homev1.AddAboutImageResponse], error) {

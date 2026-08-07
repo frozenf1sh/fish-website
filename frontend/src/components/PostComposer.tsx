@@ -24,6 +24,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const composerRef = useRef<HTMLDivElement>(null)
   
   const { settings } = useStore()
   const avatarUrl = settings?.avatarUrl
@@ -137,6 +138,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
 
   return (
     <motion.div
+      ref={composerRef}
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       className="glass-panel rounded-3xl sm:rounded-4xl p-4 sm:p-6 mb-4 sm:mb-6 mx-3 sm:mx-0"
@@ -157,6 +159,14 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onFocus={() => setIsExpanded(true)}
+              onBlur={(e) => {
+                const nextFocusedElement = e.relatedTarget as Node | null
+                const focusStayedInsideComposer = nextFocusedElement && composerRef.current?.contains(nextFocusedElement)
+                if (!focusStayedInsideComposer && !content.trim() && selectedImages.length === 0) {
+                  setIsExpanded(false)
+                  setShowEmojiPicker(false)
+                }
+              }}
               placeholder="在想些什么呢？"
               aria-label="发布新动态"
               aria-expanded={isExpanded}

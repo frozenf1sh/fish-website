@@ -140,6 +140,9 @@ const (
 	ProjectServiceReorderProjectsProcedure = "/home.v1.ProjectService/ReorderProjects"
 	// AboutServiceGetAboutProcedure is the fully-qualified name of the AboutService's GetAbout RPC.
 	AboutServiceGetAboutProcedure = "/home.v1.AboutService/GetAbout"
+	// AboutServiceUpdateAboutProcedure is the fully-qualified name of the AboutService's UpdateAbout
+	// RPC.
+	AboutServiceUpdateAboutProcedure = "/home.v1.AboutService/UpdateAbout"
 	// AboutServiceAddAboutImageProcedure is the fully-qualified name of the AboutService's
 	// AddAboutImage RPC.
 	AboutServiceAddAboutImageProcedure = "/home.v1.AboutService/AddAboutImage"
@@ -1386,6 +1389,7 @@ func (UnimplementedProjectServiceHandler) ReorderProjects(context.Context, *conn
 // AboutServiceClient is a client for the home.v1.AboutService service.
 type AboutServiceClient interface {
 	GetAbout(context.Context, *connect.Request[v1.GetAboutRequest]) (*connect.Response[v1.GetAboutResponse], error)
+	UpdateAbout(context.Context, *connect.Request[v1.UpdateAboutRequest]) (*connect.Response[v1.UpdateAboutResponse], error)
 	AddAboutImage(context.Context, *connect.Request[v1.AddAboutImageRequest]) (*connect.Response[v1.AddAboutImageResponse], error)
 	RemoveAboutImage(context.Context, *connect.Request[v1.RemoveAboutImageRequest]) (*connect.Response[v1.RemoveAboutImageResponse], error)
 	ReorderAboutImages(context.Context, *connect.Request[v1.ReorderAboutImagesRequest]) (*connect.Response[v1.ReorderAboutImagesResponse], error)
@@ -1406,6 +1410,12 @@ func NewAboutServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			httpClient,
 			baseURL+AboutServiceGetAboutProcedure,
 			connect.WithSchema(aboutServiceMethods.ByName("GetAbout")),
+			connect.WithClientOptions(opts...),
+		),
+		updateAbout: connect.NewClient[v1.UpdateAboutRequest, v1.UpdateAboutResponse](
+			httpClient,
+			baseURL+AboutServiceUpdateAboutProcedure,
+			connect.WithSchema(aboutServiceMethods.ByName("UpdateAbout")),
 			connect.WithClientOptions(opts...),
 		),
 		addAboutImage: connect.NewClient[v1.AddAboutImageRequest, v1.AddAboutImageResponse](
@@ -1432,6 +1442,7 @@ func NewAboutServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 // aboutServiceClient implements AboutServiceClient.
 type aboutServiceClient struct {
 	getAbout           *connect.Client[v1.GetAboutRequest, v1.GetAboutResponse]
+	updateAbout        *connect.Client[v1.UpdateAboutRequest, v1.UpdateAboutResponse]
 	addAboutImage      *connect.Client[v1.AddAboutImageRequest, v1.AddAboutImageResponse]
 	removeAboutImage   *connect.Client[v1.RemoveAboutImageRequest, v1.RemoveAboutImageResponse]
 	reorderAboutImages *connect.Client[v1.ReorderAboutImagesRequest, v1.ReorderAboutImagesResponse]
@@ -1440,6 +1451,11 @@ type aboutServiceClient struct {
 // GetAbout calls home.v1.AboutService.GetAbout.
 func (c *aboutServiceClient) GetAbout(ctx context.Context, req *connect.Request[v1.GetAboutRequest]) (*connect.Response[v1.GetAboutResponse], error) {
 	return c.getAbout.CallUnary(ctx, req)
+}
+
+// UpdateAbout calls home.v1.AboutService.UpdateAbout.
+func (c *aboutServiceClient) UpdateAbout(ctx context.Context, req *connect.Request[v1.UpdateAboutRequest]) (*connect.Response[v1.UpdateAboutResponse], error) {
+	return c.updateAbout.CallUnary(ctx, req)
 }
 
 // AddAboutImage calls home.v1.AboutService.AddAboutImage.
@@ -1460,6 +1476,7 @@ func (c *aboutServiceClient) ReorderAboutImages(ctx context.Context, req *connec
 // AboutServiceHandler is an implementation of the home.v1.AboutService service.
 type AboutServiceHandler interface {
 	GetAbout(context.Context, *connect.Request[v1.GetAboutRequest]) (*connect.Response[v1.GetAboutResponse], error)
+	UpdateAbout(context.Context, *connect.Request[v1.UpdateAboutRequest]) (*connect.Response[v1.UpdateAboutResponse], error)
 	AddAboutImage(context.Context, *connect.Request[v1.AddAboutImageRequest]) (*connect.Response[v1.AddAboutImageResponse], error)
 	RemoveAboutImage(context.Context, *connect.Request[v1.RemoveAboutImageRequest]) (*connect.Response[v1.RemoveAboutImageResponse], error)
 	ReorderAboutImages(context.Context, *connect.Request[v1.ReorderAboutImagesRequest]) (*connect.Response[v1.ReorderAboutImagesResponse], error)
@@ -1476,6 +1493,12 @@ func NewAboutServiceHandler(svc AboutServiceHandler, opts ...connect.HandlerOpti
 		AboutServiceGetAboutProcedure,
 		svc.GetAbout,
 		connect.WithSchema(aboutServiceMethods.ByName("GetAbout")),
+		connect.WithHandlerOptions(opts...),
+	)
+	aboutServiceUpdateAboutHandler := connect.NewUnaryHandler(
+		AboutServiceUpdateAboutProcedure,
+		svc.UpdateAbout,
+		connect.WithSchema(aboutServiceMethods.ByName("UpdateAbout")),
 		connect.WithHandlerOptions(opts...),
 	)
 	aboutServiceAddAboutImageHandler := connect.NewUnaryHandler(
@@ -1500,6 +1523,8 @@ func NewAboutServiceHandler(svc AboutServiceHandler, opts ...connect.HandlerOpti
 		switch r.URL.Path {
 		case AboutServiceGetAboutProcedure:
 			aboutServiceGetAboutHandler.ServeHTTP(w, r)
+		case AboutServiceUpdateAboutProcedure:
+			aboutServiceUpdateAboutHandler.ServeHTTP(w, r)
 		case AboutServiceAddAboutImageProcedure:
 			aboutServiceAddAboutImageHandler.ServeHTTP(w, r)
 		case AboutServiceRemoveAboutImageProcedure:
@@ -1517,6 +1542,10 @@ type UnimplementedAboutServiceHandler struct{}
 
 func (UnimplementedAboutServiceHandler) GetAbout(context.Context, *connect.Request[v1.GetAboutRequest]) (*connect.Response[v1.GetAboutResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AboutService.GetAbout is not implemented"))
+}
+
+func (UnimplementedAboutServiceHandler) UpdateAbout(context.Context, *connect.Request[v1.UpdateAboutRequest]) (*connect.Response[v1.UpdateAboutResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AboutService.UpdateAbout is not implemented"))
 }
 
 func (UnimplementedAboutServiceHandler) AddAboutImage(context.Context, *connect.Request[v1.AddAboutImageRequest]) (*connect.Response[v1.AddAboutImageResponse], error) {

@@ -97,6 +97,7 @@ service ProjectService {
 // AboutService manages the public about-page photo collection.
 service AboutService {
   rpc GetAbout(GetAboutRequest) returns (GetAboutResponse);
+  rpc UpdateAbout(UpdateAboutRequest) returns (UpdateAboutResponse);
   rpc AddAboutImage(AddAboutImageRequest) returns (AddAboutImageResponse);
   rpc RemoveAboutImage(RemoveAboutImageRequest) returns (RemoveAboutImageResponse);
   rpc ReorderAboutImages(ReorderAboutImagesRequest) returns (ReorderAboutImagesResponse);
@@ -483,7 +484,13 @@ message ReorderProjectsResponse {}
 
 message AboutImage { string id = 1; Image image = 2; int32 sort_order = 3; }
 message GetAboutRequest {}
-message GetAboutResponse { Settings settings = 1; repeated AboutImage images = 2; }
+message GetAboutResponse {
+  Settings settings = 1;
+  repeated AboutImage images = 2;
+  string featured_article_id = 3;
+}
+message UpdateAboutRequest { string featured_article_id = 1; }
+message UpdateAboutResponse { string featured_article_id = 1; }
 message AddAboutImageRequest { string image_id = 1; }
 message AddAboutImageResponse { AboutImage image = 1; }
 message RemoveAboutImageRequest { string id = 1; }

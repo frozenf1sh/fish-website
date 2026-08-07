@@ -61,6 +61,8 @@ type ProjectRepository interface {
 // AboutRepository defines the editable about page data access.
 type AboutRepository interface {
 	ListImages(ctx context.Context) ([]*AboutImage, error)
+	GetFeaturedArticleID(ctx context.Context) (string, error)
+	SetFeaturedArticleID(ctx context.Context, articleID string) error
 	AddImage(ctx context.Context, image *AboutImage) (*AboutImage, error)
 	RemoveImage(ctx context.Context, id string) error
 	ReorderImages(ctx context.Context, ids []string) error

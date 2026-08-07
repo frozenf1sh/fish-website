@@ -601,8 +601,13 @@ export const clients = {
       const response = await aboutClient.getAbout({})
       return {
         settings: response.settings,
+        featuredArticleId: response.featuredArticleId || '',
         images: response.images.map((item) => ({ id: item.id, sortOrder: Number(item.sortOrder), image: item.image ? { id: item.image.id, url: item.image.url, thumbnailUrl: item.image.thumbnailUrl } : null })),
       }
+    },
+    setFeaturedArticle: async (articleId: string) => {
+      const response = await aboutClient.updateAbout({ featuredArticleId: articleId })
+      return { featuredArticleId: response.featuredArticleId || '' }
     },
     addImage: async (imageId: string) => (await aboutClient.addAboutImage({ imageId })).image,
     removeImage: async (id: string) => { await aboutClient.removeAboutImage({ id }); return {} },

@@ -1402,6 +1402,25 @@ func (r *postgresProjectRepository) Reorder(ctx context.Context, ids []string) e
 
 type postgresAboutRepository PostgresRepository
 
+func (r *postgresAboutRepository) GetFeaturedArticleID(ctx context.Context) (string, error) {
+	var articleID sql.NullString
+	if err := r.pool.QueryRow(ctx, `SELECT featured_article_id FROM about_page_settings WHERE id = 1`).Scan(&articleID); err != nil {
+		return "", fmt.Errorf("get about featured article: %w", err)
+	}
+	return articleID.String, nil
+}
+
+func (r *postgresAboutRepository) SetFeaturedArticleID(ctx context.Context, articleID string) error {
+	var value any
+	if articleID != "" {
+		value = articleID
+	}
+	if _, err := r.pool.Exec(ctx, `UPDATE about_page_settings SET featured_article_id = $1, updated_at = NOW() WHERE id = 1`, value); err != nil {
+		return fmt.Errorf("set about featured article: %w", err)
+	}
+	return nil
+}
+
 func (r *postgresAboutRepository) ListImages(ctx context.Context) ([]*domain.AboutImage, error) {
 	rows, err := r.pool.Query(ctx, `SELECT a.id,a.image_id,a.sort_order,a.created_at,i.id,i.album_id,i.object_key,i.thumbnail_object_key,i.url,i.thumbnail_url,i.file_name,i.file_size,i.mime_type,i.created_at FROM about_images a INNER JOIN images i ON i.id=a.image_id ORDER BY a.sort_order,a.created_at,a.id`)
 	if err != nil {

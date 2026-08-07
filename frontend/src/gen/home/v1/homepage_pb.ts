@@ -3650,6 +3650,11 @@ export class GetAboutResponse extends Message<GetAboutResponse> {
    */
   images: AboutImage[] = [];
 
+  /**
+   * @generated from field: string featured_article_id = 3;
+   */
+  featuredArticleId = "";
+
   constructor(data?: PartialMessage<GetAboutResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -3660,6 +3665,7 @@ export class GetAboutResponse extends Message<GetAboutResponse> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "settings", kind: "message", T: Settings },
     { no: 2, name: "images", kind: "message", T: AboutImage, repeated: true },
+    { no: 3, name: "featured_article_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAboutResponse {
@@ -3676,6 +3682,80 @@ export class GetAboutResponse extends Message<GetAboutResponse> {
 
   static equals(a: GetAboutResponse | PlainMessage<GetAboutResponse> | undefined, b: GetAboutResponse | PlainMessage<GetAboutResponse> | undefined): boolean {
     return proto3.util.equals(GetAboutResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdateAboutRequest
+ */
+export class UpdateAboutRequest extends Message<UpdateAboutRequest> {
+  /**
+   * @generated from field: string featured_article_id = 1;
+   */
+  featuredArticleId = "";
+
+  constructor(data?: PartialMessage<UpdateAboutRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateAboutRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "featured_article_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateAboutRequest {
+    return new UpdateAboutRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateAboutRequest {
+    return new UpdateAboutRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateAboutRequest {
+    return new UpdateAboutRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateAboutRequest | PlainMessage<UpdateAboutRequest> | undefined, b: UpdateAboutRequest | PlainMessage<UpdateAboutRequest> | undefined): boolean {
+    return proto3.util.equals(UpdateAboutRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.UpdateAboutResponse
+ */
+export class UpdateAboutResponse extends Message<UpdateAboutResponse> {
+  /**
+   * @generated from field: string featured_article_id = 1;
+   */
+  featuredArticleId = "";
+
+  constructor(data?: PartialMessage<UpdateAboutResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.UpdateAboutResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "featured_article_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateAboutResponse {
+    return new UpdateAboutResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateAboutResponse {
+    return new UpdateAboutResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateAboutResponse {
+    return new UpdateAboutResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateAboutResponse | PlainMessage<UpdateAboutResponse> | undefined, b: UpdateAboutResponse | PlainMessage<UpdateAboutResponse> | undefined): boolean {
+    return proto3.util.equals(UpdateAboutResponse, a, b);
   }
 }
 
