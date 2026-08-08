@@ -674,13 +674,10 @@ export function BlogPage() {
 
       resetComposer()
       window.dispatchEvent(new Event('blog:updated'))
-      if (targetID && requestedStatus === 'published') {
-        navigate(`/blog/${targetID}`)
-      } else if (requestedStatus === 'draft') {
-        setArticleFilter('draft')
-      } else {
-        await loadArticles({ reset: true, pageToken: '' })
-      }
+      const listParams = new URLSearchParams()
+      listParams.set('folder', folderId || ROOT_FOLDER_ID)
+      if (manageMode) listParams.set('manage', '1')
+      navigate({ pathname: '/blog', search: listParams.toString() })
       showToast({ type: 'success', message: requestedStatus === 'draft' ? '草稿已保存' : (editingArticleId ? '文章已更新' : '文章已发布') })
     } catch (err) {
       console.error('Failed to save article:', err)
