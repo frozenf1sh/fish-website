@@ -4,6 +4,16 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  // Gallery classes are assembled dynamically when an article is rendered or
+  // when the editor inserts a selected set of images. Keep their production
+  // CSS even though Tailwind cannot infer the interpolated class names.
+  safelist: [
+    'blog-gallery-columns-2',
+    'blog-gallery-columns-3',
+    'blog-gallery-columns-4',
+    'blog-gallery-columns-auto',
+    'blog-gallery-layout-masonry',
+  ],
   theme: {
     extend: {
       borderRadius: {
