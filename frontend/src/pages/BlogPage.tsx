@@ -70,11 +70,13 @@ const escapeHtmlAttribute = (value: string) => value
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
 
+const getGalleryColumns = (imageCount: number) => imageCount === 4 ? 2 : imageCount <= 2 ? 2 : 3
+
 const buildGalleryHtml = (images: Array<{ fileName: string; url: string }>) => {
   const items = images.map((image) => (
     `  <figure class="blog-gallery-item"><img src="${escapeHtmlAttribute(image.url)}" alt="${escapeHtmlAttribute(image.fileName)}" loading="lazy" /></figure>`
   )).join('\n')
-  return `<div class="blog-html-block blog-gallery blog-gallery-columns-3 blog-gallery-aspect-square blog-gallery-layout-grid">\n${items}\n</div>`
+  return `<div class="blog-html-block blog-gallery blog-gallery-columns-${getGalleryColumns(images.length)} blog-gallery-aspect-square blog-gallery-layout-grid">\n${items}\n</div>`
 }
 
 export function BlogPage() {
