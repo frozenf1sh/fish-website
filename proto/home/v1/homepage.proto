@@ -66,6 +66,7 @@ service AlbumService {
   rpc UpdateAlbum(UpdateAlbumRequest) returns (UpdateAlbumResponse);
   // MoveImages moves selected images to another album while preserving upload time
   rpc MoveImages(MoveImagesRequest) returns (MoveImagesResponse);
+  rpc SetImageDate(SetImageDateRequest) returns (SetImageDateResponse);
   // AnalyzeImageReferences analyzes whether images in an album are still referenced
   rpc AnalyzeImageReferences(AnalyzeImageReferencesRequest) returns (AnalyzeImageReferencesResponse);
   // RepairImageReferences repairs reference counter consistency from source data
@@ -294,6 +295,8 @@ message Image {
   int64 file_size = 6;
   string mime_type = 7;
   google.protobuf.Timestamp created_at = 8;
+  // Optional calendar date assigned by the owner for timeline presentation.
+  string photo_date = 9;
 }
 
 message CreateAlbumRequest {
@@ -369,6 +372,17 @@ message MoveImagesRequest {
 
 message MoveImagesResponse {
   int32 moved_count = 1;
+}
+
+message SetImageDateRequest {
+  string album_id = 1;
+  repeated string image_ids = 2;
+  // Calendar date in ISO-8601 format: YYYY-MM-DD.
+  string photo_date = 3;
+}
+
+message SetImageDateResponse {
+  int32 updated_count = 1;
 }
 
 message ImageReference {

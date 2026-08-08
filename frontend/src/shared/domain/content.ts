@@ -36,6 +36,7 @@ export interface AlbumImage {
   fileSize: number
   mimeType: string
   createdAt: DateValue
+  photoDate?: string
 }
 
 export interface ImageReferenceItem {

@@ -540,6 +540,16 @@ func (h *Handler) MoveImages(ctx context.Context, req *connect.Request[homev1.Mo
 	return connect.NewResponse(&homev1.MoveImagesResponse{MovedCount: int32(movedCount)}), nil
 }
 
+// SetImageDate assigns a calendar date used for album timeline grouping.
+func (h *Handler) SetImageDate(ctx context.Context, req *connect.Request[homev1.SetImageDateRequest]) (*connect.Response[homev1.SetImageDateResponse], error) {
+	updatedCount, err := h.albumUsecase.SetImageDate(ctx, req.Msg.AlbumId, req.Msg.ImageIds, req.Msg.PhotoDate)
+	if err != nil {
+		logger.Error("SetImageDate failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	return connect.NewResponse(&homev1.SetImageDateResponse{UpdatedCount: int32(updatedCount)}), nil
+}
+
 // AnalyzeImageReferences analyzes image references in an album.
 func (h *Handler) AnalyzeImageReferences(ctx context.Context, req *connect.Request[homev1.AnalyzeImageReferencesRequest]) (*connect.Response[homev1.AnalyzeImageReferencesResponse], error) {
 	logger.Info("received AnalyzeImageReferences request", logger.String("album_id", req.Msg.AlbumId))
@@ -695,10 +705,14 @@ func fromProtoArticleStatus(status homev1.ArticleStatus) string {
 	switch status {
 	case homev1.ArticleStatus_ARTICLE_STATUS_DRAFT:
 		return "draft"
-	case homev1.ArticleStatus_ARTICLE_STATUS_PUBLISHED, homev1.ArticleStatus_ARTICLE_STATUS_UNSPECIFIED:
+	case homev1.ArticleStatus_ARTICLE_STATUS_PUBLISHED:
 		return "published"
+	case homev1.ArticleStatus_ARTICLE_STATUS_UNSPECIFIED:
+		// UNSPECIFIED means no filter for authenticated article management.
+		// Anonymous requests are narrowed to published in ListArticles above.
+		return ""
 	default:
-		return "published"
+		return ""
 	}
 }
 
@@ -726,6 +740,10 @@ func toProtoAlbum(a *domain.Album) *homev1.Album {
 }
 
 func toProtoImage(i *domain.Image) *homev1.Image {
+	photoDate := ""
+	if i.PhotoDate != nil {
+		photoDate = i.PhotoDate.Format("2006-01-02")
+	}
 	return &homev1.Image{
 		Id:           i.ID,
 		AlbumId:      i.AlbumID,
@@ -735,6 +753,7 @@ func toProtoImage(i *domain.Image) *homev1.Image {
 		FileSize:     i.FileSize,
 		MimeType:     i.MimeType,
 		CreatedAt:    timestamppb.New(i.CreatedAt),
+		PhotoDate:    photoDate,
 	}
 }
 

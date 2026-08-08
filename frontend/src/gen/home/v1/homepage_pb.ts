@@ -1656,6 +1656,13 @@ export class Image extends Message<Image> {
    */
   createdAt?: Timestamp;
 
+  /**
+   * Optional calendar date assigned by the owner for timeline presentation.
+   *
+   * @generated from field: string photo_date = 9;
+   */
+  photoDate = "";
+
   constructor(data?: PartialMessage<Image>) {
     super();
     proto3.util.initPartial(data, this);
@@ -1672,6 +1679,7 @@ export class Image extends Message<Image> {
     { no: 6, name: "file_size", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
     { no: 7, name: "mime_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 8, name: "created_at", kind: "message", T: Timestamp },
+    { no: 9, name: "photo_date", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Image {
@@ -2320,6 +2328,94 @@ export class MoveImagesResponse extends Message<MoveImagesResponse> {
 
   static equals(a: MoveImagesResponse | PlainMessage<MoveImagesResponse> | undefined, b: MoveImagesResponse | PlainMessage<MoveImagesResponse> | undefined): boolean {
     return proto3.util.equals(MoveImagesResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.SetImageDateRequest
+ */
+export class SetImageDateRequest extends Message<SetImageDateRequest> {
+  /**
+   * @generated from field: string album_id = 1;
+   */
+  albumId = "";
+
+  /**
+   * @generated from field: repeated string image_ids = 2;
+   */
+  imageIds: string[] = [];
+
+  /**
+   * Calendar date in ISO-8601 format: YYYY-MM-DD.
+   *
+   * @generated from field: string photo_date = 3;
+   */
+  photoDate = "";
+
+  constructor(data?: PartialMessage<SetImageDateRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.SetImageDateRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "album_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "image_ids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 3, name: "photo_date", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SetImageDateRequest {
+    return new SetImageDateRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SetImageDateRequest {
+    return new SetImageDateRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SetImageDateRequest {
+    return new SetImageDateRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SetImageDateRequest | PlainMessage<SetImageDateRequest> | undefined, b: SetImageDateRequest | PlainMessage<SetImageDateRequest> | undefined): boolean {
+    return proto3.util.equals(SetImageDateRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.SetImageDateResponse
+ */
+export class SetImageDateResponse extends Message<SetImageDateResponse> {
+  /**
+   * @generated from field: int32 updated_count = 1;
+   */
+  updatedCount = 0;
+
+  constructor(data?: PartialMessage<SetImageDateResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.SetImageDateResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "updated_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SetImageDateResponse {
+    return new SetImageDateResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SetImageDateResponse {
+    return new SetImageDateResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SetImageDateResponse {
+    return new SetImageDateResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SetImageDateResponse | PlainMessage<SetImageDateResponse> | undefined, b: SetImageDateResponse | PlainMessage<SetImageDateResponse> | undefined): boolean {
+    return proto3.util.equals(SetImageDateResponse, a, b);
   }
 }
 

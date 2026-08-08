@@ -38,6 +38,7 @@ type AlbumRepository interface {
 	GetImage(ctx context.Context, imageID string) (*Image, error)
 	UpdateImage(ctx context.Context, image *Image) (*Image, error)
 	MoveImagesToAlbum(ctx context.Context, fromAlbumID string, imageIDs []string, targetAlbumID string) ([]*Image, error)
+	SetImageDate(ctx context.Context, albumID string, imageIDs []string, photoDate time.Time) (int, error)
 	DeleteImages(ctx context.Context, albumID string, imageIDs []string) ([]*Image, error)
 	DeleteAlbum(ctx context.Context, albumID string) error
 }

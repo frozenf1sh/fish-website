@@ -56,6 +56,7 @@ type Image struct {
 	FileSize           int64
 	MimeType           string
 	CreatedAt          time.Time
+	PhotoDate          *time.Time
 }
 
 // ObjectMetadata is the verified subset of an object-store HEAD response.

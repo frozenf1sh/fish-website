@@ -164,6 +164,7 @@ type UploadImageInput = { albumId?: string; fileName: string; mimeType: string; 
 type ConfirmImageInput = { imageId: string; uploadUrl: string }
 type UpdateAlbumInput = CreateAlbumInput & { albumId: string }
 type MoveImagesInput = { fromAlbumId: string; targetAlbumId: string; imageIds?: string[] }
+type SetImageDateInput = { albumId: string; imageIds?: string[]; photoDate: string }
 type DeleteImagesInput = { albumId: string; imageIds?: string[] }
 type SiteSettingsInput = {
   displayName?: string
@@ -453,6 +454,7 @@ export const clients = {
           fileSize: Number(image.fileSize || 0),
           mimeType: image.mimeType,
           createdAt: { toDate: () => image.createdAt?.toDate() || new Date() },
+          photoDate: image.photoDate || '',
         })),
       }
     },
@@ -485,6 +487,7 @@ export const clients = {
               fileSize: Number(response.image.fileSize || 0),
               mimeType: response.image.mimeType,
               createdAt: { toDate: () => response.image?.createdAt?.toDate() || new Date() },
+              photoDate: response.image.photoDate || '',
             }
           : null,
       }
@@ -517,6 +520,14 @@ export const clients = {
       return {
         movedCount: Number(response.movedCount || 0),
       }
+    },
+    setImageDate: async (req: SetImageDateInput) => {
+      const response = await albumClient.setImageDate({
+        albumId: req.albumId,
+        imageIds: req.imageIds || [],
+        photoDate: req.photoDate,
+      })
+      return { updatedCount: Number(response.updatedCount || 0) }
     },
     analyzeImageReferences: async (req: AlbumIDInput) => {
       const response = await albumClient.analyzeImageReferences({

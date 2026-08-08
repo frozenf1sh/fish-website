@@ -24,6 +24,19 @@ const toDate = (value?: { toDate?: () => Date }) => {
   return value.toDate()
 }
 
+const parsePhotoDate = (value: string) => {
+  const [year, month, day] = value.split('-').map(Number)
+  if (!year || !month || !day) return new Date()
+  return new Date(year, month - 1, day)
+}
+
+const formatPhotoDateInput = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const formatDayLabel = (d: Date) => {
   const today = new Date()
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
@@ -48,6 +61,8 @@ export function AlbumsPage() {
   const [moveTargetAlbumId, setMoveTargetAlbumId] = useState('')
   const [isMoveMode, setIsMoveMode] = useState(false)
   const [isEditAlbumOpen, setIsEditAlbumOpen] = useState(false)
+  const [isSetDateOpen, setIsSetDateOpen] = useState(false)
+  const [photoDateInput, setPhotoDateInput] = useState('')
   const [isCreateAlbumOpen, setIsCreateAlbumOpen] = useState(false)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
@@ -194,7 +209,7 @@ export function AlbumsPage() {
   const groupedImages = useMemo(() => {
     const groups = new Map<string, { label: string; images: AlbumImage[]; time: number }>()
     for (const image of albumImages) {
-      const date = toDate(image.createdAt)
+      const date = image.photoDate ? parsePhotoDate(image.photoDate) : toDate(image.createdAt)
       const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
       if (!groups.has(key)) {
         groups.set(key, { label: formatDayLabel(date), images: [], time: new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() })
@@ -203,6 +218,52 @@ export function AlbumsPage() {
     }
     return Array.from(groups.values()).sort((a, b) => b.time - a.time)
   }, [albumImages])
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (isSetDateOpen) {
+        setIsSetDateOpen(false)
+        return
+      }
+      if (confirmDeleteOpen) {
+        setConfirmDeleteOpen(false)
+        setPendingDeleteImageIds([])
+        return
+      }
+      if (showMediaPicker) {
+        setShowMediaPicker(false)
+        return
+      }
+      if (isEditAlbumOpen) {
+        setIsEditAlbumOpen(false)
+        return
+      }
+      if (isCreateAlbumOpen) {
+        setIsCreateAlbumOpen(false)
+        return
+      }
+      if (isReferencePanelOpen) {
+        setIsReferencePanelOpen(false)
+        return
+      }
+      if (selectedImage) {
+        setSelectedImage(null)
+        return
+      }
+      if (!selectedAlbumId) return
+      if (selectionMode) {
+        setSelectionMode(false)
+        setIsMoveMode(false)
+        setMoveTargetAlbumId('')
+        setSelectedImageIds([])
+        return
+      }
+      setSelectedAlbumId('')
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [confirmDeleteOpen, isCreateAlbumOpen, isEditAlbumOpen, isReferencePanelOpen, isSetDateOpen, selectedAlbumId, selectedImage, selectionMode, showMediaPicker])
 
   const refreshAlbums = async (preferAlbumId?: string) => {
     setIsLoadingAlbums(true)
@@ -296,6 +357,35 @@ export function AlbumsPage() {
     setSelectedImageIds((prev) =>
       prev.includes(imageId) ? prev.filter((id) => id !== imageId) : [...prev, imageId],
     )
+  }
+
+  const openSetDate = () => {
+    if (selectedImageIds.length === 0) {
+      showToast({ type: 'warning', message: '请先选择照片' })
+      return
+    }
+    const firstSelected = albumImages.find((image) => image.id === selectedImageIds[0])
+    setPhotoDateInput(firstSelected?.photoDate || formatPhotoDateInput(toDate(firstSelected?.createdAt)))
+    setIsSetDateOpen(true)
+  }
+
+  const handleSetImageDate = async () => {
+    if (!selectedAlbumId || !photoDateInput || selectedImageIds.length === 0) return
+    try {
+      const response = await clients.album.setImageDate({
+        albumId: selectedAlbumId,
+        imageIds: selectedImageIds,
+        photoDate: photoDateInput,
+      })
+      const refreshed = await clients.album.getAlbum({ albumId: selectedAlbumId })
+      setSelectedAlbum((refreshed.album as Album | null) || null)
+      setAlbumImages((refreshed.images as AlbumImage[]) || [])
+      setIsSetDateOpen(false)
+      showToast({ type: 'success', message: `已为 ${response.updatedCount} 张照片设置所属日期` })
+    } catch (err) {
+      console.error('Failed to set image date:', err)
+      showToast({ type: 'error', message: '设置照片日期失败，请重试' })
+    }
   }
 
   const handleDeleteImages = async (imageIds: string[]) => {
@@ -554,116 +644,78 @@ export function AlbumsPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="mb-4 text-white/75 flex items-center justify-between gap-3 flex-wrap">
+            <div className="mb-4 flex items-center justify-between gap-3 flex-wrap text-white/75">
               <div>
                 <h3 className="text-xl font-semibold text-white">{selectedAlbum.name}</h3>
-                <p className="text-sm text-white/60 mt-1">{selectedAlbum.description || '暂无描述'}</p>
+                <p className="mt-1 text-sm text-white/60">{selectedAlbum.description || '暂无描述'}</p>
               </div>
-              <div className="flex items-center gap-2 flex-wrap justify-end">
-                <button
-                  onClick={() => setSelectedAlbumId('')}
-                  className="px-4 py-2 rounded-2xl border border-white/30 text-white/90 hover:bg-white/10"
-                >
-                  退出相册
-                </button>
-                {isLoggedIn && (
-                  <>
-                    <button
-                      onClick={() => {
-                        uploadedImageIdsRef.current = []
-                        setShowMediaPicker(true)
-                      }}
-                      disabled={isDeleting}
-                      className="btn-primary px-4 py-2 rounded-2xl text-white disabled:opacity-50"
-                    >
-                      上传图片
+              <div className="space-y-2">
+                <div className="flex items-center justify-end gap-2 flex-wrap">
+                  <button
+                    onClick={() => setSelectedAlbumId('')}
+                    className="rounded-2xl border border-white/30 px-4 py-2 text-white/90 hover:bg-white/10"
+                  >
+                    退出相册
+                  </button>
+                  {isLoggedIn && (
+                    <>
+                      {!isSpecialAlbum(selectedAlbum.id) && (
+                        <button onClick={openEditAlbum} className="rounded-2xl border border-white/30 px-4 py-2 text-white/90 hover:bg-white/10">
+                          编辑相册
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          uploadedImageIdsRef.current = []
+                          setShowMediaPicker(true)
+                        }}
+                        disabled={isDeleting}
+                        className="btn-primary rounded-2xl px-4 py-2 text-white disabled:opacity-50"
+                      >
+                        上传图片
+                      </button>
+                      {isSpecialAlbum(selectedAlbum.id) && (
+                        <button onClick={handleAnalyzeReferences} disabled={isAnalyzingReferences} className="rounded-2xl border border-amber-300/40 bg-amber-500/20 px-4 py-2 text-amber-100 hover:bg-amber-500/35 disabled:opacity-50">
+                          {isAnalyzingReferences ? '分析中...' : '引用分析'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setSelectionMode((prev) => !prev)
+                          setIsMoveMode(false)
+                          setMoveTargetAlbumId('')
+                          setSelectedImageIds([])
+                        }}
+                        className={`rounded-full border px-3 py-1.5 text-sm transition-all ${selectionMode ? 'border-white/40 bg-white/25 text-white' : 'border-white/20 bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}`}
+                      >
+                        {selectionMode ? '退出多选' : '多选'}
+                      </button>
+                    </>
+                  )}
+                </div>
+                {isLoggedIn && selectionMode && (
+                  <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-2">
+                    <button onClick={() => setIsMoveMode((prev) => !prev)} className={`rounded-full border px-3 py-1.5 text-sm transition-all ${isMoveMode ? 'border-white/40 bg-white/25 text-white' : 'border-white/20 bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}`}>
+                      {isMoveMode ? '取消移动' : '移动到相册'}
                     </button>
-                    {!isSpecialAlbum(selectedAlbum.id) && (
-                      <button
-                        onClick={openEditAlbum}
-                        className="px-4 py-2 rounded-2xl border border-white/30 text-white/90 hover:bg-white/10"
-                      >
-                        编辑相册
-                      </button>
-                    )}
-                    {!isSpecialAlbum(selectedAlbum.id) && (
-                      <button
-                        onClick={requestDeleteAlbum}
-                        disabled={isDeletingAlbum}
-                        className="px-4 py-2 rounded-2xl border border-red-300/40 text-red-100 bg-red-500/20 hover:bg-red-500/35 disabled:opacity-50"
-                      >
-                        {isDeletingAlbum ? '删除中...' : '删除相册'}
-                      </button>
-                    )}
-                    {isSpecialAlbum(selectedAlbum.id) && (
-                      <button
-                        onClick={handleAnalyzeReferences}
-                        disabled={isAnalyzingReferences}
-                        className="px-4 py-2 rounded-2xl border border-amber-300/40 text-amber-100 bg-amber-500/20 hover:bg-amber-500/35 disabled:opacity-50"
-                      >
-                        {isAnalyzingReferences ? '分析中...' : '引用分析'}
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        setSelectionMode((prev) => !prev)
-                        setSelectedImageIds([])
-                      }}
-                      className={`px-3 py-1.5 rounded-full border text-sm transition-all ${
-                        selectionMode
-                          ? 'bg-white/25 text-white border-white/40'
-                          : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20 hover:text-white'
-                      }`}
-                    >
-                      {selectionMode ? '退出多选' : '多选'}
-                    </button>
-                    {selectionMode && (
-                      <button
-                        onClick={() => setIsMoveMode((prev) => !prev)}
-                        className={`px-3 py-1.5 rounded-full border text-sm transition-all ${
-                          isMoveMode
-                            ? 'bg-white/25 text-white border-white/40'
-                            : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20 hover:text-white'
-                        }`}
-                      >
-                        {isMoveMode ? '取消移动' : '移动到相册'}
-                      </button>
-                    )}
-                    {selectionMode && isMoveMode && (
+                    {isMoveMode && (
                       <>
-                        <select
-                          value={moveTargetAlbumId}
-                          onChange={(e) => setMoveTargetAlbumId(e.target.value)}
-                          className="px-3 py-1.5 rounded-full border text-sm bg-white/10 text-white border-white/20"
-                        >
+                        <select value={moveTargetAlbumId} onChange={(e) => setMoveTargetAlbumId(e.target.value)} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white">
                           <option value="">选择目标相册</option>
-                          {albums
-                            .filter((album) => album.id !== selectedAlbumId)
-                            .map((album) => (
-                              <option key={album.id} value={album.id} className="text-slate-900">
-                                {album.name}
-                              </option>
-                            ))}
+                          {albums.filter((album) => album.id !== selectedAlbumId).map((album) => <option key={album.id} value={album.id} className="text-slate-900">{album.name}</option>)}
                         </select>
-                        <button
-                          onClick={handleMoveImages}
-                          disabled={isMoving || !moveTargetAlbumId || selectedImageIds.length === 0}
-                          className="px-3 py-1.5 rounded-full border text-sm bg-emerald-500/25 text-emerald-100 border-emerald-300/40 hover:bg-emerald-500/35 disabled:opacity-50"
-                        >
+                        <button onClick={handleMoveImages} disabled={isMoving || !moveTargetAlbumId || selectedImageIds.length === 0} className="rounded-full border border-emerald-300/40 bg-emerald-500/25 px-3 py-1.5 text-sm text-emerald-100 hover:bg-emerald-500/35 disabled:opacity-50">
                           {isMoving ? '移动中...' : `移动已选 ${selectedImageIds.length}`}
                         </button>
                       </>
                     )}
-                    {selectionMode && selectedImageIds.length > 0 && (
-                      <button
-                        onClick={() => requestDeleteImages(selectedImageIds)}
-                        disabled={isDeleting || isMoving}
-                        className="px-3 py-1.5 rounded-full border text-sm bg-red-500/25 text-red-100 border-red-300/40 hover:bg-red-500/35 disabled:opacity-50"
-                      >
+                    <button onClick={openSetDate} disabled={selectedImageIds.length === 0} className="rounded-full border border-sky-300/35 bg-sky-500/20 px-3 py-1.5 text-sm text-sky-100 hover:bg-sky-500/30 disabled:opacity-50">设置日期</button>
+                    {selectedImageIds.length > 0 && (
+                      <button onClick={() => requestDeleteImages(selectedImageIds)} disabled={isDeleting || isMoving} className="rounded-full border border-red-300/40 bg-red-500/25 px-3 py-1.5 text-sm text-red-100 hover:bg-red-500/35 disabled:opacity-50">
                         {isDeleting ? '删除中...' : `删除已选 ${selectedImageIds.length}`}
                       </button>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             </div>
@@ -882,7 +934,20 @@ export function AlbumsPage() {
                     公开相册
                   </label>
                 </div>
-                <div className="mt-5 flex justify-end gap-2">
+                <div className="mt-5 flex items-center justify-between gap-2">
+                  {!isSpecialAlbum(selectedAlbum?.id || '') ? (
+                    <button
+                      onClick={() => {
+                        setIsEditAlbumOpen(false)
+                        requestDeleteAlbum()
+                      }}
+                      disabled={isSavingAlbumEdit || isDeletingAlbum}
+                      className="px-3 py-2 rounded-xl border border-red-300/35 bg-red-500/15 text-sm text-red-100 hover:bg-red-500/25 disabled:opacity-50"
+                    >
+                      删除相册
+                    </button>
+                  ) : <span />}
+                  <div className="flex justify-end gap-2">
                   <button
                     onClick={() => setIsEditAlbumOpen(false)}
                     disabled={isSavingAlbumEdit}
@@ -897,6 +962,52 @@ export function AlbumsPage() {
                   >
                     {isSavingAlbumEdit ? '保存中...' : '保存修改'}
                   </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
+
+      {createPortal(
+        <AnimatePresence>
+          {isSetDateOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[146] flex items-center justify-center bg-black/55 p-4 backdrop-blur-xl"
+              onClick={() => setIsSetDateOpen(false)}
+            >
+              <motion.div
+                initial={{ y: 10, scale: 0.98, opacity: 0 }}
+                animate={{ y: 0, scale: 1, opacity: 1 }}
+                exit={{ y: 10, scale: 0.98, opacity: 0 }}
+                className="w-full max-w-md rounded-[2rem] border border-white/25 bg-white/[0.14] p-5 text-white shadow-2xl backdrop-blur-2xl"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-sky-100/70">Timeline date</p>
+                    <h3 className="mt-1 text-lg font-semibold">设置照片所属日期</h3>
+                    <p className="mt-1 text-sm text-white/60">已选择 {selectedImageIds.length} 张照片，时间线将按此日期分组。</p>
+                  </div>
+                  <button type="button" onClick={() => setIsSetDateOpen(false)} className="rounded-full bg-white/10 px-2.5 py-1 text-white/70 hover:bg-white/20" aria-label="关闭">×</button>
+                </div>
+                <label className="mt-5 block text-sm text-white/75">
+                  照片日期
+                  <input
+                    type="date"
+                    value={photoDateInput}
+                    onChange={(event) => setPhotoDateInput(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-white/25 bg-white/15 px-4 py-3 text-white outline-none backdrop-blur-xl focus:border-sky-200/70 focus:bg-white/20"
+                  />
+                </label>
+                <div className="mt-5 flex justify-end gap-2">
+                  <button type="button" onClick={() => setIsSetDateOpen(false)} className="rounded-2xl border border-white/20 px-4 py-2 text-sm text-white/75 hover:bg-white/10">取消</button>
+                  <button type="button" onClick={() => void handleSetImageDate()} disabled={!photoDateInput} className="rounded-2xl bg-sky-400/80 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-sky-950/20 hover:bg-sky-300 disabled:opacity-50">保存日期</button>
                 </div>
               </motion.div>
             </motion.div>

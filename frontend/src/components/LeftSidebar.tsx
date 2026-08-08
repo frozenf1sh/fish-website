@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { BlogFolderTree } from './BlogFolderTree'
 
@@ -47,6 +48,7 @@ function SocialIcon({ kind }: { kind: SocialIconKind }) {
 }
 
 export function LeftSidebar() {
+  const navigate = useNavigate()
   const {
     settings,
     isLoggedIn,
@@ -73,12 +75,14 @@ export function LeftSidebar() {
         {/* 头像卡片 */}
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="glass-panel rounded-4xl p-8 text-center"
+          onClick={() => navigate('/about')}
+          className="glass-panel cursor-pointer rounded-4xl p-8 text-center"
         >
           <div className="relative inline-block mb-6">
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 blur-xl opacity-50 avatar-glow"></div>
             <button
-              onClick={() => {
+              onClick={(event) => {
+                event.stopPropagation()
                 if (!isLoggedIn) {
                   setShowLoginModal(true)
                 }
@@ -143,6 +147,7 @@ export function LeftSidebar() {
                   !href ? 'opacity-30' : ''
                 }`}
                 title={link.name}
+                onClick={(event) => event.stopPropagation()}
               >
                 <SocialIcon kind={link.icon} />
               </motion.a>
@@ -154,14 +159,18 @@ export function LeftSidebar() {
           <div className="mt-6 pt-4 border-t border-white/15 flex gap-2">
             {isLoggedIn && (
               <button
-                onClick={() => setShowSettingsDrawer(true)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setShowSettingsDrawer(true)
+                }}
                 className="flex-1 px-3 py-2 rounded-2xl bg-white/15 text-white/90 hover:bg-white/25 transition-all"
               >
                 ⚙️ 设置
               </button>
             )}
             <button
-              onClick={() => {
+              onClick={(event) => {
+                event.stopPropagation()
                 if (isLoggedIn) {
                   logout()
                 } else {

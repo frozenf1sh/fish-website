@@ -72,6 +72,15 @@ export function PostPage() {
     }
   }, [postId])
 
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || isEditing || selectedImage) return
+      navigate('/')
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isEditing, navigate, selectedImage])
+
   const shareUrl = typeof window === 'undefined' ? `/post/${postId}` : `${window.location.origin}/post/${postId}`
 
   const handleSave = async () => {

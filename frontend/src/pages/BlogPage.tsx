@@ -33,8 +33,7 @@ const componentTemplates = [
   { value: 'details', label: '折叠面板', description: '收起较长的补充内容', template: '<details class="blog-html-block blog-details">\n  <summary>点击展开</summary>\n  <div>在这里输入折叠内容。</div>\n</details>' },
   { value: 'columns', label: '双栏内容', description: '并排展示两段内容', template: '<div class="blog-html-block blog-columns">\n  <div>左栏内容</div>\n  <div>右栏内容</div>\n</div>' },
   { value: 'hover-reveal', label: '涂黑悬浮信息', description: '移入或点击后显示文字', template: '<div class="blog-html-block blog-hover-reveal" tabindex="0">\n  <span class="blog-hover-reveal-cover">移入查看</span>\n  <span class="blog-hover-reveal-content">在这里输入隐藏文字。</span>\n</div>' },
-  { value: 'html', label: 'HTML 块', description: '插入可渲染的安全 HTML', template: '<div class="blog-html-block">\n  <p>在这里直接编写 HTML 内容。</p>\n</div>' },
-  { value: 'gallery', label: '图片画廊', description: '批量选择图片并生成网格', template: '' },
+  { value: 'gallery', label: '图片画廊', description: '批量选择图片并生成 HTML 网格', template: '' },
 ] as const
 
 const ROOT_FOLDER_ID = 'root'
@@ -65,6 +64,19 @@ const getArticlePreview = (value: string) => value
   .trim()
   .slice(0, 220)
 
+const escapeHtmlAttribute = (value: string) => value
+  .replace(/&/g, '&amp;')
+  .replace(/"/g, '&quot;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+
+const buildGalleryHtml = (images: Array<{ fileName: string; url: string }>) => {
+  const items = images.map((image) => (
+    `  <figure class="blog-gallery-item"><img src="${escapeHtmlAttribute(image.url)}" alt="${escapeHtmlAttribute(image.fileName)}" loading="lazy" /></figure>`
+  )).join('\n')
+  return `<div class="blog-html-block blog-gallery blog-gallery-columns-3 blog-gallery-aspect-square blog-gallery-layout-grid">\n${items}\n</div>`
+}
+
 export function BlogPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { articleId } = useParams()
@@ -77,7 +89,7 @@ export function BlogPage() {
   const manageRequested = searchParams.get('manage') === '1'
 
   const [articles, setArticles] = useState<BlogArticle[]>([])
-  const [articleFilter, setArticleFilter] = useState<'published' | 'draft' | 'all'>('published')
+  const [articleFilter, setArticleFilter] = useState<'published' | 'draft' | 'all'>(() => isLoggedIn ? 'all' : 'published')
   const [nextPageToken, setNextPageToken] = useState('')
   const [hasMore, setHasMore] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -108,11 +120,22 @@ export function BlogPage() {
   const articleRequestIdRef = useRef(0)
 
   useEffect(() => {
-    if (manageRequested) {
-      setManageMode(true)
-      setSelectedIds([])
-    }
+    setManageMode(manageRequested)
+    setSelectedIds([])
   }, [manageRequested])
+
+  useEffect(() => {
+    setArticleFilter(isLoggedIn ? 'all' : 'published')
+  }, [isLoggedIn])
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !articleId || composeOpen) return
+      navigate('/blog')
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [articleId, composeOpen, navigate])
 
   const articleMap = useMemo(() => {
     const map = new Map<string, BlogArticle>()
@@ -134,6 +157,15 @@ export function BlogPage() {
     } catch {
       showToast({ type: 'error', message: '复制失败，请手动复制地址栏链接' })
     }
+  }
+
+  const openArticleEditor = (article: BlogArticle) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('compose', '1')
+    next.set('edit', article.id)
+    next.set('folder', article.folderId || ROOT_FOLDER_ID)
+    next.delete('manage')
+    navigate({ pathname: '/blog', search: next.toString() })
   }
 
   const normalizeFolders = (folders: FolderNode[]) => {
@@ -183,6 +215,14 @@ export function BlogPage() {
     setPreviewMode('split')
     setEditHistory({ items: [''], index: 0 })
     setSaveStatus('published')
+  }
+
+  const closeComposer = () => {
+    resetComposer()
+    const next = new URLSearchParams(searchParams)
+    next.delete('compose')
+    next.delete('edit')
+    setSearchParams(next)
   }
 
   const loadArticles = async (options?: { reset?: boolean; pageToken?: string }) => {
@@ -555,7 +595,7 @@ export function BlogPage() {
   const insertImages = (images: Array<{ fileName: string; url: string }>) => {
     if (!images.length) return
     if (mediaInsertMode === 'gallery') {
-      insertSnippet(`:::gallery{columns="3" aspect="square" layout="grid"}\n${images.map((image) => `![${image.fileName}](${image.url})`).join('\n')}\n:::`)
+      insertSnippet(buildGalleryHtml(images))
       return
     }
     insertSnippet(images.map((image) => `![${image.fileName}](${image.url})`).join('\n'))
@@ -723,6 +763,9 @@ export function BlogPage() {
             article={sharedArticle}
             actions={(
               <>
+                {isLoggedIn && (
+                  <button onClick={() => openArticleEditor(sharedArticle)} className="px-3 py-2 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-100">编辑文章</button>
+                )}
                 <button onClick={() => copyShareUrl(sharedArticle.id)} className="px-3 py-2 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-100">复制链接</button>
                 <button onClick={() => navigate('/blog')} className="px-3 py-2 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-100">返回列表</button>
               </>
@@ -778,6 +821,9 @@ export function BlogPage() {
                 <button type="button" onClick={() => setPreviewMode('edit')} className={`px-2.5 py-1.5 text-sm rounded-xl ${previewMode === 'edit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'}`}>编辑</button>
                 <button type="button" onClick={() => setPreviewMode('preview')} className={`px-2.5 py-1.5 text-sm rounded-xl ${previewMode === 'preview' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'}`}>预览</button>
                 <button type="button" onClick={() => setPreviewMode('split')} className={`px-2.5 py-1.5 text-sm rounded-xl ${previewMode === 'split' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700'}`}>分栏</button>
+                <button type="button" onClick={closeComposer} className="rounded-xl border border-slate-300 px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-100">取消</button>
+                <button type="submit" name="save-draft" value="draft" disabled={isPublishing} className="rounded-xl border border-slate-300 px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">保存草稿</button>
+                <button type="submit" value="published" disabled={isPublishing} className="rounded-xl bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-800 disabled:opacity-50">{isPublishing ? '保存中...' : (editingArticleId && saveStatus === 'published' ? '保存并发布' : '发布文章')}</button>
               </div>
             </div>
 
@@ -829,23 +875,6 @@ export function BlogPage() {
             )}
           </div>
 
-          <div className="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-slate-50 px-4 py-4 sm:px-6">
-            <button
-              type="button"
-              onClick={() => {
-                resetComposer()
-                const next = new URLSearchParams(searchParams)
-                next.delete('compose')
-                next.delete('edit')
-                setSearchParams(next)
-              }}
-              className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-200"
-            >
-              取消
-            </button>
-            <button type="submit" name="save-draft" value="draft" disabled={isPublishing} className="rounded-xl border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-200 disabled:opacity-50">保存草稿</button>
-            <button type="submit" value="published" disabled={isPublishing} className="rounded-xl bg-slate-900 px-5 py-2 text-white hover:bg-slate-800 disabled:opacity-50">{isPublishing ? '保存中...' : (editingArticleId && saveStatus === 'published' ? '保存并发布' : '发布文章')}</button>
-          </div>
         </form>
         <MediaPickerDialog open={mediaPickerOpen} onClose={() => setMediaPickerOpen(false)} onConfirm={insertImages} />
       </div>
@@ -951,15 +980,11 @@ export function BlogPage() {
                   <p className="text-white/65 text-sm mb-3 line-clamp-2 break-all [overflow-wrap:anywhere]">{article.content.replace(/#+\s?.*\n/g, '').trim()}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {isLoggedIn && manageMode && (
+                  {isLoggedIn && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        const next = new URLSearchParams(searchParams)
-                        next.set('compose', '1')
-                        next.set('edit', article.id)
-                        next.set('folder', article.folderId || ROOT_FOLDER_ID)
-                        setSearchParams(next)
+                        openArticleEditor(article)
                       }}
                       className="px-3 py-1.5 rounded-xl border border-white/25 text-white/85 hover:bg-white/10"
                     >

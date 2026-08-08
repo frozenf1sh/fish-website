@@ -85,7 +85,7 @@ export function BlogFolderTree() {
     const loadFolders = async () => {
       setIsLoading(true)
       try {
-        const response = await clients.blog.listArticles({ pageSize: 1000, folderId: '', status: 'published' })
+        const response = await clients.blog.listArticles({ pageSize: 1000, folderId: '', status: isLoggedIn ? undefined : 'published' })
         const apiFolders = (response.folders || []) as ApiFolder[]
         const allArticles = (response.articles || []) as Array<{ folderId?: string }>
 
@@ -126,7 +126,7 @@ export function BlogFolderTree() {
     const onUpdated = () => loadFolders()
     window.addEventListener('blog:updated', onUpdated)
     return () => window.removeEventListener('blog:updated', onUpdated)
-  }, [])
+  }, [isLoggedIn])
 
   const handleSelect = (folderId: string) => {
     const next = new URLSearchParams(searchParams)

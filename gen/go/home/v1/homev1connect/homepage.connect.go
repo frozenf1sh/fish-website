@@ -102,6 +102,9 @@ const (
 	AlbumServiceUpdateAlbumProcedure = "/home.v1.AlbumService/UpdateAlbum"
 	// AlbumServiceMoveImagesProcedure is the fully-qualified name of the AlbumService's MoveImages RPC.
 	AlbumServiceMoveImagesProcedure = "/home.v1.AlbumService/MoveImages"
+	// AlbumServiceSetImageDateProcedure is the fully-qualified name of the AlbumService's SetImageDate
+	// RPC.
+	AlbumServiceSetImageDateProcedure = "/home.v1.AlbumService/SetImageDate"
 	// AlbumServiceAnalyzeImageReferencesProcedure is the fully-qualified name of the AlbumService's
 	// AnalyzeImageReferences RPC.
 	AlbumServiceAnalyzeImageReferencesProcedure = "/home.v1.AlbumService/AnalyzeImageReferences"
@@ -750,6 +753,7 @@ type AlbumServiceClient interface {
 	UpdateAlbum(context.Context, *connect.Request[v1.UpdateAlbumRequest]) (*connect.Response[v1.UpdateAlbumResponse], error)
 	// MoveImages moves selected images to another album while preserving upload time
 	MoveImages(context.Context, *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error)
+	SetImageDate(context.Context, *connect.Request[v1.SetImageDateRequest]) (*connect.Response[v1.SetImageDateResponse], error)
 	// AnalyzeImageReferences analyzes whether images in an album are still referenced
 	AnalyzeImageReferences(context.Context, *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error)
 	// RepairImageReferences repairs reference counter consistency from source data
@@ -813,6 +817,12 @@ func NewAlbumServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(albumServiceMethods.ByName("MoveImages")),
 			connect.WithClientOptions(opts...),
 		),
+		setImageDate: connect.NewClient[v1.SetImageDateRequest, v1.SetImageDateResponse](
+			httpClient,
+			baseURL+AlbumServiceSetImageDateProcedure,
+			connect.WithSchema(albumServiceMethods.ByName("SetImageDate")),
+			connect.WithClientOptions(opts...),
+		),
 		analyzeImageReferences: connect.NewClient[v1.AnalyzeImageReferencesRequest, v1.AnalyzeImageReferencesResponse](
 			httpClient,
 			baseURL+AlbumServiceAnalyzeImageReferencesProcedure,
@@ -849,6 +859,7 @@ type albumServiceClient struct {
 	confirmImageUpload     *connect.Client[v1.ConfirmImageUploadRequest, v1.ConfirmImageUploadResponse]
 	updateAlbum            *connect.Client[v1.UpdateAlbumRequest, v1.UpdateAlbumResponse]
 	moveImages             *connect.Client[v1.MoveImagesRequest, v1.MoveImagesResponse]
+	setImageDate           *connect.Client[v1.SetImageDateRequest, v1.SetImageDateResponse]
 	analyzeImageReferences *connect.Client[v1.AnalyzeImageReferencesRequest, v1.AnalyzeImageReferencesResponse]
 	repairImageReferences  *connect.Client[v1.RepairImageReferencesRequest, v1.RepairImageReferencesResponse]
 	deleteImages           *connect.Client[v1.DeleteImagesRequest, v1.DeleteImagesResponse]
@@ -890,6 +901,11 @@ func (c *albumServiceClient) MoveImages(ctx context.Context, req *connect.Reques
 	return c.moveImages.CallUnary(ctx, req)
 }
 
+// SetImageDate calls home.v1.AlbumService.SetImageDate.
+func (c *albumServiceClient) SetImageDate(ctx context.Context, req *connect.Request[v1.SetImageDateRequest]) (*connect.Response[v1.SetImageDateResponse], error) {
+	return c.setImageDate.CallUnary(ctx, req)
+}
+
 // AnalyzeImageReferences calls home.v1.AlbumService.AnalyzeImageReferences.
 func (c *albumServiceClient) AnalyzeImageReferences(ctx context.Context, req *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error) {
 	return c.analyzeImageReferences.CallUnary(ctx, req)
@@ -926,6 +942,7 @@ type AlbumServiceHandler interface {
 	UpdateAlbum(context.Context, *connect.Request[v1.UpdateAlbumRequest]) (*connect.Response[v1.UpdateAlbumResponse], error)
 	// MoveImages moves selected images to another album while preserving upload time
 	MoveImages(context.Context, *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error)
+	SetImageDate(context.Context, *connect.Request[v1.SetImageDateRequest]) (*connect.Response[v1.SetImageDateResponse], error)
 	// AnalyzeImageReferences analyzes whether images in an album are still referenced
 	AnalyzeImageReferences(context.Context, *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error)
 	// RepairImageReferences repairs reference counter consistency from source data
@@ -985,6 +1002,12 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(albumServiceMethods.ByName("MoveImages")),
 		connect.WithHandlerOptions(opts...),
 	)
+	albumServiceSetImageDateHandler := connect.NewUnaryHandler(
+		AlbumServiceSetImageDateProcedure,
+		svc.SetImageDate,
+		connect.WithSchema(albumServiceMethods.ByName("SetImageDate")),
+		connect.WithHandlerOptions(opts...),
+	)
 	albumServiceAnalyzeImageReferencesHandler := connect.NewUnaryHandler(
 		AlbumServiceAnalyzeImageReferencesProcedure,
 		svc.AnalyzeImageReferences,
@@ -1025,6 +1048,8 @@ func NewAlbumServiceHandler(svc AlbumServiceHandler, opts ...connect.HandlerOpti
 			albumServiceUpdateAlbumHandler.ServeHTTP(w, r)
 		case AlbumServiceMoveImagesProcedure:
 			albumServiceMoveImagesHandler.ServeHTTP(w, r)
+		case AlbumServiceSetImageDateProcedure:
+			albumServiceSetImageDateHandler.ServeHTTP(w, r)
 		case AlbumServiceAnalyzeImageReferencesProcedure:
 			albumServiceAnalyzeImageReferencesHandler.ServeHTTP(w, r)
 		case AlbumServiceRepairImageReferencesProcedure:
@@ -1068,6 +1093,10 @@ func (UnimplementedAlbumServiceHandler) UpdateAlbum(context.Context, *connect.Re
 
 func (UnimplementedAlbumServiceHandler) MoveImages(context.Context, *connect.Request[v1.MoveImagesRequest]) (*connect.Response[v1.MoveImagesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.MoveImages is not implemented"))
+}
+
+func (UnimplementedAlbumServiceHandler) SetImageDate(context.Context, *connect.Request[v1.SetImageDateRequest]) (*connect.Response[v1.SetImageDateResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AlbumService.SetImageDate is not implemented"))
 }
 
 func (UnimplementedAlbumServiceHandler) AnalyzeImageReferences(context.Context, *connect.Request[v1.AnalyzeImageReferencesRequest]) (*connect.Response[v1.AnalyzeImageReferencesResponse], error) {

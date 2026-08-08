@@ -585,7 +585,7 @@ func (r *postgresAlbumRepository) ListImagesByAlbum(ctx context.Context, albumID
 	}
 
 	query := `
-		SELECT id, album_id, object_key, thumbnail_object_key, url, thumbnail_url, file_name, file_size, mime_type, created_at
+		SELECT id, album_id, object_key, thumbnail_object_key, url, thumbnail_url, file_name, file_size, mime_type, created_at, photo_date
 		FROM images
 		WHERE album_id = $1
 		AND ($2 = '' OR id < $2)
@@ -624,7 +624,7 @@ func (r *postgresAlbumRepository) ListImagesByAlbum(ctx context.Context, albumID
 
 func (r *postgresAlbumRepository) GetImage(ctx context.Context, imageID string) (*domain.Image, error) {
 	image, err := scanImage(r.pool.QueryRow(ctx,
-		`SELECT id, album_id, object_key, thumbnail_object_key, url, thumbnail_url, file_name, file_size, mime_type, created_at
+		`SELECT id, album_id, object_key, thumbnail_object_key, url, thumbnail_url, file_name, file_size, mime_type, created_at, photo_date
 		 FROM images WHERE id = $1`, imageID))
 	if err != nil {
 		return nil, fmt.Errorf("query image: %w", err)
@@ -654,7 +654,7 @@ func (r *postgresAlbumRepository) MoveImagesToAlbum(ctx context.Context, fromAlb
 		`UPDATE images
 		 SET album_id = $3
 		 WHERE album_id = $1 AND id = ANY($2)
-		 RETURNING id, album_id, object_key, thumbnail_object_key, url, thumbnail_url, file_name, file_size, mime_type, created_at`,
+			RETURNING id, album_id, object_key, thumbnail_object_key, url, thumbnail_url, file_name, file_size, mime_type, created_at, photo_date`,
 		fromAlbumID,
 		imageIDs,
 		targetAlbumID,
@@ -688,7 +688,7 @@ func (r *postgresAlbumRepository) DeleteImages(ctx context.Context, albumID stri
 	rows, err := r.pool.Query(ctx,
 		`DELETE FROM images
 		 WHERE album_id = $1 AND id = ANY($2)
-		 RETURNING id, album_id, object_key, thumbnail_object_key, url, thumbnail_url, file_name, file_size, mime_type, created_at`,
+			RETURNING id, album_id, object_key, thumbnail_object_key, url, thumbnail_url, file_name, file_size, mime_type, created_at, photo_date`,
 		albumID,
 		imageIDs,
 	)
@@ -713,6 +713,25 @@ func (r *postgresAlbumRepository) DeleteImages(ctx context.Context, albumID stri
 	return deleted, nil
 }
 
+func (r *postgresAlbumRepository) SetImageDate(ctx context.Context, albumID string, imageIDs []string, photoDate time.Time) (int, error) {
+	if len(imageIDs) == 0 {
+		return 0, nil
+	}
+	var updated int
+	if err := r.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM images WHERE album_id = $1 AND id = ANY($2)`, albumID, imageIDs,
+	).Scan(&updated); err != nil {
+		return 0, fmt.Errorf("count images for date update: %w", err)
+	}
+	if _, err := r.pool.Exec(ctx,
+		`UPDATE images SET photo_date = $3::date WHERE album_id = $1 AND id = ANY($2)`,
+		albumID, imageIDs, photoDate.Format("2006-01-02"),
+	); err != nil {
+		return 0, fmt.Errorf("set image date: %w", err)
+	}
+	return updated, nil
+}
+
 type imageScanner interface {
 	Scan(...any) error
 }
@@ -720,9 +739,10 @@ type imageScanner interface {
 func scanImage(row imageScanner) (*domain.Image, error) {
 	var image domain.Image
 	var objectKey, thumbnailObjectKey, url, thumbnailURL sql.NullString
+	var photoDate sql.NullTime
 	if err := row.Scan(
 		&image.ID, &image.AlbumID, &objectKey, &thumbnailObjectKey, &url, &thumbnailURL,
-		&image.FileName, &image.FileSize, &image.MimeType, &image.CreatedAt,
+		&image.FileName, &image.FileSize, &image.MimeType, &image.CreatedAt, &photoDate,
 	); err != nil {
 		return nil, err
 	}
@@ -737,6 +757,10 @@ func scanImage(row imageScanner) (*domain.Image, error) {
 	}
 	if thumbnailURL.Valid {
 		image.ThumbnailURL = thumbnailURL.String
+	}
+	if photoDate.Valid {
+		value := photoDate.Time
+		image.PhotoDate = &value
 	}
 	return &image, nil
 }

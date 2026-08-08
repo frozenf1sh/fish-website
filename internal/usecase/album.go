@@ -193,6 +193,24 @@ func (u *AlbumUsecase) MoveImages(ctx context.Context, fromAlbumID, targetAlbumI
 	return len(moved), nil
 }
 
+func (u *AlbumUsecase) SetImageDate(ctx context.Context, albumID string, imageIDs []string, photoDate string) (int, error) {
+	if albumID == "" || len(imageIDs) == 0 {
+		return 0, nil
+	}
+	parsed, err := time.Parse("2006-01-02", photoDate)
+	if err != nil {
+		return 0, fmt.Errorf("photo date must use YYYY-MM-DD: %w", err)
+	}
+	if _, err := u.albumRepo.GetAlbum(ctx, albumID); err != nil {
+		return 0, fmt.Errorf("get album: %w", err)
+	}
+	updated, err := u.albumRepo.SetImageDate(ctx, albumID, imageIDs, parsed)
+	if err != nil {
+		return 0, fmt.Errorf("set image date: %w", err)
+	}
+	return updated, nil
+}
+
 // ListAlbums lists albums with pagination
 func (u *AlbumUsecase) ListAlbums(ctx context.Context, pageSize int, pageToken string, onlyPublic bool) ([]*domain.Album, string, bool, error) {
 	if pageSize <= 0 {
