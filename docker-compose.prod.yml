@@ -52,7 +52,7 @@ services:
       - fish-network
 
   backend:
-    image: ghcr.io/${GHCR_OWNER:-your-github-username-or-org}/fish-website-backend:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_OWNER:-frozenf1sh}/fish-website-backend:${IMAGE_TAG:-latest}
     container_name: fish-website-backend
     pull_policy: always
     restart: unless-stopped
@@ -69,7 +69,7 @@ services:
       - fish-network
 
   frontend:
-    image: ghcr.io/${GHCR_OWNER:-your-github-username-or-org}/fish-website-frontend:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_OWNER:-frozenf1sh}/fish-website-frontend:${IMAGE_TAG:-latest}
     container_name: fish-website-frontend
     pull_policy: always
     restart: unless-stopped

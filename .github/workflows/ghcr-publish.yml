@@ -1,4 +1,4 @@
-name: Build, Publish, and Reconcile
+name: Build and Publish
 
 on:
   pull_request:
@@ -13,19 +13,16 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 env:
-  # The self-hosted runner mounts the registry CA from the cluster-managed
-  # ConfigMap before Buildx starts.
-  REGISTRY: registry.frozenf1sh.top
-  IMAGE_PREFIX: registry.frozenf1sh.top/fish-website
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/frozenf1sh/fish-website
 
 jobs:
   quality:
     name: Verify contracts and application quality
-    runs-on: [self-hosted, linux, x64, k3s]
-    # Public-repository forks must never execute on the private runner.
+    runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
@@ -83,12 +80,13 @@ jobs:
   docker:
     name: Build ${{ matrix.name }} image
     needs: quality
-    runs-on: [self-hosted, linux, x64, k3s]
-    # Public-repository forks must never execute on the private runner.
+    runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         include:
           - name: backend
@@ -108,25 +106,13 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          # The registry is reachable only through the k3s node's tailnet route.
-          # A container-network builder cannot resolve that private DNS name.
-          driver-opts: network=host
-          # The runner installs this private CA at the referenced host path.
-          # setup-buildx copies declared registry certificates into BuildKit.
-          buildkitd-config: .github/buildkitd.toml
 
-      - name: Log in to the private registry
-        # BuildKit reads and writes the private registry cache even when the
-        # resulting application image is not pushed (for example on manual
-        # dispatch or pull requests). Authentication must therefore happen for
-        # every trusted build. The push expression below still controls whether
-        # application images are published.
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract image metadata
         id: meta
@@ -150,55 +136,5 @@ jobs:
           push: ${{ github.event_name == 'push' || startsWith(github.ref, 'refs/tags/v') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}/cache-${{ matrix.image }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}/cache-${{ matrix.image }}:buildcache,mode=max
-
-  reconcile:
-    name: Promote desired image revision
-    needs: docker
-    runs-on: [self-hosted, linux, x64, k3s]
-    # Ordinary pushes update dev; a manual production retry is permitted only
-    # from an immutable v* release tag.
-    if: github.event_name == 'push' || startsWith(github.ref, 'refs/tags/v')
-    environment: ${{ github.ref_type == 'tag' && 'production' || 'development' }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Update the GitOps image tags
-        env:
-          IMAGE_TAG: sha-${{ github.sha }}
-        run: |
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            deploy_branch=production
-            deployment_path=deploy/fish-website/kustomization.yaml
-            commit_message="deploy: promote production to ${IMAGE_TAG} [skip ci]"
-          else
-            deploy_branch=main
-            deployment_path=deploy/fish-website-dev/kustomization.yaml
-            commit_message="deploy: update development to ${IMAGE_TAG} [skip ci]"
-          fi
-
-          # Production desired state is isolated from ordinary main changes.
-          git fetch origin "$deploy_branch"
-          git checkout -B "$deploy_branch" "origin/$deploy_branch"
-          git pull --rebase origin "$deploy_branch"
-
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            # Promote the production manifest from the exact source revision
-            # that built this release image. The production branch is never a
-            # delayed copy of main.
-            git checkout "$GITHUB_SHA" -- deploy/fish-website
-            perl -0pi -e 's|(newName: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(newName: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"
-          else
-            perl -0pi -e 's|(name: registry\.frozenf1sh\.top/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(name: registry\.frozenf1sh\.top/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$deployment_path"
-          git diff --cached --quiet || git commit -m "$commit_message"
-          git push origin "HEAD:$deploy_branch"
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,scope=${{ matrix.image }},mode=max
