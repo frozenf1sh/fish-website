@@ -6,8 +6,8 @@ resources:
   - traefik-middleware.yaml
 images:
   - name: backend
-    newName: registry.frozenf1sh.top/fish-website/backend
-    newTag: sha-5667fe7e9f55edf0262ce90a328533aa7b0ba20c
+    newName: ghcr.io/frozenf1sh/fish-website/backend
+    newTag: sha-f25c93b6d857f8c5e5cdad46bc56e3b78174a714
   - name: frontend
-    newName: registry.frozenf1sh.top/fish-website/frontend
-    newTag: sha-5667fe7e9f55edf0262ce90a328533aa7b0ba20c
+    newName: ghcr.io/frozenf1sh/fish-website/frontend
+    newTag: sha-f25c93b6d857f8c5e5cdad46bc56e3b78174a714

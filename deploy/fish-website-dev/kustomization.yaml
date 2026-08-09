@@ -90,7 +90,7 @@ patches:
                       port:
                         name: http
 images:
-  - name: registry.frozenf1sh.top/fish-website/backend
-    newTag: sha-724c8ba37c93a7831836b084ce864e90530b4a05
-  - name: registry.frozenf1sh.top/fish-website/frontend
-    newTag: sha-724c8ba37c93a7831836b084ce864e90530b4a05
+  - name: ghcr.io/frozenf1sh/fish-website/backend
+    newTag: sha-f25c93b6d857f8c5e5cdad46bc56e3b78174a714
+  - name: ghcr.io/frozenf1sh/fish-website/frontend
+    newTag: sha-f25c93b6d857f8c5e5cdad46bc56e3b78174a714
