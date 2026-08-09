@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { BlogFolderTree } from './BlogFolderTree'
 
+interface LeftSidebarProps {
+  mobileDrawer?: boolean
+  onClose?: () => void
+}
+
 type SocialIconKind = 'github' | 'xiaohongshu' | 'douyin' | 'bilibili'
 
 const socialLinks = [
@@ -47,7 +52,7 @@ function SocialIcon({ kind }: { kind: SocialIconKind }) {
   )
 }
 
-export function LeftSidebar() {
+export function LeftSidebar({ mobileDrawer = false, onClose }: LeftSidebarProps) {
   const navigate = useNavigate()
   const {
     settings,
@@ -65,20 +70,22 @@ export function LeftSidebar() {
   }
 
   return (
-    <motion.div
+    <>
+      {mobileDrawer && <motion.button type="button" aria-label="关闭账户菜单" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose} className="fixed inset-0 z-[55] bg-slate-950/55 backdrop-blur-sm" />}
+      <motion.div
       initial={{ x: -50, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="h-full"
+      className={mobileDrawer ? 'fixed inset-y-0 left-0 z-[60] w-[min(86vw,340px)] p-3' : 'h-full'}
     >
-      <div className="sticky top-6 space-y-6">
+      <div className={mobileDrawer ? 'h-full space-y-4 overflow-y-auto' : 'sticky top-6 space-y-6'}>
         {/* 头像卡片 */}
         <motion.div
           whileHover={{ scale: 1.02 }}
-          onClick={() => navigate('/about')}
-          className="glass-panel cursor-pointer rounded-4xl p-8 text-center"
+          onClick={() => { navigate('/about'); onClose?.() }}
+          className={`glass-panel cursor-pointer text-center ${mobileDrawer ? 'rounded-3xl p-5' : 'rounded-4xl p-8'}`}
         >
-          <div className="relative inline-block mb-6">
+          <div className={`relative inline-block ${mobileDrawer ? 'mb-4' : 'mb-6'}`}>
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 blur-xl opacity-50 avatar-glow"></div>
             <button
               onClick={(event) => {
@@ -87,7 +94,7 @@ export function LeftSidebar() {
                   setShowLoginModal(true)
                 }
               }}
-              className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white/50 shadow-2xl hover:scale-105 transition-transform"
+              className={`relative rounded-full overflow-hidden border-4 border-white/50 shadow-2xl hover:scale-105 transition-transform ${mobileDrawer ? 'h-24 w-24' : 'h-32 w-32'}`}
             >
               {settings?.avatarUrl ? (
                 <img
@@ -103,10 +110,10 @@ export function LeftSidebar() {
             </button>
           </div>
 
-          <h1 className="text-2xl font-bold text-white mb-2 text-gradient">
+          <h1 className={`${mobileDrawer ? 'text-xl' : 'text-2xl'} font-bold text-white mb-2 text-gradient`}>
             {settings?.displayName || ''}
           </h1>
-          <p className="text-white/80 text-sm leading-relaxed mb-6">
+          <p className="text-white/80 text-sm leading-relaxed mb-5">
             {settings?.bio || ''}
           </p>
 
@@ -162,6 +169,7 @@ export function LeftSidebar() {
                 onClick={(event) => {
                   event.stopPropagation()
                   setShowSettingsDrawer(true)
+                  onClose?.()
                 }}
                 className="flex-1 px-3 py-2 rounded-2xl bg-white/15 text-white/90 hover:bg-white/25 transition-all"
               >
@@ -171,11 +179,12 @@ export function LeftSidebar() {
             <button
               onClick={(event) => {
                 event.stopPropagation()
-                if (isLoggedIn) {
-                  logout()
-                } else {
-                  setShowLoginModal(true)
-                }
+                  if (isLoggedIn) {
+                    logout()
+                  } else {
+                    setShowLoginModal(true)
+                  }
+                  onClose?.()
               }}
               className="flex-1 px-3 py-2 rounded-2xl bg-white/10 text-white/85 hover:bg-white/20 transition-all"
             >
@@ -185,8 +194,9 @@ export function LeftSidebar() {
         </motion.div>
 
         {/* 博客目录树 */}
-        <BlogFolderTree />
+        {!mobileDrawer && <BlogFolderTree />}
       </div>
-    </motion.div>
+      </motion.div>
+    </>
   )
 }

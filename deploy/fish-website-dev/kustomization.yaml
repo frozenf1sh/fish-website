@@ -40,6 +40,14 @@ patches:
                     value: "https://dev.frozenf1sh.top,http://localhost:5173"
                   - name: ENABLE_REFLECTION
                     value: "true"
+                  - name: GITHUB_USERNAME
+                    value: "frozenf1sh"
+                  - name: GITHUB_TOKEN
+                    valueFrom:
+                      secretKeyRef:
+                        name: application
+                        key: github-token
+                        optional: true
                   - name: ADMIN_PASSWORD_HASH
                     valueFrom:
                       secretKeyRef:

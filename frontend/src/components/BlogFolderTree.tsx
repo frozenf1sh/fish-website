@@ -179,13 +179,7 @@ export function BlogFolderTree() {
   }
 
   return (
-    <div className="glass-card rounded-4xl p-6">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white/90 font-semibold flex items-center gap-2">
-          <span>📁</span>
-          博客目录
-        </h3>
-      </div>
+    <div className="glass-card rounded-4xl p-4 sm:p-5">
 
       {isLoading ? (
         <div className="py-6 text-center text-white/60 text-sm">加载中...</div>

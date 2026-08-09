@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LeftSidebar } from './LeftSidebar'
 import { RightSidebar } from './RightSidebar'
@@ -7,17 +8,12 @@ import { useStore } from '../store/useStore'
 const mobileTabs = [
   { icon: '🏠', label: '首页', path: '/' },
   { icon: '📸', label: '相册', path: '/albums' },
-  { icon: '🔎', label: '搜索', path: '/search' },
   { icon: '📝', label: '博客', path: '/blog' },
+  { icon: '💻', label: '项目', path: '/projects' },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M20 21a8 8 0 0 0-16 0" />
-        <circle cx="12" cy="8" r="4" />
-      </svg>
-    ),
-    label: '我',
-    path: '/me',
+    icon: '🌟',
+    label: '关于',
+    path: '/about',
   },
 ]
 
@@ -25,31 +21,31 @@ export function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const avatarUrl = useStore((state) => state.settings?.avatarUrl)
+  const [mobileProfileOpen, setMobileProfileOpen] = useState(false)
 
   return (
     <div className="min-h-screen">
       <div className="xl:hidden fixed top-0 left-0 right-0 z-40 px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 backdrop-blur-xl border-b border-white/20 bg-black/20">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-white"
-          >
+          <div className="flex items-center gap-2 text-white">
+            <button
+              type="button"
+              onClick={() => setMobileProfileOpen(true)}
+              className="rounded-full focus:outline-none focus:ring-2 focus:ring-white/60"
+              aria-label="打开账户菜单"
+            >
             {avatarUrl ? (
               <img src={avatarUrl} alt="avatar" className="w-7 h-7 rounded-full object-cover border border-white/30" />
             ) : (
               <span className="w-7 h-7 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-sm">🐟</span>
             )}
-            <span className="text-sm font-semibold tracking-wide">冻鱼的小站</span>
-          </button>
-          <button
-            onClick={() => navigate('/search')}
-            className="w-9 h-9 rounded-full bg-white/20 text-white/90 flex items-center justify-center"
-            aria-label="前往搜索"
-          >
-            🔎
-          </button>
+            </button>
+            <button type="button" onClick={() => navigate('/')} className="text-sm font-semibold tracking-wide">冻鱼的小站</button>
+          </div>
         </div>
       </div>
+
+      {mobileProfileOpen && <LeftSidebar mobileDrawer onClose={() => setMobileProfileOpen(false)} />}
 
       <div className="max-w-[1480px] mx-auto px-4 sm:px-6 pb-24 xl:pb-6 pt-20 xl:pt-6">
         <div className="grid gap-4 xl:gap-6 xl:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_minmax(220px,260px)] items-start">

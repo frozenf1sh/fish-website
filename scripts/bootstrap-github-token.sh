@@ -35,14 +35,17 @@ fi
 
 umask 077
 patch_file=$(mktemp)
+deployment_patch_file=$(mktemp)
 cleanup() {
   rm -f "$patch_file"
-  unset github_token token_b64 patch_file
+  rm -f "$deployment_patch_file"
+  unset github_token token_b64 patch_file deployment_patch_file
 }
 trap cleanup EXIT
 
 token_b64=$(printf '%s' "$github_token" | base64 | tr -d '\n')
 printf '{"data":{"github-token":"%s"}}\n' "$token_b64" >"$patch_file"
+printf '%s\n' '{"spec":{"template":{"spec":{"containers":[{"name":"backend","env":[{"name":"GITHUB_USERNAME","value":"frozenf1sh"},{"name":"GITHUB_TOKEN","valueFrom":{"secretKeyRef":{"name":"application","key":"github-token","optional":true}}}]}]}}}}' >"$deployment_patch_file"
 
 namespaces=(fish-website fish-website-dev)
 for namespace in "${namespaces[@]}"; do
@@ -51,6 +54,9 @@ for namespace in "${namespaces[@]}"; do
   kubectl "${kubectl_args[@]}" -n "$namespace" patch secret application \
     --type=merge \
     --patch-file="$patch_file" >/dev/null
+  kubectl "${kubectl_args[@]}" -n "$namespace" patch deployment backend \
+    --type=strategic \
+    --patch-file="$deployment_patch_file" >/dev/null
 done
 
 for namespace in "${namespaces[@]}"; do

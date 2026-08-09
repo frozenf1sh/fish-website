@@ -28,10 +28,10 @@ export function GitHubActivityCard() {
   if (!activity) return null
 
   return (
-    <section className="overflow-hidden rounded-3xl bg-white p-4 text-slate-900 shadow-xl sm:p-6" aria-label="GitHub 活动">
+    <section className="mx-auto w-full overflow-hidden rounded-3xl bg-white p-4 text-slate-900 shadow-xl sm:max-w-3xl sm:p-5" aria-label="GitHub 活动">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <img src={activity.avatarUrl} alt={`${activity.username} avatar`} className="h-12 w-12 shrink-0 rounded-2xl object-cover ring-1 ring-slate-200" />
+          <img src={activity.avatarUrl} alt={`${activity.username} avatar`} className="h-11 w-11 shrink-0 rounded-2xl object-cover ring-1 ring-slate-200" />
           <div className="min-w-0">
             <p className="truncate text-base font-semibold sm:text-lg">{activity.displayName || activity.username}</p>
             <a href={activity.profileUrl} target="_blank" rel="noopener noreferrer" className="truncate text-sm text-slate-500 hover:text-slate-900 hover:underline">@{activity.username}</a>
@@ -42,10 +42,10 @@ export function GitHubActivityCard() {
 
       {activity.bio && <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-600">{activity.bio}</p>}
 
-      <div className="mt-4 grid grid-cols-3 gap-2 border-y border-slate-200 py-3 text-center">
-        <div><p className="text-lg font-semibold">{formatCount(activity.publicRepositories)}</p><p className="text-xs text-slate-500">公开仓库</p></div>
-        <div><p className="text-lg font-semibold">{formatCount(activity.followers)}</p><p className="text-xs text-slate-500">关注者</p></div>
-        <div><p className="text-lg font-semibold">{formatCount(activity.totalContributions)}</p><p className="text-xs text-slate-500">年度贡献</p></div>
+      <div className="mt-4 grid grid-cols-3 gap-2 border-y border-slate-200 py-2.5 text-center">
+        <div><p className="text-base font-semibold sm:text-lg">{formatCount(activity.publicRepositories)}</p><p className="text-xs text-slate-500">公开仓库</p></div>
+        <div><p className="text-base font-semibold sm:text-lg">{formatCount(activity.followers)}</p><p className="text-xs text-slate-500">关注者</p></div>
+        <div><p className="text-base font-semibold sm:text-lg">{formatCount(activity.totalContributions)}</p><p className="text-xs text-slate-500">年度贡献</p></div>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
@@ -55,11 +55,11 @@ export function GitHubActivityCard() {
 
       {activity.contributionCalendarAvailable ? (
         <div className="mt-3 -mx-1 overflow-x-auto pb-1" tabIndex={0} aria-label="GitHub 最近一年贡献日历，可横向滚动">
-          <div className="flex min-w-[680px] gap-1 px-1">
+          <div className="flex min-w-[620px] gap-0.5 px-1">
             {activity.weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="flex flex-col gap-1">
+              <div key={weekIndex} className="flex flex-col gap-0.5">
                 {week.map((day) => (
-                  <span key={day.date} title={`${day.date} · ${day.contributionCount} 次贡献`} className="h-2.5 w-2.5 rounded-[3px] ring-1 ring-black/5 sm:h-3 sm:w-3" style={{ backgroundColor: day.color || '#ebedf0' }} />
+                  <span key={day.date} title={`${day.date} · ${day.contributionCount} 次贡献`} className="h-2.5 w-2.5 rounded-[3px] ring-1 ring-black/5" style={{ backgroundColor: day.color || '#ebedf0' }} />
                 ))}
               </div>
             ))}

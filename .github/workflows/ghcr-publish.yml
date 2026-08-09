@@ -176,11 +176,11 @@ jobs:
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             deploy_branch=production
             deployment_path=deploy/fish-website/kustomization.yaml
-            commit_message="部署：提升生产环境至 ${IMAGE_TAG} [skip ci]"
+            commit_message="deploy: promote production to ${IMAGE_TAG} [skip ci]"
           else
             deploy_branch=main
             deployment_path=deploy/fish-website-dev/kustomization.yaml
-            commit_message="部署：更新开发环境至 ${IMAGE_TAG} [skip ci]"
+            commit_message="deploy: update development to ${IMAGE_TAG} [skip ci]"
           fi
 
           # Production desired state is isolated from ordinary main changes.

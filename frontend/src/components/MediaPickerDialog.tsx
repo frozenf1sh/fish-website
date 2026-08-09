@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { clients } from '../lib/connect'
 import { compressImage } from '../utils/imageCompressor'
@@ -159,7 +160,7 @@ export function MediaPickerDialog({ open, multiple = true, title = '选择图片
 
   if (!open) return null
 
-  return (
+  return createPortal((
     <AnimatePresence>
       <motion.div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
         <motion.div className="glass-card flex max-h-[min(760px,calc(100vh-24px))] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/20" initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} onMouseDown={(event) => event.stopPropagation()}>
@@ -210,5 +211,5 @@ export function MediaPickerDialog({ open, multiple = true, title = '选择图片
         </motion.div>
       </motion.div>
     </AnimatePresence>
-  )
+  ), document.body)
 }
