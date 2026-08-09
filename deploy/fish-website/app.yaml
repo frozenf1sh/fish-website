@@ -102,8 +102,6 @@ spec:
             - {name: MIGRATE_ONLY, value: "true"}
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}
             - {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: application, key: jwt-secret}}}
-            - {name: GITHUB_USERNAME, value: "frozenf1sh"}
-            - {name: GITHUB_TOKEN, valueFrom: {secretKeyRef: {name: application, key: github-token, optional: true}}}
             - {name: LOGGER_JSON, value: "true"}
           resources:
             requests: {cpu: 50m, memory: 96Mi}
@@ -200,6 +198,8 @@ spec:
             - {name: ENABLE_REFLECTION, value: "false"}
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}
             - {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: application, key: jwt-secret}}}
+            - {name: GITHUB_USERNAME, value: "frozenf1sh"}
+            - {name: GITHUB_TOKEN, valueFrom: {secretKeyRef: {name: application, key: github-token, optional: true}}}
             - {name: LOGGER_JSON, value: "true"}
           resources:
             requests: {cpu: 100m, memory: 128Mi}

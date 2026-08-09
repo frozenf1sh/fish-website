@@ -27,6 +27,8 @@ export function GitHubActivityCard() {
 
   if (!activity) return null
 
+  const recentWeeks = activity.weeks.slice(-26)
+
   return (
     <section className="mx-auto w-full overflow-hidden rounded-3xl bg-white p-4 text-slate-900 shadow-xl sm:max-w-3xl sm:p-5" aria-label="GitHub 活动">
       <div className="flex items-start justify-between gap-4">
@@ -50,12 +52,24 @@ export function GitHubActivityCard() {
 
       <div className="mt-4 flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold sm:text-base">贡献日历</h3>
-        <span className="text-xs text-slate-400">最近一年</span>
+        <span className="text-xs text-slate-400"><span className="sm:hidden">最近六个月</span><span className="hidden sm:inline">最近一年</span></span>
       </div>
 
       {activity.contributionCalendarAvailable ? (
-        <div className="mt-3 -mx-1 overflow-x-auto pb-1" tabIndex={0} aria-label="GitHub 最近一年贡献日历，可横向滚动">
-          <div className="flex min-w-[620px] gap-0.5 px-1">
+        <>
+          <div className="mt-3 overflow-hidden pb-1 sm:hidden" aria-label="GitHub 最近六个月贡献日历">
+            <div className="flex w-max gap-0.5 px-1">
+              {recentWeeks.map((week, weekIndex) => (
+                <div key={weekIndex} className="flex flex-col gap-0.5">
+                  {week.map((day) => (
+                    <span key={day.date} title={`${day.date} · ${day.contributionCount} 次贡献`} className="h-2.5 w-2.5 rounded-[3px] ring-1 ring-black/5" style={{ backgroundColor: day.color || '#ebedf0' }} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-3 -mx-1 hidden overflow-x-auto pb-1 sm:block" tabIndex={0} aria-label="GitHub 最近一年贡献日历，可横向滚动">
+            <div className="flex min-w-[620px] gap-0.5 px-1">
             {activity.weeks.map((week, weekIndex) => (
               <div key={weekIndex} className="flex flex-col gap-0.5">
                 {week.map((day) => (
@@ -63,8 +77,9 @@ export function GitHubActivityCard() {
                 ))}
               </div>
             ))}
+            </div>
           </div>
-        </div>
+        </>
       ) : (
         <div className="mt-3 rounded-2xl bg-slate-100 px-4 py-3 text-sm leading-6 text-slate-500">
           贡献日历暂未配置，前往 GitHub 查看完整活动。
