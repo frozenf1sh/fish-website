@@ -23,18 +23,6 @@ patches:
   - target:
       group: apps
       version: v1
-      kind: StatefulSet
-      name: minio
-    patch: |-
-      apiVersion: apps/v1
-      kind: StatefulSet
-      metadata:
-        name: minio
-      spec:
-        replicas: 0
-  - target:
-      group: apps
-      version: v1
       kind: Deployment
       name: backend
     patch: |-
@@ -48,6 +36,18 @@ patches:
             containers:
               - name: backend
                 env:
+                  - name: CORS_ALLOWED_ORIGINS
+                    value: "https://dev.frozenf1sh.top,http://localhost:5173"
+                  - name: ENABLE_REFLECTION
+                    value: "true"
+                  - name: GITHUB_USERNAME
+                    value: "frozenf1sh"
+                  - name: GITHUB_TOKEN
+                    valueFrom:
+                      secretKeyRef:
+                        name: application
+                        key: github-token
+                        optional: true
                   - name: ADMIN_PASSWORD_HASH
                     valueFrom:
                       secretKeyRef:
@@ -66,6 +66,7 @@ patches:
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-prod
           traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+          traefik.ingress.kubernetes.io/router.middlewares: fish-website-dev-api-strip@kubernetescrd
       spec:
         tls:
           - hosts: [dev.frozenf1sh.top]
@@ -89,7 +90,7 @@ patches:
                       port:
                         name: http
 images:
-  - name: registry.frozenf1sh.top/fish-website/backend
-    newTag: sha-f670d562d7f03662e8b0edde262931aa08d53239
-  - name: registry.frozenf1sh.top/fish-website/frontend
-    newTag: sha-f670d562d7f03662e8b0edde262931aa08d53239
+  - name: ghcr.io/frozenf1sh/fish-website/backend
+    newTag: sha-f25c93b6d857f8c5e5cdad46bc56e3b78174a714
+  - name: ghcr.io/frozenf1sh/fish-website/frontend
+    newTag: sha-f25c93b6d857f8c5e5cdad46bc56e3b78174a714

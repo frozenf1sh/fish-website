@@ -85,7 +85,7 @@ spec:
       restartPolicy: OnFailure
       serviceAccountName: fish-website
       automountServiceAccountToken: false
-      imagePullSecrets: [{name: registry-credentials}]
+      imagePullSecrets: [{name: ghcr-secret}]
       containers:
         - name: database-migrate
           image: backend
@@ -146,7 +146,7 @@ spec:
           restartPolicy: OnFailure
           serviceAccountName: fish-website
           automountServiceAccountToken: false
-          imagePullSecrets: [{name: registry-credentials}]
+          imagePullSecrets: [{name: ghcr-secret}]
           containers:
             - name: recycle-bin-purge
               image: backend
@@ -183,7 +183,7 @@ spec:
     metadata: {labels: {app.kubernetes.io/name: backend}}
     spec:
       serviceAccountName: fish-website
-      imagePullSecrets: [{name: registry-credentials}]
+      imagePullSecrets: [{name: ghcr-secret}]
       containers:
         - name: backend
           image: backend
@@ -243,7 +243,7 @@ spec:
         fsGroup: 101
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: {type: RuntimeDefault}
-      imagePullSecrets: [{name: registry-credentials}]
+      imagePullSecrets: [{name: ghcr-secret}]
       containers:
         - name: frontend
           image: frontend
