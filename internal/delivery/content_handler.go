@@ -2,10 +2,12 @@ package delivery
 
 import (
 	"context"
+	"time"
 
 	"connectrpc.com/connect"
 	homev1 "github.com/frozenfish/fish-website/gen/go/home/v1"
 	"github.com/frozenfish/fish-website/internal/domain"
+	githubclient "github.com/frozenfish/fish-website/internal/github"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -120,6 +122,31 @@ func toProtoAboutImage(image *domain.AboutImage) *homev1.AboutImage {
 	result := &homev1.AboutImage{Id: image.ID, SortOrder: int32(image.SortOrder)}
 	if image.Image != nil {
 		result.Image = toProtoImage(image.Image)
+	}
+	return result
+}
+
+func toProtoGitHubActivity(activity *githubclient.Activity) *homev1.GitHubActivity {
+	result := &homev1.GitHubActivity{
+		Username:                      activity.Username,
+		ProfileUrl:                    activity.ProfileURL,
+		AvatarUrl:                     activity.AvatarURL,
+		DisplayName:                   activity.DisplayName,
+		Bio:                           activity.Bio,
+		PublicRepositories:            activity.PublicRepositories,
+		Followers:                     activity.Followers,
+		Following:                     activity.Following,
+		TotalContributions:            activity.TotalContributions,
+		ContributionCalendarAvailable: activity.ContributionCalendarAvailable,
+		LastUpdatedAt:                 activity.LastUpdatedAt.Format(time.RFC3339),
+		Weeks:                         make([]*homev1.GitHubContributionWeek, 0, len(activity.Weeks)),
+	}
+	for _, week := range activity.Weeks {
+		protoWeek := &homev1.GitHubContributionWeek{Days: make([]*homev1.GitHubContributionDay, 0, len(week.Days))}
+		for _, day := range week.Days {
+			protoWeek.Days = append(protoWeek.Days, &homev1.GitHubContributionDay{Date: day.Date, ContributionCount: day.ContributionCount, Color: day.Color})
+		}
+		result.Weeks = append(result.Weeks, protoWeek)
 	}
 	return result
 }

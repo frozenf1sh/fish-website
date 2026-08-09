@@ -35,6 +35,8 @@ const (
 	ProjectServiceName = "home.v1.ProjectService"
 	// AboutServiceName is the fully-qualified name of the AboutService service.
 	AboutServiceName = "home.v1.AboutService"
+	// GitHubServiceName is the fully-qualified name of the GitHubService service.
+	GitHubServiceName = "home.v1.GitHubService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -155,6 +157,9 @@ const (
 	// AboutServiceReorderAboutImagesProcedure is the fully-qualified name of the AboutService's
 	// ReorderAboutImages RPC.
 	AboutServiceReorderAboutImagesProcedure = "/home.v1.AboutService/ReorderAboutImages"
+	// GitHubServiceGetActivityProcedure is the fully-qualified name of the GitHubService's GetActivity
+	// RPC.
+	GitHubServiceGetActivityProcedure = "/home.v1.GitHubService/GetActivity"
 )
 
 // AuthServiceClient is a client for the home.v1.AuthService service.
@@ -1587,4 +1592,74 @@ func (UnimplementedAboutServiceHandler) RemoveAboutImage(context.Context, *conne
 
 func (UnimplementedAboutServiceHandler) ReorderAboutImages(context.Context, *connect.Request[v1.ReorderAboutImagesRequest]) (*connect.Response[v1.ReorderAboutImagesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.AboutService.ReorderAboutImages is not implemented"))
+}
+
+// GitHubServiceClient is a client for the home.v1.GitHubService service.
+type GitHubServiceClient interface {
+	GetActivity(context.Context, *connect.Request[v1.GetActivityRequest]) (*connect.Response[v1.GetActivityResponse], error)
+}
+
+// NewGitHubServiceClient constructs a client for the home.v1.GitHubService service. By default, it
+// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
+// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
+// connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewGitHubServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) GitHubServiceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	gitHubServiceMethods := v1.File_home_v1_homepage_proto.Services().ByName("GitHubService").Methods()
+	return &gitHubServiceClient{
+		getActivity: connect.NewClient[v1.GetActivityRequest, v1.GetActivityResponse](
+			httpClient,
+			baseURL+GitHubServiceGetActivityProcedure,
+			connect.WithSchema(gitHubServiceMethods.ByName("GetActivity")),
+			connect.WithClientOptions(opts...),
+		),
+	}
+}
+
+// gitHubServiceClient implements GitHubServiceClient.
+type gitHubServiceClient struct {
+	getActivity *connect.Client[v1.GetActivityRequest, v1.GetActivityResponse]
+}
+
+// GetActivity calls home.v1.GitHubService.GetActivity.
+func (c *gitHubServiceClient) GetActivity(ctx context.Context, req *connect.Request[v1.GetActivityRequest]) (*connect.Response[v1.GetActivityResponse], error) {
+	return c.getActivity.CallUnary(ctx, req)
+}
+
+// GitHubServiceHandler is an implementation of the home.v1.GitHubService service.
+type GitHubServiceHandler interface {
+	GetActivity(context.Context, *connect.Request[v1.GetActivityRequest]) (*connect.Response[v1.GetActivityResponse], error)
+}
+
+// NewGitHubServiceHandler builds an HTTP handler from the service implementation. It returns the
+// path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewGitHubServiceHandler(svc GitHubServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	gitHubServiceMethods := v1.File_home_v1_homepage_proto.Services().ByName("GitHubService").Methods()
+	gitHubServiceGetActivityHandler := connect.NewUnaryHandler(
+		GitHubServiceGetActivityProcedure,
+		svc.GetActivity,
+		connect.WithSchema(gitHubServiceMethods.ByName("GetActivity")),
+		connect.WithHandlerOptions(opts...),
+	)
+	return "/home.v1.GitHubService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case GitHubServiceGetActivityProcedure:
+			gitHubServiceGetActivityHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+// UnimplementedGitHubServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedGitHubServiceHandler struct{}
+
+func (UnimplementedGitHubServiceHandler) GetActivity(context.Context, *connect.Request[v1.GetActivityRequest]) (*connect.Response[v1.GetActivityResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("home.v1.GitHubService.GetActivity is not implemented"))
 }

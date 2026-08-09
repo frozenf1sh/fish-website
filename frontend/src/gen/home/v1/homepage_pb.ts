@@ -257,6 +257,263 @@ export class LogoutResponse extends Message<LogoutResponse> {
 }
 
 /**
+ * @generated from message home.v1.GetActivityRequest
+ */
+export class GetActivityRequest extends Message<GetActivityRequest> {
+  constructor(data?: PartialMessage<GetActivityRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GetActivityRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetActivityRequest {
+    return new GetActivityRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetActivityRequest {
+    return new GetActivityRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetActivityRequest {
+    return new GetActivityRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetActivityRequest | PlainMessage<GetActivityRequest> | undefined, b: GetActivityRequest | PlainMessage<GetActivityRequest> | undefined): boolean {
+    return proto3.util.equals(GetActivityRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GitHubContributionDay
+ */
+export class GitHubContributionDay extends Message<GitHubContributionDay> {
+  /**
+   * @generated from field: string date = 1;
+   */
+  date = "";
+
+  /**
+   * @generated from field: int32 contribution_count = 2;
+   */
+  contributionCount = 0;
+
+  /**
+   * @generated from field: string color = 3;
+   */
+  color = "";
+
+  constructor(data?: PartialMessage<GitHubContributionDay>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GitHubContributionDay";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "date", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "contribution_count", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "color", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GitHubContributionDay {
+    return new GitHubContributionDay().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GitHubContributionDay {
+    return new GitHubContributionDay().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GitHubContributionDay {
+    return new GitHubContributionDay().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GitHubContributionDay | PlainMessage<GitHubContributionDay> | undefined, b: GitHubContributionDay | PlainMessage<GitHubContributionDay> | undefined): boolean {
+    return proto3.util.equals(GitHubContributionDay, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GitHubContributionWeek
+ */
+export class GitHubContributionWeek extends Message<GitHubContributionWeek> {
+  /**
+   * @generated from field: repeated home.v1.GitHubContributionDay days = 1;
+   */
+  days: GitHubContributionDay[] = [];
+
+  constructor(data?: PartialMessage<GitHubContributionWeek>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GitHubContributionWeek";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "days", kind: "message", T: GitHubContributionDay, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GitHubContributionWeek {
+    return new GitHubContributionWeek().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GitHubContributionWeek {
+    return new GitHubContributionWeek().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GitHubContributionWeek {
+    return new GitHubContributionWeek().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GitHubContributionWeek | PlainMessage<GitHubContributionWeek> | undefined, b: GitHubContributionWeek | PlainMessage<GitHubContributionWeek> | undefined): boolean {
+    return proto3.util.equals(GitHubContributionWeek, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GitHubActivity
+ */
+export class GitHubActivity extends Message<GitHubActivity> {
+  /**
+   * @generated from field: string username = 1;
+   */
+  username = "";
+
+  /**
+   * @generated from field: string profile_url = 2;
+   */
+  profileUrl = "";
+
+  /**
+   * @generated from field: string avatar_url = 3;
+   */
+  avatarUrl = "";
+
+  /**
+   * @generated from field: string display_name = 4;
+   */
+  displayName = "";
+
+  /**
+   * @generated from field: string bio = 5;
+   */
+  bio = "";
+
+  /**
+   * @generated from field: int32 public_repositories = 6;
+   */
+  publicRepositories = 0;
+
+  /**
+   * @generated from field: int32 followers = 7;
+   */
+  followers = 0;
+
+  /**
+   * @generated from field: int32 following = 8;
+   */
+  following = 0;
+
+  /**
+   * @generated from field: int32 total_contributions = 9;
+   */
+  totalContributions = 0;
+
+  /**
+   * @generated from field: repeated home.v1.GitHubContributionWeek weeks = 10;
+   */
+  weeks: GitHubContributionWeek[] = [];
+
+  /**
+   * @generated from field: bool contribution_calendar_available = 11;
+   */
+  contributionCalendarAvailable = false;
+
+  /**
+   * @generated from field: string last_updated_at = 12;
+   */
+  lastUpdatedAt = "";
+
+  constructor(data?: PartialMessage<GitHubActivity>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GitHubActivity";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "username", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "profile_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "avatar_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "display_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "bio", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "public_repositories", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 7, name: "followers", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 8, name: "following", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 9, name: "total_contributions", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 10, name: "weeks", kind: "message", T: GitHubContributionWeek, repeated: true },
+    { no: 11, name: "contribution_calendar_available", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 12, name: "last_updated_at", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GitHubActivity {
+    return new GitHubActivity().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GitHubActivity {
+    return new GitHubActivity().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GitHubActivity {
+    return new GitHubActivity().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GitHubActivity | PlainMessage<GitHubActivity> | undefined, b: GitHubActivity | PlainMessage<GitHubActivity> | undefined): boolean {
+    return proto3.util.equals(GitHubActivity, a, b);
+  }
+}
+
+/**
+ * @generated from message home.v1.GetActivityResponse
+ */
+export class GetActivityResponse extends Message<GetActivityResponse> {
+  /**
+   * @generated from field: home.v1.GitHubActivity activity = 1;
+   */
+  activity?: GitHubActivity;
+
+  constructor(data?: PartialMessage<GetActivityResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "home.v1.GetActivityResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "activity", kind: "message", T: GitHubActivity },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetActivityResponse {
+    return new GetActivityResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetActivityResponse {
+    return new GetActivityResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetActivityResponse {
+    return new GetActivityResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetActivityResponse | PlainMessage<GetActivityResponse> | undefined, b: GetActivityResponse | PlainMessage<GetActivityResponse> | undefined): boolean {
+    return proto3.util.equals(GetActivityResponse, a, b);
+  }
+}
+
+/**
  * Post messages
  *
  * @generated from message home.v1.Post

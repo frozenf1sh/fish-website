@@ -11,6 +11,7 @@ import (
 	"context"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/frozenfish/fish-website/internal/domain"
+	"github.com/frozenfish/fish-website/internal/github"
 	"github.com/frozenfish/fish-website/internal/identity/application"
 	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/repository"
@@ -47,13 +48,18 @@ func InitializeServer(ctx context.Context, cfg *config.Config) (*Server, error) 
 	projectUsecase := provideProjectUsecase(projectRepository, imageReferenceRepository)
 	aboutRepository := provideAboutRepository(postgresRepository)
 	aboutUsecase := provideAboutUsecase(aboutRepository, imageReferenceRepository)
-	handler := provideHandler(ownerAuthenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase, projectUsecase, aboutUsecase)
+	gitHubUsecase := provideGitHubUsecase(cfg)
+	handler := provideHandler(ownerAuthenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase, projectUsecase, aboutUsecase, gitHubUsecase)
 	interceptor := provideAuthInterceptor(ownerAuthenticator)
 	server := NewServer(cfg, pool, handler, interceptor)
 	return server, nil
 }
 
 // wire.go:
+
+func provideGitHubUsecase(cfg *config.Config) *usecase.GitHubUsecase {
+	return usecase.NewGitHubUsecase(github.NewClient(cfg.GitHub.Username, cfg.GitHub.Token), time.Duration(cfg.GitHub.CacheTTLSeconds)*time.Second)
+}
 
 func providePGXPool(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(ctx, cfg.Database.DSN)
@@ -147,8 +153,9 @@ func provideHandler(
 	settingsUsecase *usecase.SettingsUsecase,
 	projectUsecase *usecase.ProjectUsecase,
 	aboutUsecase *usecase.AboutUsecase,
+	githubUsecase *usecase.GitHubUsecase,
 ) *delivery.Handler {
-	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase, projectUsecase, aboutUsecase)
+	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase, projectUsecase, aboutUsecase, githubUsecase)
 }
 
 func provideAuthInterceptor(authenticator *application.OwnerAuthenticator) connect.Interceptor {

@@ -51,3 +51,24 @@ export interface ImageReferenceItem {
   faviconReferenceCount: number
   safeToDelete: boolean
 }
+
+export interface GitHubContributionDay {
+  date: string
+  contributionCount: number
+  color: string
+}
+
+export interface GitHubActivity {
+  username: string
+  profileUrl: string
+  avatarUrl: string
+  displayName: string
+  bio: string
+  publicRepositories: number
+  followers: number
+  following: number
+  totalContributions: number
+  weeks: GitHubContributionDay[][]
+  contributionCalendarAvailable: boolean
+  lastUpdatedAt: string
+}

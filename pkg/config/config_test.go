@@ -49,6 +49,7 @@ func validConfig() Config {
 			JWTSecret:         "at-least-thirty-two-characters-long",
 			TokenTTLSeconds:   900,
 		},
-		CORS: CORSConfig{AllowedOrigins: []string{"http://localhost:5173"}},
+		GitHub: GitHubConfig{Username: "frozenf1sh", CacheTTLSeconds: 21600},
+		CORS:   CORSConfig{AllowedOrigins: []string{"http://localhost:5173"}},
 	}
 }

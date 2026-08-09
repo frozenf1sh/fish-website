@@ -21,6 +21,7 @@ minio_password=$(openssl rand -base64 32 | tr -d '\n')
 admin_password=$(openssl rand -base64 32 | tr -d '\n')
 admin_password_hash=$(printf %s "$admin_password" | go run ./cmd/passwordhash)
 jwt_secret=$(openssl rand -hex 48)
+github_token=${GITHUB_TOKEN:-}
 
 kubectl create namespace registry --dry-run=client -o yaml | kubectl apply -f -
 kubectl create namespace fish-website --dry-run=client -o yaml | kubectl apply -f -
@@ -35,9 +36,14 @@ kubectl -n fish-website create secret generic minio \
   --from-literal=username=fishminio \
   --from-literal=password="$minio_password" \
   --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n fish-website create secret generic application \
-  --from-literal=admin-password-hash="$admin_password_hash" \
-  --from-literal=jwt-secret="$jwt_secret" \
+application_secret_args=(
+  --from-literal=admin-password-hash="$admin_password_hash"
+  --from-literal=jwt-secret="$jwt_secret"
+)
+if [ -n "$github_token" ]; then
+  application_secret_args+=(--from-literal=github-token="$github_token")
+fi
+kubectl -n fish-website create secret generic application "${application_secret_args[@]}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 echo "Registry username: ${registry_user}"

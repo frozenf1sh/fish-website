@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/frozenfish/fish-website/internal/delivery"
 	"github.com/frozenfish/fish-website/internal/domain"
+	githubclient "github.com/frozenfish/fish-website/internal/github"
 	identityapplication "github.com/frozenfish/fish-website/internal/identity/application"
 	"github.com/frozenfish/fish-website/internal/middleware"
 	"github.com/frozenfish/fish-website/internal/repository"
@@ -39,11 +40,16 @@ func InitializeServer(ctx context.Context, cfg *pkgconfig.Config) (*Server, erro
 		provideSettingsUsecase,
 		provideProjectUsecase,
 		provideAboutUsecase,
+		provideGitHubUsecase,
 		provideHandler,
 		provideAuthInterceptor,
 		NewServer,
 	)
 	return &Server{}, nil
+}
+
+func provideGitHubUsecase(cfg *pkgconfig.Config) *usecase.GitHubUsecase {
+	return usecase.NewGitHubUsecase(githubclient.NewClient(cfg.GitHub.Username, cfg.GitHub.Token), time.Duration(cfg.GitHub.CacheTTLSeconds)*time.Second)
 }
 
 func providePGXPool(ctx context.Context, cfg *pkgconfig.Config) (*pgxpool.Pool, error) {
@@ -137,8 +143,9 @@ func provideHandler(
 	settingsUsecase *usecase.SettingsUsecase,
 	projectUsecase *usecase.ProjectUsecase,
 	aboutUsecase *usecase.AboutUsecase,
+	githubUsecase *usecase.GitHubUsecase,
 ) *delivery.Handler {
-	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase, projectUsecase, aboutUsecase)
+	return delivery.NewHandler(authenticator, postUsecase, blogUsecase, albumUsecase, settingsUsecase, projectUsecase, aboutUsecase, githubUsecase)
 }
 
 func provideAuthInterceptor(authenticator *identityapplication.OwnerAuthenticator) connect.Interceptor {

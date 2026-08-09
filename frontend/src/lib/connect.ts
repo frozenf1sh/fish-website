@@ -9,6 +9,7 @@ import {
   SettingsService,
   ProjectService,
   AboutService,
+  GitHubService,
 } from '../gen/home/v1/homepage_connect'
 
 const getApiBaseUrl = () => {
@@ -119,6 +120,7 @@ const albumClient = createPromiseClient(AlbumService, transport)
 const settingsClient = createPromiseClient(SettingsService, transport)
 const projectClient = createPromiseClient(ProjectService, transport)
 const aboutClient = createPromiseClient(AboutService, transport)
+const githubClient = createPromiseClient(GitHubService, transport)
 
 let refreshPromise: Promise<string | null> | null = null
 
@@ -670,5 +672,30 @@ export const clients = {
     addImage: async (imageId: string) => (await aboutClient.addAboutImage({ imageId })).image,
     removeImage: async (id: string) => { await aboutClient.removeAboutImage({ id }); return {} },
     reorderImages: async (imageIds: string[]) => { await aboutClient.reorderAboutImages({ imageIds }); return {} },
+  },
+  github: {
+    getActivity: async () => {
+      const response = await githubClient.getActivity({})
+      const activity = response.activity
+      if (!activity) return null
+      return {
+        username: activity.username,
+        profileUrl: activity.profileUrl,
+        avatarUrl: activity.avatarUrl,
+        displayName: activity.displayName,
+        bio: activity.bio,
+        publicRepositories: Number(activity.publicRepositories),
+        followers: Number(activity.followers),
+        following: Number(activity.following),
+        totalContributions: Number(activity.totalContributions),
+        weeks: (activity.weeks || []).map((week) => (week.days || []).map((day) => ({
+          date: day.date,
+          contributionCount: Number(day.contributionCount),
+          color: day.color,
+        }))),
+        contributionCalendarAvailable: !!activity.contributionCalendarAvailable,
+        lastUpdatedAt: activity.lastUpdatedAt,
+      }
+    },
   },
 }

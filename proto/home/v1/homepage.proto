@@ -104,6 +104,11 @@ service AboutService {
   rpc ReorderAboutImages(ReorderAboutImagesRequest) returns (ReorderAboutImagesResponse);
 }
 
+// GitHubService provides a cached public activity summary for the site owner.
+service GitHubService {
+  rpc GetActivity(GetActivityRequest) returns (GetActivityResponse);
+}
+
 // Auth messages
 message LoginRequest {
   string username = 1;
@@ -119,6 +124,37 @@ message RefreshRequest {}
 message RefreshResponse { string token = 1; google.protobuf.Timestamp expires_at = 2; }
 message LogoutRequest {}
 message LogoutResponse {}
+
+message GetActivityRequest {}
+
+message GitHubContributionDay {
+  string date = 1;
+  int32 contribution_count = 2;
+  string color = 3;
+}
+
+message GitHubContributionWeek {
+  repeated GitHubContributionDay days = 1;
+}
+
+message GitHubActivity {
+  string username = 1;
+  string profile_url = 2;
+  string avatar_url = 3;
+  string display_name = 4;
+  string bio = 5;
+  int32 public_repositories = 6;
+  int32 followers = 7;
+  int32 following = 8;
+  int32 total_contributions = 9;
+  repeated GitHubContributionWeek weeks = 10;
+  bool contribution_calendar_available = 11;
+  string last_updated_at = 12;
+}
+
+message GetActivityResponse {
+  GitHubActivity activity = 1;
+}
 
 // Post messages
 message Post {

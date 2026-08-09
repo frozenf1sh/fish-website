@@ -16,6 +16,7 @@ type Config struct {
 	Database DatabaseConfig
 	Storage  StorageConfig
 	Auth     AuthConfig
+	GitHub   GitHubConfig
 	CORS     CORSConfig
 	Logger   LoggerConfig
 }
@@ -56,6 +57,14 @@ type AuthConfig struct {
 	AdminPasswordHash string
 	JWTSecret         string
 	TokenTTLSeconds   int
+}
+
+// GitHubConfig controls the cached public GitHub activity integration.
+// Token is optional locally, but required to retrieve the contribution calendar.
+type GitHubConfig struct {
+	Username        string
+	Token           string
+	CacheTTLSeconds int
 }
 
 // CORSConfig defines browser origins that may call the API cross-origin.
@@ -161,6 +170,17 @@ func bindEnvironment(v *viper.Viper) {
 		v.Set("Auth.JWTSecret", val)
 	}
 
+	// GitHub activity
+	if val := os.Getenv("GITHUB_USERNAME"); val != "" {
+		v.Set("GitHub.Username", val)
+	}
+	if val := os.Getenv("GITHUB_TOKEN"); val != "" {
+		v.Set("GitHub.Token", val)
+	}
+	if val := os.Getenv("GITHUB_CACHE_TTL_SECONDS"); val != "" {
+		v.Set("GitHub.CacheTTLSeconds", val)
+	}
+
 	if val := os.Getenv("CORS_ALLOWED_ORIGINS"); val != "" {
 		v.Set("CORS.AllowedOrigins", splitCSV(val))
 	}
@@ -228,6 +248,15 @@ func applyEnvironmentFallback(cfg *Config) {
 	if val := os.Getenv("JWT_SECRET"); val != "" && cfg.Auth.JWTSecret == "" {
 		cfg.Auth.JWTSecret = val
 	}
+	if val := os.Getenv("GITHUB_USERNAME"); val != "" && cfg.GitHub.Username == "" {
+		cfg.GitHub.Username = val
+	}
+	if val := os.Getenv("GITHUB_TOKEN"); val != "" && cfg.GitHub.Token == "" {
+		cfg.GitHub.Token = val
+	}
+	if val := os.Getenv("GITHUB_CACHE_TTL_SECONDS"); val != "" && cfg.GitHub.CacheTTLSeconds == 0 {
+		cfg.GitHub.CacheTTLSeconds, _ = strconv.Atoi(val)
+	}
 	if val := os.Getenv("SERVER_ADDRESS"); val != "" && cfg.Server.Address == "" {
 		cfg.Server.Address = val
 	}
@@ -246,6 +275,8 @@ func setDefaults(v *viper.Viper) {
 	// Auth defaults
 	v.SetDefault("Auth.OwnerUsername", "admin")
 	v.SetDefault("Auth.TokenTTLSeconds", 900)
+	v.SetDefault("GitHub.Username", "frozenf1sh")
+	v.SetDefault("GitHub.CacheTTLSeconds", 21600)
 
 	// Local development is safe by default. All deployed environments override
 	// this with their public HTTPS origins through a non-secret environment value.
@@ -287,6 +318,12 @@ func validate(cfg *Config) error {
 	}
 	if cfg.Auth.TokenTTLSeconds <= 0 || cfg.Auth.TokenTTLSeconds > 24*60*60 {
 		return fmt.Errorf("auth token TTL must be between 1 and 86400 seconds")
+	}
+	if cfg.GitHub.Username == "" {
+		return fmt.Errorf("GitHub username is required")
+	}
+	if cfg.GitHub.CacheTTLSeconds <= 0 || cfg.GitHub.CacheTTLSeconds > 7*24*60*60 {
+		return fmt.Errorf("GitHub cache TTL must be between 1 and 604800 seconds")
 	}
 	if len(cfg.CORS.AllowedOrigins) == 0 {
 		return fmt.Errorf("at least one CORS allowed origin is required")

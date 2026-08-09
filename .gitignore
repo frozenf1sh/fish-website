@@ -33,3 +33,5 @@ run-local.sh
 # .vscode/
 .claude/
 CLAUDWE.md
+
+.DS_Store

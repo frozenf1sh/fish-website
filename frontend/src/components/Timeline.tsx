@@ -45,6 +45,7 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
   const navigate = useNavigate()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [imageRatios, setImageRatios] = useState<Record<string, number>>({})
+  const [isPostExpanded, setIsPostExpanded] = useState(false)
   
   const displayName = settings?.displayName || 'FrozenFish'
   const avatarUrl = settings?.avatarUrl
@@ -72,6 +73,7 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
   }
 
   const imageCount = item.images?.length || 0
+  const isLongPost = item.content.trim().length > 280
   const isSingleImage = imageCount === 1
   const visibleImages = imageCount > 9 ? item.images!.slice(0, 9) : (item.images || [])
 
@@ -128,10 +130,11 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
             <span className="text-white/40 text-xs sm:text-sm">· {item.timestamp}</span>
           </div>
 
-          <div className="mb-3 sm:mb-4">
+          <div className={`relative mb-3 sm:mb-4 ${isLongPost && !isPostExpanded ? 'max-h-36 overflow-hidden sm:max-h-none sm:overflow-visible' : ''}`}>
             <Suspense fallback={<p className="text-white/65 text-sm whitespace-pre-wrap break-words">{item.content}</p>}>
               <MarkdownViewer content={item.content} />
             </Suspense>
+            {isLongPost && !isPostExpanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/75 to-transparent sm:hidden" />}
           </div>
 
           {item.images && item.images.length > 0 && (
@@ -195,7 +198,18 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
             </div>
           )}
 
-          <div className="mt-2 flex justify-end">
+          <div className="mt-2 flex items-center justify-end gap-2">
+            {isLongPost && <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsPostExpanded((expanded) => !expanded)
+              }}
+              className="sm:hidden rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white/80 hover:bg-white/20"
+              aria-expanded={isPostExpanded}
+            >
+              {isPostExpanded ? '收起' : '展开阅读'}
+            </button>}
             <button
               onClick={(e) => {
                 e.stopPropagation()

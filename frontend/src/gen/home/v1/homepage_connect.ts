@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddAboutImageRequest, AddAboutImageResponse, AnalyzeImageReferencesRequest, AnalyzeImageReferencesResponse, ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, CreateProjectRequest, CreateProjectResponse, DeleteAlbumRequest, DeleteAlbumResponse, DeleteArticleRequest, DeleteArticleResponse, DeleteFolderRequest, DeleteFolderResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, DeletePostResponse, DeleteProjectRequest, DeleteProjectResponse, GetAboutRequest, GetAboutResponse, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetProjectRequest, GetProjectResponse, GetSettingsRequest, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, ListProjectsRequest, ListProjectsResponse, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, MoveImagesRequest, MoveImagesResponse, RefreshRequest, RefreshResponse, RemoveAboutImageRequest, RemoveAboutImageResponse, ReorderAboutImagesRequest, ReorderAboutImagesResponse, ReorderProjectsRequest, ReorderProjectsResponse, RepairImageReferencesRequest, RepairImageReferencesResponse, SetImageDateRequest, SetImageDateResponse, UpdateAboutRequest, UpdateAboutResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateProjectRequest, UpdateProjectResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
+import { AddAboutImageRequest, AddAboutImageResponse, AnalyzeImageReferencesRequest, AnalyzeImageReferencesResponse, ConfirmImageUploadRequest, ConfirmImageUploadResponse, CreateAlbumRequest, CreateAlbumResponse, CreateArticleRequest, CreateArticleResponse, CreateFolderRequest, CreateFolderResponse, CreatePostRequest, CreatePostResponse, CreateProjectRequest, CreateProjectResponse, DeleteAlbumRequest, DeleteAlbumResponse, DeleteArticleRequest, DeleteArticleResponse, DeleteFolderRequest, DeleteFolderResponse, DeleteImagesRequest, DeleteImagesResponse, DeletePostRequest, DeletePostResponse, DeleteProjectRequest, DeleteProjectResponse, GetAboutRequest, GetAboutResponse, GetActivityRequest, GetActivityResponse, GetAlbumRequest, GetAlbumResponse, GetArticleRequest, GetArticleResponse, GetPostRequest, GetPostResponse, GetProjectRequest, GetProjectResponse, GetSettingsRequest, GetSettingsResponse, ListAlbumsRequest, ListAlbumsResponse, ListArticlesRequest, ListArticlesResponse, ListPostsRequest, ListPostsResponse, ListProjectsRequest, ListProjectsResponse, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, MoveImagesRequest, MoveImagesResponse, RefreshRequest, RefreshResponse, RemoveAboutImageRequest, RemoveAboutImageResponse, ReorderAboutImagesRequest, ReorderAboutImagesResponse, ReorderProjectsRequest, ReorderProjectsResponse, RepairImageReferencesRequest, RepairImageReferencesResponse, SetImageDateRequest, SetImageDateResponse, UpdateAboutRequest, UpdateAboutResponse, UpdateAlbumRequest, UpdateAlbumResponse, UpdateArticleRequest, UpdateArticleResponse, UpdateFolderRequest, UpdateFolderResponse, UpdatePostRequest, UpdatePostResponse, UpdateProjectRequest, UpdateProjectResponse, UpdateSettingsRequest, UpdateSettingsResponse, UploadImageRequestRequest, UploadImageRequestResponse } from "./homepage_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -505,6 +505,26 @@ export const AboutService = {
       name: "ReorderAboutImages",
       I: ReorderAboutImagesRequest,
       O: ReorderAboutImagesResponse,
+      kind: MethodKind.Unary,
+    },
+  }
+} as const;
+
+/**
+ * GitHubService provides a cached public activity summary for the site owner.
+ *
+ * @generated from service home.v1.GitHubService
+ */
+export const GitHubService = {
+  typeName: "home.v1.GitHubService",
+  methods: {
+    /**
+     * @generated from rpc home.v1.GitHubService.GetActivity
+     */
+    getActivity: {
+      name: "GetActivity",
+      I: GetActivityRequest,
+      O: GetActivityResponse,
       kind: MethodKind.Unary,
     },
   }

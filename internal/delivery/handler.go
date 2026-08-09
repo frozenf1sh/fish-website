@@ -27,6 +27,7 @@ type Handler struct {
 	settingsUsecase *usecase.SettingsUsecase
 	projectUsecase  *usecase.ProjectUsecase
 	aboutUsecase    *usecase.AboutUsecase
+	githubUsecase   *usecase.GitHubUsecase
 }
 
 // NewHandler creates a new Handler
@@ -38,6 +39,7 @@ func NewHandler(
 	settingsUsecase *usecase.SettingsUsecase,
 	projectUsecase *usecase.ProjectUsecase,
 	aboutUsecase *usecase.AboutUsecase,
+	githubUsecase *usecase.GitHubUsecase,
 ) *Handler {
 	logger.Info("initializing Connect-RPC handler")
 	return &Handler{
@@ -48,6 +50,7 @@ func NewHandler(
 		settingsUsecase: settingsUsecase,
 		projectUsecase:  projectUsecase,
 		aboutUsecase:    aboutUsecase,
+		githubUsecase:   githubUsecase,
 	}
 }
 
@@ -82,6 +85,19 @@ func (h *Handler) NewProjectServiceHandler() (string, http.Handler) {
 
 func (h *Handler) NewAboutServiceHandler() (string, http.Handler) {
 	return homev1connect.NewAboutServiceHandler(h)
+}
+
+func (h *Handler) NewGitHubServiceHandler() (string, http.Handler) {
+	return homev1connect.NewGitHubServiceHandler(h)
+}
+
+func (h *Handler) GetActivity(ctx context.Context, _ *connect.Request[homev1.GetActivityRequest]) (*connect.Response[homev1.GetActivityResponse], error) {
+	activity, err := h.githubUsecase.GetActivity(ctx)
+	if err != nil {
+		logger.Error("GetGitHubActivity failed", logger.Err(err))
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	}
+	return connect.NewResponse(&homev1.GetActivityResponse{Activity: toProtoGitHubActivity(activity)}), nil
 }
 
 // Login authenticates a user

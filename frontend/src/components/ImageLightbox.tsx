@@ -34,16 +34,14 @@ export function ImageLightbox({ src, alt = '放大图片', onClose }: ImageLight
           role="dialog"
           aria-modal="true"
           aria-label="图片预览"
-          onClick={onClose}
+          onClick={(event) => {
+            // This portal still bubbles through the React tree to PostCard.
+            // Stop that propagation so closing the preview never navigates to
+            // the post detail page as a side effect.
+            event.stopPropagation()
+            onClose()
+          }}
         >
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 rounded-full bg-black/45 border border-white/20 text-white/90 text-xl hover:bg-black/65 transition-colors"
-            aria-label="关闭图片预览"
-          >
-            ×
-          </button>
           <motion.img
             initial={{ scale: 0.94, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

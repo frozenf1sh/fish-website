@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
 import { ImageUploadButton } from '../components/ImageUploadButton'
+import { GitHubActivityCard } from '../components/GitHubActivityCard'
 
 type Project = Awaited<ReturnType<typeof clients.projects.list>>[number]
 type ProjectForm = { id: string; title: string; summary: string; linkUrl: string; coverImageId: string }
@@ -60,6 +61,7 @@ export function ProjectsPage() {
 
   return (
     <div className="space-y-4 p-4 sm:p-6 pb-24 xl:pb-6">
+      <GitHubActivityCard />
       {isLoggedIn && <div className="flex justify-end"><button type="button" onClick={() => { setForm(emptyForm); setIsEditorOpen(true) }} className="btn-primary rounded-xl px-4 py-2 text-white">新建项目</button></div>}
 
       {isLoggedIn && isEditorOpen && (
