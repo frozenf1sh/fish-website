@@ -1,24 +1,23 @@
 # GitOps deployment
 
-Argo CD continuously reconciles the registry, development and production applications in this directory. The
+Argo CD continuously reconciles the development and production applications in this directory. The
 repository is public, so **never commit secrets**. Bootstrap secrets are created
 on the cluster by `scripts/bootstrap-secrets.sh` and are intentionally excluded
 from Git.
 
-The registry must be synchronized and healthy before applying the fish-website
-Argo application. The CI workflow publishes immutable `sha-<commit>` image
+The CI workflow publishes GHCR images. Main builds use immutable short
+`sha-<commit>` tags; version tags such as `v0.2.3` are the production release
 tags. Production tracks the dedicated `production` GitOps branch, while
 development tracks `main`, so ordinary main-branch manifest changes cannot
 drift into production.
 
-`main` builds immutable images and updates only `deploy/fish-website-dev` on
-`main`; Argo CD deploys it to `dev.frozenf1sh.top`. A manually-created `v*` tag
-builds the tagged revision and, after protected GitHub `production` Environment
-approval, advances only `deploy/fish-website/kustomization.yaml` on the
-`production` branch. Create development namespace secrets with
-`scripts/bootstrap-environment-secrets.sh`; it copies only the existing
-bucket-scoped R2 and registry credentials through the Kubernetes API and creates
-new database and application secrets.
+`main` builds and publishes images without creating deployment commits. A
+manually-created `v*` tag builds the release image and, after protected GitHub
+`production` Environment approval, advances only
+`deploy/fish-website/kustomization.yaml` on the `production` branch. Create
+development namespace secrets with `scripts/bootstrap-environment-secrets.sh`;
+it copies only the existing bucket-scoped R2 and GHCR pull credentials through
+the Kubernetes API and creates new database and application secrets.
 
 Owner credentials use an Argon2id PHC hash in the `application` Secret. Before
 enabling the `ADMIN_PASSWORD_HASH` workload variable on an existing namespace,
@@ -29,10 +28,7 @@ separate rotation window.
 
 The approved production release serves `frozenf1sh.top`; its certificate is
 issued by cert-manager through Traefik. Do not remove the current `it-tools`
-Ingress until the promoted website rollout and certificate are healthy. The
-Registry is tailnet-only, so it uses a private CA rather than publicly-verifiable
-ACME. Its CA must be trusted by every build host and k3s node. Registry
-authentication is mandatory.
+Ingress until the promoted website rollout and certificate are healthy.
 
 The `fish-website-platform` Argo CD Application owns only the CoreDNS override
 needed for public `frozenf1sh.top` lookups from pods. It deliberately does not

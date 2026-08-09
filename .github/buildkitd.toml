@@ -1,2 +1,0 @@
-[registry."registry.frozenf1sh.top"]
-  ca = ["/etc/docker/certs.d/registry.frozenf1sh.top/ca.crt"]

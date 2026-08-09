@@ -26,7 +26,6 @@ web-build:
 kustomize:
 	kubectl kustomize deploy/fish-website >/dev/null
 	kubectl kustomize deploy/fish-website-dev >/dev/null
-	kubectl kustomize deploy/registry >/dev/null
 
 build: web-build
 	go build ./cmd/...

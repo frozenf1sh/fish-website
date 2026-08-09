@@ -6,12 +6,10 @@ metadata:
   labels:
     app.kubernetes.io/part-of: fish-website
 spec:
-  description: fish-website and its private container registry
+  description: fish-website workloads using GHCR
   sourceRepos:
     - https://github.com/frozenf1sh/fish-website.git
   destinations:
-    - namespace: registry
-      server: https://kubernetes.default.svc
     - namespace: fish-website
       server: https://kubernetes.default.svc
     - namespace: fish-website-dev
