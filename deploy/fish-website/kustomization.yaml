@@ -8,7 +8,7 @@ resources:
 images:
   - name: backend
     newName: ghcr.io/frozenf1sh/fish-website/backend
-    newTag: v0.2.8
+    newTag: v0.2.9
   - name: frontend
     newName: ghcr.io/frozenf1sh/fish-website/frontend
-    newTag: v0.2.8
+    newTag: v0.2.9
