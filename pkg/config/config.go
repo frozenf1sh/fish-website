@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	identitydomain "github.com/frozenfish/fish-website/internal/identity/domain"
 	"github.com/frozenfish/fish-website/pkg/logger"
 	"github.com/spf13/viper"
 )
@@ -53,7 +54,6 @@ type R2Config struct {
 // AuthConfig holds authentication-related configuration
 type AuthConfig struct {
 	OwnerUsername     string
-	AdminPassword     string // Deprecated transitional input. Do not set in new deployments.
 	AdminPasswordHash string
 	JWTSecret         string
 	TokenTTLSeconds   int
@@ -105,7 +105,7 @@ func Load() (*Config, error) {
 	// discoverable without retaining provider-era compatibility aliases.
 	bindEnvironment(v)
 
-	// Configure environment variables - first try nested names, then legacy
+	// Configure environment variables - first try nested names, then explicit
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 
@@ -154,9 +154,6 @@ func bindEnvironment(v *viper.Viper) {
 	}
 
 	// Auth
-	if val := os.Getenv("ADMIN_PASSWORD"); val != "" {
-		v.Set("Auth.AdminPassword", val)
-	}
 	if val := os.Getenv("ADMIN_PASSWORD_HASH"); val != "" {
 		v.Set("Auth.AdminPasswordHash", val)
 	}
@@ -229,9 +226,6 @@ func applyEnvironmentFallback(cfg *Config) {
 	}
 	if val := os.Getenv("R2_PUBLIC_BASE_URL"); val != "" && cfg.Storage.R2.PublicBaseURL == "" {
 		cfg.Storage.R2.PublicBaseURL = val
-	}
-	if val := os.Getenv("ADMIN_PASSWORD"); val != "" && cfg.Auth.AdminPassword == "" {
-		cfg.Auth.AdminPassword = val
 	}
 	if val := os.Getenv("ADMIN_PASSWORD_HASH"); val != "" && cfg.Auth.AdminPasswordHash == "" {
 		cfg.Auth.AdminPasswordHash = val
@@ -310,8 +304,11 @@ func validate(cfg *Config) error {
 	if cfg.Auth.OwnerUsername == "" {
 		return fmt.Errorf("owner username is required")
 	}
-	if cfg.Auth.AdminPasswordHash == "" && cfg.Auth.AdminPassword == "" {
+	if cfg.Auth.AdminPasswordHash == "" {
 		return fmt.Errorf("admin password hash is required")
+	}
+	if !identitydomain.IsArgon2idHash(cfg.Auth.AdminPasswordHash) {
+		return fmt.Errorf("admin password hash must be a valid Argon2id hash using the configured work-factor floor")
 	}
 	if len(cfg.Auth.JWTSecret) < 32 {
 		return fmt.Errorf("JWT secret must contain at least 32 bytes")

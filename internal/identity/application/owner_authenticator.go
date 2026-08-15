@@ -36,7 +36,7 @@ type OwnerAuthenticator struct {
 	now           func() time.Time
 }
 
-func NewOwnerAuthenticator(ownerUsername, passwordHash, legacyPassword, jwtSecret string, tokenTTL time.Duration) *OwnerAuthenticator {
+func NewOwnerAuthenticator(ownerUsername, passwordHash, jwtSecret string, tokenTTL time.Duration) *OwnerAuthenticator {
 	service := &OwnerAuthenticator{
 		ownerUsername: ownerUsername,
 		passwordHash:  passwordHash,
@@ -44,10 +44,8 @@ func NewOwnerAuthenticator(ownerUsername, passwordHash, legacyPassword, jwtSecre
 		tokenTTL:      tokenTTL,
 		now:           time.Now,
 	}
-	if service.passwordHash == "" {
-		// Transitional support only: the plaintext is transformed in process and
-		// never compared directly or retained by this application service.
-		service.passwordHash, service.configErr = identitydomain.HashPassword(legacyPassword)
+	if !identitydomain.IsArgon2idHash(service.passwordHash) {
+		service.configErr = identitydomain.ErrInvalidPasswordHash
 	}
 	return service
 }
@@ -58,6 +56,9 @@ func (s *OwnerAuthenticator) Login(_ context.Context, username, password string)
 		return "", time.Time{}, fmt.Errorf("initialize password verifier: %w", s.configErr)
 	}
 	if subtle.ConstantTimeCompare([]byte(username), []byte(s.ownerUsername)) != 1 {
+		return "", time.Time{}, identitydomain.ErrInvalidCredentials
+	}
+	if err := identitydomain.ValidatePassword(password); err != nil {
 		return "", time.Time{}, identitydomain.ErrInvalidCredentials
 	}
 

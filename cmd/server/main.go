@@ -201,13 +201,6 @@ func main() {
 		logger.String("log_level", string(cfg.Logger.Level)),
 		logger.Bool("log_json", cfg.Logger.JSON))
 
-	// A legacy raw password is accepted only during the hash migration. New
-	// deployments use ADMIN_PASSWORD_HASH exclusively.
-	if cfg.Auth.AdminPassword == "" && cfg.Auth.AdminPasswordHash == "" {
-		logger.Error("owner credential configuration is required")
-		os.Exit(1)
-	}
-
 	// Initialize server
 	logger.Debug("initializing server")
 	server, err := InitializeServer(ctx, cfg)

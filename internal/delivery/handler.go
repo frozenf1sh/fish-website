@@ -21,6 +21,7 @@ import (
 // Handler implements all Connect-RPC handlers
 type Handler struct {
 	authenticator   *identityapplication.OwnerAuthenticator
+	loginLimiter    *loginRateLimiter
 	postUsecase     *usecase.PostUsecase
 	blogUsecase     *usecase.BlogUsecase
 	albumUsecase    *usecase.AlbumUsecase
@@ -44,6 +45,7 @@ func NewHandler(
 	logger.Info("initializing Connect-RPC handler")
 	return &Handler{
 		authenticator:   authenticator,
+		loginLimiter:    newLoginRateLimiter(),
 		postUsecase:     postUsecase,
 		blogUsecase:     blogUsecase,
 		albumUsecase:    albumUsecase,
@@ -103,16 +105,23 @@ func (h *Handler) GetActivity(ctx context.Context, _ *connect.Request[homev1.Get
 // Login authenticates a user
 func (h *Handler) Login(ctx context.Context, req *connect.Request[homev1.LoginRequest]) (*connect.Response[homev1.LoginResponse], error) {
 	logger.Info("received Login request", logger.String("username", req.Msg.Username))
+	loginKey := loginRateLimitKey(req.Msg.Username, req.Header())
+	if !h.loginLimiter.allow(loginKey) {
+		logger.Warn("login rate limit reached", logger.String("username", req.Msg.Username))
+		return nil, connect.NewError(connect.CodeResourceExhausted, errors.New("too many login attempts; try again later"))
+	}
 
 	token, expiresAt, err := h.authenticator.Login(ctx, req.Msg.Username, req.Msg.Password)
 	if err != nil {
 		if errors.Is(err, identitydomain.ErrInvalidCredentials) {
+			h.loginLimiter.recordFailure(loginKey)
 			logger.Warn("login failed: invalid password", logger.String("username", req.Msg.Username))
 			return nil, connect.NewError(connect.CodePermissionDenied, err)
 		}
 		logger.Error("login failed with internal error", logger.Err(err))
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	h.loginLimiter.reset(loginKey)
 
 	logger.Info("login successful", logger.String("username", req.Msg.Username))
 	response := connect.NewResponse(&homev1.LoginResponse{

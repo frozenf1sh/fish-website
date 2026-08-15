@@ -45,7 +45,7 @@ func validConfig() Config {
 		}},
 		Auth: AuthConfig{
 			OwnerUsername:     "owner",
-			AdminPasswordHash: "$argon2id$v=19$m=65536,t=3,p=2$salt$hash",
+			AdminPasswordHash: "$argon2id$v=19$m=65536,t=3,p=2$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
 			JWTSecret:         "at-least-thirty-two-characters-long",
 			TokenTTLSeconds:   900,
 		},

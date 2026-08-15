@@ -100,7 +100,7 @@ spec:
             - {name: CORS_ALLOWED_ORIGINS, value: "https://frozenf1sh.top"}
             - {name: ENABLE_REFLECTION, value: "false"}
             - {name: MIGRATE_ONLY, value: "true"}
-            - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}
+            - {name: ADMIN_PASSWORD_HASH, valueFrom: {secretKeyRef: {name: application, key: admin-password-hash}}}
             - {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: application, key: jwt-secret}}}
             - {name: LOGGER_JSON, value: "true"}
           resources:
@@ -196,7 +196,7 @@ spec:
             - {name: R2_USE_SSL, value: "true"}
             - {name: CORS_ALLOWED_ORIGINS, value: "https://frozenf1sh.top"}
             - {name: ENABLE_REFLECTION, value: "false"}
-            - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: application, key: admin-password}}}
+            - {name: ADMIN_PASSWORD_HASH, valueFrom: {secretKeyRef: {name: application, key: admin-password-hash}}}
             - {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: application, key: jwt-secret}}}
             - {name: GITHUB_USERNAME, value: "frozenf1sh"}
             - {name: GITHUB_TOKEN, valueFrom: {secretKeyRef: {name: application, key: github-token, optional: true}}}
@@ -282,7 +282,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.middlewares: fish-website-api-strip@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: fish-website-redirect-https@kubernetescrd,fish-website-security-headers@kubernetescrd,fish-website-api-strip@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:

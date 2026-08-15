@@ -11,13 +11,13 @@ import (
 
 func TestOwnerAuthenticatorLoginAndValidateToken(t *testing.T) {
 	t.Parallel()
-	hash, err := identitydomain.HashPassword("secret-password")
+	hash, err := identitydomain.HashPassword("secret-password!")
 	if err != nil {
 		t.Fatalf("HashPassword() error = %v", err)
 	}
-	service := NewOwnerAuthenticator("owner", hash, "", "01234567890123456789012345678901", 15*time.Minute)
+	service := NewOwnerAuthenticator("owner", hash, "01234567890123456789012345678901", 15*time.Minute)
 
-	token, expiresAt, err := service.Login(context.Background(), "owner", "secret-password")
+	token, expiresAt, err := service.Login(context.Background(), "owner", "secret-password!")
 	if err != nil {
 		t.Fatalf("Login() error = %v", err)
 	}
@@ -35,14 +35,14 @@ func TestOwnerAuthenticatorLoginAndValidateToken(t *testing.T) {
 
 func TestOwnerAuthenticatorRejectsWrongUsernameOrPassword(t *testing.T) {
 	t.Parallel()
-	hash, err := identitydomain.HashPassword("secret-password")
+	hash, err := identitydomain.HashPassword("secret-password!")
 	if err != nil {
 		t.Fatalf("HashPassword() error = %v", err)
 	}
-	service := NewOwnerAuthenticator("owner", hash, "", "01234567890123456789012345678901", 15*time.Minute)
+	service := NewOwnerAuthenticator("owner", hash, "01234567890123456789012345678901", 15*time.Minute)
 
 	for _, testCase := range []struct{ username, password string }{
-		{username: "other", password: "secret-password"},
+		{username: "other", password: "secret-password!"},
 		{username: "owner", password: "wrong-password"},
 	} {
 		_, _, err := service.Login(context.Background(), testCase.username, testCase.password)
@@ -54,11 +54,11 @@ func TestOwnerAuthenticatorRejectsWrongUsernameOrPassword(t *testing.T) {
 
 func TestOwnerAuthenticatorRefreshTokenCannotBeUsedAsAccessToken(t *testing.T) {
 	t.Parallel()
-	hash, err := identitydomain.HashPassword("secret-password")
+	hash, err := identitydomain.HashPassword("secret-password!")
 	if err != nil {
 		t.Fatalf("HashPassword() error = %v", err)
 	}
-	service := NewOwnerAuthenticator("owner", hash, "", "01234567890123456789012345678901", 15*time.Minute)
+	service := NewOwnerAuthenticator("owner", hash, "01234567890123456789012345678901", 15*time.Minute)
 
 	refresh, _, err := service.IssueRefreshToken()
 	if err != nil {

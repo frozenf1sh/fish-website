@@ -116,7 +116,6 @@ func provideOwnerAuthenticator(cfg *config.Config) *application.OwnerAuthenticat
 	return application.NewOwnerAuthenticator(
 		cfg.Auth.OwnerUsername,
 		cfg.Auth.AdminPasswordHash,
-		cfg.Auth.AdminPassword,
 		cfg.Auth.JWTSecret, time.Duration(cfg.Auth.TokenTTLSeconds)*time.Second,
 	)
 }
