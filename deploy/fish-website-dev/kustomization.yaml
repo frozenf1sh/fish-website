@@ -59,7 +59,7 @@ patches:
       metadata:
         name: fish-website
         annotations:
-          cert-manager.io/cluster-issuer: letsencrypt-prod
+          cert-manager.io/cluster-issuer: letsencrypt-prod-dns01
           traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
           traefik.ingress.kubernetes.io/router.middlewares: fish-website-dev-redirect-https@kubernetescrd,fish-website-dev-security-headers@kubernetescrd,fish-website-dev-api-strip@kubernetescrd
       spec:
