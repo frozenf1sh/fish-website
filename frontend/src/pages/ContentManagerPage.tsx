@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
 import { ImageUploadButton } from '../components/ImageUploadButton'
+import { showToast } from '../lib/toast'
 
 type ImageOption = { id: string; url: string; fileName: string }
 type Project = Awaited<ReturnType<typeof clients.projects.list>>[number]
@@ -17,7 +18,7 @@ export function ContentManagerPage() {
   const [articles, setArticles] = useState<Article[]>([])
   const [images, setImages] = useState<ImageOption[]>([])
   const [form, setForm] = useState(emptyProject)
-  const [aboutImageId, setAboutImageId] = useState('')
+  const [reorderingProjectId, setReorderingProjectId] = useState<string | null>(null)
 
   const load = async () => {
     const [projectList, aboutData, blog, albums] = await Promise.all([
@@ -52,6 +53,28 @@ export function ContentManagerPage() {
     await load()
   }
 
+  const moveProject = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction
+    if (targetIndex < 0 || targetIndex >= projects.length || reorderingProjectId) return
+
+    const previous = projects
+    const next = [...projects]
+    const [project] = next.splice(index, 1)
+    next.splice(targetIndex, 0, project)
+    setProjects(next)
+    setReorderingProjectId(project.id)
+
+    try {
+      await clients.projects.reorder(next.map((item) => item.id))
+    } catch (error) {
+      console.error('Failed to reorder projects:', error)
+      setProjects(previous)
+      showToast({ type: 'error', message: '项目排序保存失败，请重试' })
+    } finally {
+      setReorderingProjectId(null)
+    }
+  }
+
   return (
     <div className="space-y-5 p-4 sm:p-6 pb-24 xl:pb-6">
       <header>
@@ -76,10 +99,12 @@ export function ContentManagerPage() {
         </div>
         <button type="button" className="btn-primary rounded-2xl px-4 py-2.5 text-white" onClick={saveProject}>{form.id ? '保存项目' : '新增项目'}</button>
         <div className="space-y-2">
-          {projects.map((project) => (
+          {projects.map((project, index) => (
             <div key={project.id} className="flex items-center justify-between gap-3 border-t border-white/10 pt-3 text-white/80">
               <span className="truncate">{project.title}</span>
-              <div className="flex shrink-0 gap-3">
+              <div className="flex shrink-0 items-center gap-2">
+                <button type="button" onClick={() => void moveProject(index, -1)} disabled={index === 0 || !!reorderingProjectId} aria-label={`上移项目 ${project.title}`} title="上移项目" className="rounded-lg px-1.5 py-1 text-white/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35">↑</button>
+                <button type="button" onClick={() => void moveProject(index, 1)} disabled={index === projects.length - 1 || !!reorderingProjectId} aria-label={`下移项目 ${project.title}`} title="下移项目" className="rounded-lg px-1.5 py-1 text-white/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35">↓</button>
                 <button type="button" className="text-sm text-white/60 hover:text-white" onClick={() => setForm({ id: project.id, title: project.title, summary: project.summary, linkUrl: project.linkUrl, coverImageId: project.coverImage?.id || '' })}>编辑</button>
                 <button type="button" className="text-sm text-pink-300 hover:text-pink-200" onClick={async () => { await clients.projects.remove({ id: project.id }); await load() }}>删除</button>
               </div>
@@ -91,7 +116,7 @@ export function ContentManagerPage() {
       <section className="glass-card rounded-3xl p-4 sm:p-5 space-y-5">
         <div>
           <h2 className="text-white font-semibold">关于页</h2>
-          <p className="mt-1 text-xs text-white/50">配置顶部个人卡片、引用博客和关于页照片。</p>
+          <p className="mt-1 text-xs text-white/50">配置顶部个人卡片和引用博客。</p>
         </div>
         <div className="space-y-2">
           <label className="block text-sm text-white/75">引用博客</label>
@@ -100,19 +125,6 @@ export function ContentManagerPage() {
             {articles.map((article) => <option key={article.id} value={article.id}>{article.title}</option>)}
           </select>
           <p className="text-xs leading-5 text-white/45">引用后，关于页会在个人卡片下方显示完整的 Markdown 博客。</p>
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm text-white/75">关于页照片</label>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <select className="content-input min-w-0 flex-1" value={aboutImageId} onChange={(e) => setAboutImageId(e.target.value)}>
-              <option value="">选择已有照片</option>
-              {images.map((image) => <option key={image.id} value={image.id}>{image.fileName}</option>)}
-            </select>
-            <button type="button" className="btn-primary rounded-2xl px-4 py-2.5 text-white" onClick={async () => { if (aboutImageId) { await clients.about.addImage(aboutImageId); setAboutImageId(''); await load() } }}>添加照片</button>
-          </div>
-          <div className="grid grid-cols-3 gap-2 pt-2">
-            {about?.images?.map((item) => <div key={item.id} className="relative overflow-hidden rounded-2xl border border-white/15">{item.image?.url && <img src={item.image.url} alt="关于页照片" className="aspect-square w-full object-cover" />}<button type="button" className="absolute right-1 top-1 rounded-xl bg-black/60 px-2 py-1 text-xs text-white hover:bg-red-500/70" onClick={async () => { await clients.about.removeImage(item.id); await load() }}>删除</button></div>)}
-          </div>
         </div>
       </section>
     </div>

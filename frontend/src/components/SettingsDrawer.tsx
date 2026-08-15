@@ -7,6 +7,7 @@ import { clients } from '../lib/connect'
 import { showToast } from '../lib/toast'
 import { readSiteBehaviorConfig, writeSiteBehaviorConfig } from '../utils/siteConfig'
 import { useNavigate } from 'react-router-dom'
+import { ImageUploadButton } from './ImageUploadButton'
 
 interface SettingsDrawerProps {
   isOpen: boolean
@@ -261,29 +262,12 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                               <span className="text-4xl">🌸</span>
                             )}
                           </div>
-                          {uploadingImage === 'avatar' && (
-                            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                              <LoadingSpinner size="sm" />
-                            </div>
-                          )}
                         </div>
                         <div className="flex-1">
-                          <input
-                            type="file"
-                            id="avatar-upload"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) handleImageUpload(file, 'avatar')
-                            }}
+                          <ImageUploadButton
+                            label="更换头像"
+                            onUploaded={(image) => setLocalSettings((current) => current ? { ...current, avatarUrl: image.url } : current)}
                           />
-                          <label
-                            htmlFor="avatar-upload"
-                            className="block w-full btn-primary px-4 py-2 rounded-2xl text-white text-center cursor-pointer text-sm"
-                          >
-                            更换头像
-                          </label>
                         </div>
                       </div>
                     </div>
@@ -415,26 +399,10 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                             </div>
                           </div>
                         )}
-                        <input
-                          type="file"
-                          id="background-upload"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) handleImageUpload(file, 'background')
-                          }}
+                        <ImageUploadButton
+                          label={localSettings.backgroundImageUrl ? '更换背景图' : '上传背景图'}
+                          onUploaded={(image) => setLocalSettings((current) => current ? { ...current, backgroundImageUrl: image.url } : current)}
                         />
-                        <label
-                          htmlFor="background-upload"
-                          className="block w-full btn-primary px-4 py-3 rounded-2xl text-white text-center cursor-pointer relative overflow-hidden"
-                        >
-                          {uploadingImage === 'background' ? (
-                            <LoadingSpinner size="sm" text="上传中..." />
-                          ) : (
-                            localSettings.backgroundImageUrl ? '更换背景图' : '上传背景图'
-                          )}
-                        </label>
                       </div>
 
                       <div className="flex items-center justify-between p-4 glass-light rounded-2xl">

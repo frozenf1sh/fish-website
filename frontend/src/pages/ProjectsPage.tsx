@@ -4,6 +4,7 @@ import { clients } from '../lib/connect'
 import { useStore } from '../store/useStore'
 import { ImageUploadButton } from '../components/ImageUploadButton'
 import { GitHubActivityCard } from '../components/GitHubActivityCard'
+import { showToast } from '../lib/toast'
 
 type Project = Awaited<ReturnType<typeof clients.projects.list>>[number]
 type ProjectForm = { id: string; title: string; summary: string; linkUrl: string; coverImageId: string }
@@ -17,6 +18,7 @@ export function ProjectsPage() {
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [reorderingProjectId, setReorderingProjectId] = useState<string | null>(null)
 
   const loadProjects = async () => {
     const result = await clients.projects.list()
@@ -59,10 +61,31 @@ export function ProjectsPage() {
     await loadProjects()
   }
 
+  const moveProject = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction
+    if (targetIndex < 0 || targetIndex >= projects.length || reorderingProjectId) return
+
+    const previous = projects
+    const next = [...projects]
+    const [project] = next.splice(index, 1)
+    next.splice(targetIndex, 0, project)
+    setProjects(next)
+    setReorderingProjectId(project.id)
+
+    try {
+      await clients.projects.reorder(next.map((item) => item.id))
+    } catch (error) {
+      console.error('Failed to reorder projects:', error)
+      setProjects(previous)
+      showToast({ type: 'error', message: '项目排序保存失败，请重试' })
+    } finally {
+      setReorderingProjectId(null)
+    }
+  }
+
   return (
-    <div className="space-y-4 p-4 sm:p-6 pb-24 xl:pb-6">
+    <div className="space-y-4 p-4 sm:p-6 pb-24 xl:pt-0 xl:pb-6">
       <GitHubActivityCard />
-      {isLoggedIn && <div className="flex justify-end"><button type="button" onClick={() => { setForm(emptyForm); setIsEditorOpen(true) }} className="btn-primary rounded-xl px-4 py-2 text-white">新建项目</button></div>}
 
       {isLoggedIn && isEditorOpen && (
         <section className="glass-card rounded-3xl p-5 space-y-3">
@@ -90,7 +113,12 @@ export function ProjectsPage() {
           >
             {project.coverImage?.url && <img src={project.coverImage.url} alt={project.title} className="w-full aspect-[16/7] object-cover" loading={index > 1 ? 'lazy' : 'eager'} />}
             <div className="p-5"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold text-white">{project.title}</h2><p className="mt-2 text-sm leading-6 text-white/65 whitespace-pre-wrap">{project.summary}</p></div>{project.linkUrl && <span className="text-white/65 text-xl">↗</span>}</div>
-              {isLoggedIn && <div className="mt-4 flex gap-2" onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => editProject(project)} className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20">编辑</button><button type="button" onClick={() => deleteProject(project)} className="rounded-xl border border-red-300/30 bg-red-500/15 px-3 py-2 text-sm text-red-100 hover:bg-red-500/30">删除</button></div>}
+              {isLoggedIn && <div className="mt-4 flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
+                <button type="button" onClick={() => void moveProject(index, -1)} disabled={index === 0 || !!reorderingProjectId} aria-label={`上移项目 ${project.title}`} title="上移项目" className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-35">↑</button>
+                <button type="button" onClick={() => void moveProject(index, 1)} disabled={index === projects.length - 1 || !!reorderingProjectId} aria-label={`下移项目 ${project.title}`} title="下移项目" className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-35">↓</button>
+                <button type="button" onClick={() => editProject(project)} className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20">编辑</button>
+                <button type="button" onClick={() => deleteProject(project)} className="rounded-xl border border-red-300/30 bg-red-500/15 px-3 py-2 text-sm text-red-100 hover:bg-red-500/30">删除</button>
+              </div>}
             </div>
           </motion.article>
         ))}

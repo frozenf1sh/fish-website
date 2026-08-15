@@ -24,7 +24,7 @@ export function Layout() {
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false)
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen xl:h-screen xl:overflow-hidden">
       <div className="xl:hidden fixed top-0 left-0 right-0 z-40 px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 backdrop-blur-xl border-b border-white/20 bg-black/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-white">
@@ -47,13 +47,13 @@ export function Layout() {
 
       {mobileProfileOpen && <LeftSidebar mobileDrawer onClose={() => setMobileProfileOpen(false)} />}
 
-      <div className="max-w-[1480px] mx-auto px-4 sm:px-6 pb-24 xl:pb-6 pt-20 xl:pt-6">
-        <div className="grid gap-4 xl:gap-6 xl:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_minmax(220px,260px)] items-start">
+      <div className="max-w-[1480px] mx-auto px-4 sm:px-6 pb-24 pt-20 xl:h-full xl:overflow-hidden xl:pb-6 xl:pt-6">
+        <div className="grid gap-4 xl:h-full xl:gap-6 xl:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_minmax(220px,260px)] items-start">
           {/* 左栏与右栏保持同一固定轨道宽度 */}
           <motion.aside
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="hidden xl:block min-w-0"
+            className="hidden min-h-0 min-w-0 xl:block xl:h-full"
           >
             <LeftSidebar />
           </motion.aside>
@@ -63,7 +63,7 @@ export function Layout() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="min-w-0 w-full border-x border-white/10"
+            className="min-h-0 min-w-0 w-full border-x border-white/10 xl:h-full xl:overflow-y-auto xl:overscroll-y-contain"
           >
             <Outlet />
           </motion.main>
@@ -73,7 +73,7 @@ export function Layout() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="hidden xl:block min-w-0"
+            className="hidden min-h-0 min-w-0 xl:block xl:h-full"
           >
             <RightSidebar />
           </motion.aside>

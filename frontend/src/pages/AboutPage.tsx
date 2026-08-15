@@ -33,7 +33,7 @@ export function AboutPage() {
   const settings = about?.settings
 
   return (
-    <div className="space-y-5 px-4 sm:px-6 pb-24 xl:pb-6">
+    <div className="space-y-5 px-4 sm:px-6 pb-24 xl:pt-0 xl:pb-6">
       <div className="lg:hidden">
         {isLoading ? (
           <section className="glass-card rounded-3xl h-24 sm:h-64 animate-pulse" aria-label="正在加载关于页" />

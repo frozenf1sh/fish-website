@@ -109,6 +109,7 @@ export function BlogPage() {
   const [previewMode, setPreviewMode] = useState<PreviewMode>('split')
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const markdownImportInputRef = useRef<HTMLInputElement | null>(null)
+  const historyLastEditAtRef = useRef(0)
   const [editHistory, setEditHistory] = useState<{ items: string[]; index: number }>({ items: [''], index: 0 })
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
   const [mediaInsertMode, setMediaInsertMode] = useState<'image' | 'gallery'>('image')
@@ -216,6 +217,7 @@ export function BlogPage() {
     setTagsInput('')
     setPreviewMode('split')
     setEditHistory({ items: [''], index: 0 })
+    historyLastEditAtRef.current = 0
     setSaveStatus('published')
   }
 
@@ -340,12 +342,23 @@ export function BlogPage() {
     load()
   }, [articleId])
 
-  const applyEditorChange = (next: string, selection?: { start: number; end: number }) => {
+  const applyEditorChange = (
+    next: string,
+    selection?: { start: number; end: number },
+    historyMode: 'new' | 'merge' = 'new',
+  ) => {
     setContent(next)
+    const now = Date.now()
+    const mergeWithRecentTyping = historyMode === 'merge' && now - historyLastEditAtRef.current < 700
+    historyLastEditAtRef.current = historyMode === 'merge' ? now : 0
     setEditHistory((prev) => {
       const base = prev.items.slice(0, prev.index + 1)
       if (base[base.length - 1] === next) {
         return prev
+      }
+      if (mergeWithRecentTyping && base.length > 1) {
+        const merged = [...base.slice(0, -1), next]
+        return { items: merged, index: merged.length - 1 }
       }
       const nextItems = [...base, next]
       const limit = 120
@@ -859,7 +872,7 @@ export function BlogPage() {
                 <textarea
                   ref={textareaRef}
                   value={content}
-                  onChange={(e) => applyEditorChange(e.target.value)}
+                  onChange={(e) => applyEditorChange(e.target.value, undefined, 'merge')}
                   onKeyDown={handleEditorKeyDown}
                   placeholder="在这里编写 Markdown..."
                   className="h-full min-h-0 w-full resize-none overflow-y-auto bg-white p-4 font-mono text-[14px] leading-6 text-slate-900 placeholder:text-slate-400 focus:outline-none sm:p-5"

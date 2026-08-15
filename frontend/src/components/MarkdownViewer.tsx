@@ -97,14 +97,19 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
               </blockquote>
             )
           },
+          // The code block component owns the complete surface. Avoid the
+          // invalid default <pre><div> nesting and its browser margins.
+          pre({ children }) {
+            return <>{children}</>
+          },
           code({ node, className, children, ...props }) {
             void node
             const text = String(children || '')
             const isInlineCode = !className && !text.includes('\n')
             if (!isInlineCode) {
               return (
-                <Suspense fallback={<pre className="my-4 overflow-x-auto rounded-3xl bg-black/30 p-4 text-sm">{text}</pre>}>
-                  <MarkdownCodeBlock theme={theme} className={className}>{children}</MarkdownCodeBlock>
+                <Suspense fallback={<pre className="my-5 overflow-x-auto rounded-2xl bg-[#0b0f14] p-4 text-sm text-slate-200">{text}</pre>}>
+                  <MarkdownCodeBlock className={className}>{children}</MarkdownCodeBlock>
                 </Suspense>
               )
             }

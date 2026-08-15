@@ -30,7 +30,7 @@ export function GitHubActivityCard() {
   const recentWeeks = activity.weeks.slice(-26)
 
   return (
-    <section className="mx-auto w-full overflow-hidden rounded-3xl bg-white p-4 text-slate-900 shadow-xl sm:max-w-3xl sm:p-5" aria-label="GitHub 活动">
+    <section className="w-full overflow-hidden rounded-3xl bg-white p-4 text-slate-900 shadow-xl sm:p-5" aria-label="GitHub 活动">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <img src={activity.avatarUrl} alt={`${activity.username} avatar`} className="h-11 w-11 shrink-0 rounded-2xl object-cover ring-1 ring-slate-200" />
