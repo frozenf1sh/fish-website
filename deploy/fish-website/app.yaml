@@ -290,7 +290,7 @@ metadata:
   name: fish-website
   namespace: fish-website
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/cluster-issuer: letsencrypt-prod-dns01
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.middlewares: fish-website-redirect-https@kubernetescrd,fish-website-security-headers@kubernetescrd,fish-website-api-strip@kubernetescrd
 spec:
