@@ -22,41 +22,34 @@ const getApiBaseUrl = () => {
   return '/api'
 }
 
-const REQUEST_TIMEOUT_MS = 12000
+// Keep a request from leaving a page-level spinner in limbo. Connect's
+// deadline signal aborts the underlying fetch, unlike Promise.race alone.
+const REQUEST_TIMEOUT_MS = 8000
 const ACCESS_TOKEN_REFRESH_SKEW_MS = 60 * 1000
-
-function withRequestTimeout<T>(request: Promise<T>, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), timeoutMs)
-  })
-  return Promise.race([request, timeout]).finally(() => {
-    if (timer !== undefined) clearTimeout(timer)
-  })
-}
 
 const transport = createConnectTransport({
   baseUrl: getApiBaseUrl(),
   credentials: 'include',
-    interceptors: [
-      (next) => async (req) => {
+  defaultTimeoutMs: REQUEST_TIMEOUT_MS,
+  interceptors: [
+    (next) => async (req) => {
       const isAuthProcedure = /\/AuthService\/(Login|Refresh|Logout)$/.test(req.url)
-      let token = getAuthToken()
-      if (token && !isAuthProcedure && isAccessTokenExpiring(token)) {
-        token = await refreshAccessToken()
-      }
+      // Never make public requests wait for a best-effort session refresh.
+      // Public endpoints accept anonymous users, and protected endpoints can
+      // still refresh once after returning Unauthenticated below.
+      const token = getAuthToken()
       if (token) {
         req.header.set('Authorization', `Bearer ${token}`)
       }
       try {
-        return await withRequestTimeout(next(req))
+        return await next(req)
       } catch (err) {
         const connectErr = ConnectError.from(err)
         if (connectErr.code === Code.Unauthenticated && !isAuthProcedure) {
           const refreshed = await refreshAccessToken()
           if (refreshed) {
             req.header.set('Authorization', `Bearer ${refreshed}`)
-            return withRequestTimeout(next(req))
+            return next(req)
           }
         }
         throw err
@@ -126,7 +119,7 @@ let refreshPromise: Promise<string | null> | null = null
 
 export async function refreshAccessToken(): Promise<string | null> {
   if (refreshPromise) return refreshPromise
-  refreshPromise = withRequestTimeout(authClient.refresh({}))
+  refreshPromise = authClient.refresh({})
     .then((response) => {
       if (!response.token) throw new Error('Refresh returned an empty access token')
       setAuthToken(response.token)
@@ -148,6 +141,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 type ArticleStatus = 'draft' | 'published'
 type PageInput = { pageSize?: number; pageToken?: string }
+type RequestOptions = { signal?: AbortSignal; timeoutMs?: number }
 type LoginInput = { username: string; password: string }
 type CreatePostInput = { content: string; imageIds?: string[] }
 type PostIDInput = { id: string }
@@ -208,11 +202,11 @@ export const clients = {
       const response = await postClient.createPost(req)
       return { post: response.post ? { id: response.post.id } : { id: 'new-post' } }
     },
-    listPosts: async (req: PageInput = {}) => {
+    listPosts: async (req: PageInput = {}, options?: RequestOptions) => {
       const response = await postClient.listPosts({
         pageSize: req.pageSize ?? 50,
         pageToken: req.pageToken ?? '',
-      })
+      }, options)
       return {
         posts: response.posts.map((p) => ({
           id: p.id,

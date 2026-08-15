@@ -82,10 +82,14 @@ export function BlogFolderTree() {
   const activeId = searchParams.get('folder') || 'root'
 
   useEffect(() => {
+    let cancelled = false
+    let loadStarted = false
     const loadFolders = async () => {
+      if (cancelled) return
       setIsLoading(true)
       try {
         const response = await clients.blog.listArticles({ pageSize: 1000, folderId: '', status: isLoggedIn ? undefined : 'published' })
+        if (cancelled) return
         const apiFolders = (response.folders || []) as ApiFolder[]
         const allArticles = (response.articles || []) as Array<{ folderId?: string }>
 
@@ -115,17 +119,35 @@ export function BlogFolderTree() {
         }
         setFolders(normalized)
       } catch (err) {
+        if (cancelled) return
         console.error('load folders failed', err)
         setFolders([{ id: 'root', name: '根目录', articleCount: 0, children: [] }])
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
 
-    loadFolders()
-    const onUpdated = () => loadFolders()
+    // The folder tree is secondary navigation. Let the main timeline and
+    // settings requests win the first connection/DB round-trip.
+    const startInitialLoad = () => {
+      if (cancelled || loadStarted) return
+      loadStarted = true
+      void loadFolders()
+    }
+
+    const scheduledInitialLoad = window.setTimeout(startInitialLoad, 350)
+
+    const onUpdated = () => {
+      if (cancelled) return
+      loadStarted = true
+      void loadFolders()
+    }
     window.addEventListener('blog:updated', onUpdated)
-    return () => window.removeEventListener('blog:updated', onUpdated)
+    return () => {
+      cancelled = true
+      window.clearTimeout(scheduledInitialLoad)
+      window.removeEventListener('blog:updated', onUpdated)
+    }
   }, [isLoggedIn])
 
   const handleSelect = (folderId: string) => {

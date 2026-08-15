@@ -139,6 +139,36 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,scope=${{ matrix.image }},mode=max
 
+  promote-development:
+    name: Promote development release
+    needs: docker
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    environment: development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Update development image tags
+        run: |
+          deployment_path=deploy/fish-website-dev/kustomization.yaml
+          git fetch origin main
+          git checkout -B main origin/main
+          git pull --rebase origin main
+          short_image_tag="sha-${GITHUB_SHA:0:7}"
+          IMAGE_TAG="$short_image_tag" perl -0pi -e 's|(name: ghcr\.io/frozenf1sh/fish-website/backend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g; s|(name: ghcr\.io/frozenf1sh/fish-website/frontend\n\s*newTag: )\S+|${1}$ENV{IMAGE_TAG}|g' "$deployment_path"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$deployment_path"
+          git diff --cached --quiet || git commit -m "deploy: update development to ${short_image_tag} [skip ci]"
+          git push origin "HEAD:main"
+
   promote-production:
     name: Promote production release
     needs: docker

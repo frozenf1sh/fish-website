@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { clients } from '../lib/connect'
@@ -7,6 +7,27 @@ import { showToast } from '../lib/toast'
 import { ImageLightbox } from './ImageLightbox'
 
 const MarkdownViewer = lazy(() => import('./MarkdownViewer').then(({ MarkdownViewer }) => ({ default: MarkdownViewer })))
+
+function DeferredMarkdownViewer({ content }: { content: string }) {
+  const [shouldRender, setShouldRender] = useState(false)
+
+  useEffect(() => {
+    // Keep the first paint independent from the rich markdown bundle. The
+    // full renderer is still available shortly after the page becomes idle.
+    const timer = window.setTimeout(() => setShouldRender(true), 700)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  if (!shouldRender) {
+    return <p className="text-white/65 text-sm whitespace-pre-wrap break-words">{content}</p>
+  }
+
+  return (
+    <Suspense fallback={<p className="text-white/65 text-sm whitespace-pre-wrap break-words">{content}</p>}>
+      <MarkdownViewer content={content} />
+    </Suspense>
+  )
+}
 
 type TimelineItemType = 'post' | 'system' | 'blog' | 'album'
 
@@ -131,9 +152,7 @@ const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number
           </div>
 
           <div className={`relative mb-3 sm:mb-4 ${isLongPost && !isPostExpanded ? 'max-h-36 overflow-hidden sm:max-h-none sm:overflow-visible' : ''}`}>
-            <Suspense fallback={<p className="text-white/65 text-sm whitespace-pre-wrap break-words">{item.content}</p>}>
-              <MarkdownViewer content={item.content} />
-            </Suspense>
+            <DeferredMarkdownViewer content={item.content} />
             {isLongPost && !isPostExpanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/75 to-transparent sm:hidden" />}
           </div>
 
@@ -366,8 +385,10 @@ export function Timeline() {
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const postsRequestIdRef = useRef(0)
+  const postsAbortControllerRef = useRef<AbortController | null>(null)
 
-  const mapPosts = (posts: TimelinePost[]): TimelineItem[] => {
+  const mapPosts = useCallback((posts: TimelinePost[]): TimelineItem[] => {
     return posts.map((post) => {
       let timestampStr = '刚刚'
       if (post.createdAt) {
@@ -397,32 +418,47 @@ export function Timeline() {
         images: post.imageUrls || [],
       }
     })
-  }
+  }, [])
 
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
+    const requestId = ++postsRequestIdRef.current
+    postsAbortControllerRef.current?.abort()
+    const controller = new AbortController()
+    postsAbortControllerRef.current = controller
+
     setIsLoading(true)
     setLoadError(null)
     try {
-      const response = await clients.post.listPosts({ pageSize: 12, pageToken: '' })
+      const response = await clients.post.listPosts({ pageSize: 12, pageToken: '' }, { signal: controller.signal })
+      if (requestId !== postsRequestIdRef.current) return
       setTimelineItems(mapPosts(response.posts || []))
       setNextPageToken(response.nextPageToken || '')
       setHasMore(!!response.hasMore)
     } catch (error) {
+      if (controller.signal.aborted || requestId !== postsRequestIdRef.current) return
       console.error('Failed to load posts:', error)
       setTimelineItems([])
       setNextPageToken('')
       setHasMore(false)
       setLoadError('动态加载失败，请检查网络后重试')
     } finally {
-      setIsLoading(false)
+      if (requestId === postsRequestIdRef.current) {
+        setIsLoading(false)
+        if (postsAbortControllerRef.current === controller) {
+          postsAbortControllerRef.current = null
+        }
+      }
     }
-  }
+  }, [mapPosts])
 
   useEffect(() => {
     void loadPosts()
-    // loadPosts intentionally runs once per Timeline mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    return () => {
+      postsRequestIdRef.current += 1
+      postsAbortControllerRef.current?.abort()
+      postsAbortControllerRef.current = null
+    }
+  }, [loadPosts])
 
   const loadMore = async () => {
     if (!hasMore || !nextPageToken || isLoadingMore) return

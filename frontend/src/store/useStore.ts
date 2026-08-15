@@ -64,6 +64,7 @@ const defaultSettings: Settings = {
 }
 
 let authRefreshTimer: ReturnType<typeof setTimeout> | undefined
+let settingsRequestPromise: Promise<void> | null = null
 
 export const useStore = create<AppState>((set, get) => {
   const clearAccessTokenRefresh = () => {
@@ -159,17 +160,32 @@ export const useStore = create<AppState>((set, get) => {
   settingsError: null,
 
   fetchSettings: async () => {
-    set({ isLoadingSettings: true, settingsError: null })
-    try {
-      const response = await clients.settings.getSettings()
-      if (response.settings) {
-        set({ settings: response.settings })
+    if (settingsRequestPromise) {
+      return settingsRequestPromise
+    }
+
+    const request = (async () => {
+      set({ isLoadingSettings: true, settingsError: null })
+      try {
+        const response = await clients.settings.getSettings()
+        if (response.settings) {
+          set({ settings: response.settings })
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error)
+        set({ settingsError: '加载设置失败', settings: defaultSettings })
+      } finally {
+        set({ isLoadingSettings: false })
       }
-    } catch (error) {
-      console.error('Failed to fetch settings:', error)
-      set({ settingsError: '加载设置失败', settings: defaultSettings })
+    })()
+
+    settingsRequestPromise = request
+    try {
+      await request
     } finally {
-      set({ isLoadingSettings: false })
+      if (settingsRequestPromise === request) {
+        settingsRequestPromise = null
+      }
     }
   },
 

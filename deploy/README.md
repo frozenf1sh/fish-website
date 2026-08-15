@@ -11,9 +11,10 @@ tags. Production tracks the dedicated `production` GitOps branch, while
 development tracks `main`, so ordinary main-branch manifest changes cannot
 drift into production.
 
-`main` builds and publishes images without creating deployment commits. A
-manually-created `v*` tag builds the release image and, after protected GitHub
-`production` Environment approval, advances only
+`main` builds and publishes images, then advances
+`deploy/fish-website-dev/kustomization.yaml` to the new immutable image tag so
+Argo CD deploys development automatically. A manually-created `v*` tag builds
+the release image and, after protected GitHub `production` Environment approval, advances only
 `deploy/fish-website/kustomization.yaml` on the `production` branch. Create
 development namespace secrets with `scripts/bootstrap-environment-secrets.sh`;
 it copies only the existing bucket-scoped R2 and GHCR pull credentials through

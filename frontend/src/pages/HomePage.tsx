@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
-import { PostComposer } from '../components/PostComposer'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { Timeline } from '../components/Timeline'
 import { useStore } from '../store/useStore'
+
+const PostComposer = lazy(() => import('../components/PostComposer').then(({ PostComposer }) => ({ default: PostComposer })))
 
 export function HomePage() {
   const isLoggedIn = useStore((state) => state.isLoggedIn)
@@ -13,7 +14,11 @@ export function HomePage() {
 
   return (
     <>
-      {isLoggedIn && <PostComposer onPostCreated={handlePostCreated} />}
+      {isLoggedIn && (
+        <Suspense fallback={null}>
+          <PostComposer onPostCreated={handlePostCreated} />
+        </Suspense>
+      )}
       <Timeline key={timelineKey} />
     </>
   )

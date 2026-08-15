@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { lazy, memo, Suspense, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
@@ -10,9 +10,9 @@ import rehypeRaw from 'rehype-raw'
 import rehypeKatex from 'rehype-katex'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import rehypeSlug from 'rehype-slug'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import 'katex/dist/katex.min.css'
+
+const MarkdownCodeBlock = lazy(() => import('./MarkdownCodeBlock').then(({ MarkdownCodeBlock }) => ({ default: MarkdownCodeBlock })))
 
 interface MarkdownViewerProps {
   content: string
@@ -49,45 +49,6 @@ const expandComponentBlocks = (value: string) => value
     const [left, right] = body.split(/\n---\n/)
     return `<div class="blog-columns"><div>${escapeHtmlText(left || '')}</div><div>${escapeHtmlText(right || '')}</div></div>`
   })
-
-function CodeBlock({ children, className, theme }: { children: React.ReactNode; className?: string; theme: 'dark' | 'light' }) {
-  const [copied, setCopied] = useState(false)
-  const text = String(children || '').replace(/\n$/, '')
-  const match = /language-(\w+)/.exec(className || '')
-  const language = match?.[1] || 'text'
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1200)
-    } catch {
-      setCopied(false)
-    }
-  }
-
-  return (
-    <div className={`my-4 rounded-3xl overflow-hidden ${theme === 'dark' ? 'bg-black/40 backdrop-blur-sm border border-white/10' : 'bg-slate-100 border border-slate-300'}`}>
-      <div className={`flex justify-end px-3 py-2 ${theme === 'dark' ? 'border-b border-white/10' : 'border-b border-slate-300'}`}>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className={`text-xs px-2 py-1 rounded-lg transition-all ${theme === 'dark' ? 'bg-white/10 text-white/80 hover:bg-white/20' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-        >
-          {copied ? '已复制' : '复制代码'}
-        </button>
-      </div>
-      <SyntaxHighlighter
-        language={language}
-        style={theme === 'dark' ? oneDark : oneLight}
-        customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '0.85rem' }}
-        wrapLongLines
-      >
-        {text}
-      </SyntaxHighlighter>
-    </div>
-  )
-}
 
 export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'dark' }: MarkdownViewerProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
@@ -141,7 +102,11 @@ export const MarkdownViewer = memo(function MarkdownViewer({ content, theme = 'd
             const text = String(children || '')
             const isInlineCode = !className && !text.includes('\n')
             if (!isInlineCode) {
-              return <CodeBlock theme={theme} className={className}>{children}</CodeBlock>
+              return (
+                <Suspense fallback={<pre className="my-4 overflow-x-auto rounded-3xl bg-black/30 p-4 text-sm">{text}</pre>}>
+                  <MarkdownCodeBlock theme={theme} className={className}>{children}</MarkdownCodeBlock>
+                </Suspense>
+              )
             }
             return (
               <code className={theme === 'dark' ? 'px-1.5 py-0.5 rounded-lg bg-white/10 text-pink-200' : 'px-1.5 py-0.5 rounded-lg bg-slate-200 text-rose-700'} {...props}>
