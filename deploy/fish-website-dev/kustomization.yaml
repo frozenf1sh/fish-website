@@ -86,6 +86,6 @@ patches:
                         name: http
 images:
   - name: ghcr.io/frozenf1sh/fish-website/backend
-    newTag: sha-d6b7257
+    newTag: sha-fce90a4
   - name: ghcr.io/frozenf1sh/fish-website/frontend
-    newTag: sha-d6b7257
+    newTag: sha-fce90a4
