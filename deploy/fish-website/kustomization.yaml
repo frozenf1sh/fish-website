@@ -4,6 +4,7 @@ resources:
   - namespace.yaml
   - app.yaml
   - traefik-middleware.yaml
+  - network-policy.yaml
 images:
   - name: backend
     newName: ghcr.io/frozenf1sh/fish-website/backend
