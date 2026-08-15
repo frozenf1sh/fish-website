@@ -53,14 +53,7 @@ func provideGitHubUsecase(cfg *pkgconfig.Config) *usecase.GitHubUsecase {
 }
 
 func providePGXPool(ctx context.Context, cfg *pkgconfig.Config) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, cfg.Database.DSN)
-	if err != nil {
-		return nil, err
-	}
-	if err := pool.Ping(ctx); err != nil {
-		return nil, err
-	}
-	return pool, nil
+	return openPGXPool(ctx, cfg.Database.DSN)
 }
 
 func providePostgresRepository(pool *pgxpool.Pool) *repository.PostgresRepository {
