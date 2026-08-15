@@ -23,7 +23,7 @@ export function RightSidebar() {
       transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
       className="h-full"
     >
-      <div className="sticky top-6 space-y-4">
+      <div className="sticky top-0 space-y-4">
         <motion.form
           onSubmit={(e) => {
             e.preventDefault()

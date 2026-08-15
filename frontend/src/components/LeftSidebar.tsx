@@ -78,7 +78,7 @@ export function LeftSidebar({ mobileDrawer = false, onClose }: LeftSidebarProps)
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className={mobileDrawer ? 'fixed inset-y-0 left-0 z-[60] w-[min(86vw,340px)] p-3' : 'h-full'}
     >
-      <div className={mobileDrawer ? 'h-full space-y-4 overflow-y-auto' : 'sticky top-6 space-y-6'}>
+      <div className={mobileDrawer ? 'h-full space-y-4 overflow-y-auto' : 'sticky top-0 space-y-6'}>
         {/* 头像卡片 */}
         <motion.div
           whileHover={{ scale: 1.02 }}
