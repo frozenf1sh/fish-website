@@ -61,6 +61,18 @@ const parseBlogAnnouncement = (content: string) => {
   return { title: match[1], preview: getPreviewText(match[2]), articleId: match[3].slice(match[3].lastIndexOf('/blog/') + '/blog/'.length) }
 }
 
+const toDateKey = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const formatDateLabel = (dateKey: string) => {
+  const [year, month, day] = dateKey.split('-')
+  return `${year}年${Number(month)}月${Number(day)}日`
+}
+
 const PostCard = ({ item, index, onDelete }: { item: TimelineItem; index: number; onDelete?: (id: string) => void }) => {
   const { settings, isLoggedIn } = useStore()
   const navigate = useNavigate()
@@ -378,7 +390,8 @@ const AlbumCard = ({ item, index }: { item: TimelineItem; index: number }) => {
   )
 }
 
-export function Timeline() {
+export function Timeline({ dateFilter = '' }: { dateFilter?: string }) {
+  const navigate = useNavigate()
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([])
   const [nextPageToken, setNextPageToken] = useState('')
   const [hasMore, setHasMore] = useState(false)
@@ -429,6 +442,24 @@ export function Timeline() {
     setIsLoading(true)
     setLoadError(null)
     try {
+      if (dateFilter) {
+        const matchedPosts: TimelinePost[] = []
+        let pageToken = ''
+
+        for (let page = 0; page < 20; page += 1) {
+          const response = await clients.post.listPosts({ pageSize: 100, pageToken }, { signal: controller.signal })
+          matchedPosts.push(...response.posts.filter((post) => post.createdAt && toDateKey(post.createdAt.toDate()) === dateFilter))
+          if (!response.hasMore || !response.nextPageToken) break
+          pageToken = response.nextPageToken
+        }
+
+        if (requestId !== postsRequestIdRef.current) return
+        setTimelineItems(mapPosts(matchedPosts))
+        setNextPageToken('')
+        setHasMore(false)
+        return
+      }
+
       const response = await clients.post.listPosts({ pageSize: 12, pageToken: '' }, { signal: controller.signal })
       if (requestId !== postsRequestIdRef.current) return
       setTimelineItems(mapPosts(response.posts || []))
@@ -449,7 +480,7 @@ export function Timeline() {
         }
       }
     }
-  }, [mapPosts])
+  }, [dateFilter, mapPosts])
 
   useEffect(() => {
     void loadPosts()
@@ -478,6 +509,12 @@ export function Timeline() {
 
   return (
     <div className="px-3 sm:px-0">
+      {dateFilter && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white/75">
+          <span>正在查看 {formatDateLabel(dateFilter)} 的动态</span>
+          <button type="button" onClick={() => navigate('/')} className="shrink-0 rounded-xl border border-white/20 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10">清除筛选</button>
+        </div>
+      )}
       <div className="space-y-3 sm:space-y-4 pb-8">
         {isLoading ? (
           <div className="text-center py-12 text-white/50">
@@ -491,7 +528,7 @@ export function Timeline() {
         ) : timelineItems.length === 0 ? (
           <div className="text-center py-12 text-white/50">
             <p className="text-4xl mb-4">🌸</p>
-            <p>还没有动态，快来发布第一条吧！</p>
+            <p>{dateFilter ? `${formatDateLabel(dateFilter)} 没有动态` : '还没有动态，快来发布第一条吧！'}</p>
           </div>
         ) : (
           timelineItems.map((item, index) => (

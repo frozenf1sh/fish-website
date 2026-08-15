@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { clients } from '../lib/connect'
 
 type TimelinePost = Awaited<ReturnType<typeof clients.post.listPosts>>['posts'][number]
@@ -11,23 +12,12 @@ const toDateKey = (date: Date) => {
   return `${year}-${month}-${day}`
 }
 
-const getPostPreview = (content: string) => content
-  .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-  .replace(/[`*_>#]/g, '')
-  .replace(/\s+/g, ' ')
-  .trim()
-
-const getPostTime = (post: TimelinePost) => {
-  const date = post.createdAt?.toDate?.()
-  return date ? date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : ''
-}
-
 export function CalendarWidget() {
+  const navigate = useNavigate()
   const today = new Date()
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [selectedDate, setSelectedDate] = useState<Date>(today)
-  const [isDateDetailsOpen, setIsDateDetailsOpen] = useState(false)
   const [posts, setPosts] = useState<TimelinePost[]>([])
 
   useEffect(() => {
@@ -90,15 +80,6 @@ export function CalendarWidget() {
       setCurrentMonth(currentMonth + 1)
     }
   }
-
-  const selectedDateKey = useMemo(() => {
-    const y = selectedDate.getFullYear()
-    const m = String(selectedDate.getMonth() + 1).padStart(2, '0')
-    const d = String(selectedDate.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
-  }, [selectedDate])
-
-  const selectedPosts = postsByDate.get(selectedDateKey) || []
 
   const hasPost = (date: number) => {
     const y = currentYear
@@ -170,14 +151,19 @@ export function CalendarWidget() {
           {/* 当月日期 */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const date = i + 1
+            const dateHasPost = hasPost(date)
             return (
               <motion.button
                 key={date}
+                type="button"
+                disabled={!dateHasPost}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
-                  setSelectedDate(new Date(currentYear, currentMonth, date))
-                  setIsDateDetailsOpen(true)
+                  if (!dateHasPost) return
+                  const nextDate = new Date(currentYear, currentMonth, date)
+                  setSelectedDate(nextDate)
+                  navigate(`/?date=${toDateKey(nextDate)}`)
                 }}
                 className={`
                   aspect-square rounded-2xl flex items-center justify-center text-sm font-medium transition-all relative
@@ -190,8 +176,8 @@ export function CalendarWidget() {
                 `}
               >
                 {date}
-                {hasPost(date) && (
-                  <span className="absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-pink-500"></span>
+                {dateHasPost && (
+                  <span className="pointer-events-none absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-[#ffb7c5]"></span>
                 )}
               </motion.button>
             )
@@ -199,36 +185,6 @@ export function CalendarWidget() {
         </div>
       </motion.div>
 
-      {/* 选中日期的动态 */}
-      {isDateDetailsOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card rounded-4xl p-6"
-        >
-          <h3 className="text-white/90 font-semibold mb-4 flex items-center gap-2">
-            <span className="text-lg">📝</span>
-            {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日 动态
-          </h3>
-          {selectedPosts.length > 0 ? (
-            <div className="space-y-3">
-              {selectedPosts.map((post) => (
-                <motion.article
-                  key={post.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="rounded-2xl border border-white/10 bg-white/10 p-4"
-                >
-                  <p className="whitespace-pre-wrap break-words text-sm leading-6 text-white/85">{getPostPreview(post.content) || '图片动态'}</p>
-                  {getPostTime(post) && <p className="mt-2 text-xs text-white/45">发布于 {getPostTime(post)}</p>}
-                </motion.article>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm leading-6 text-white/55">这一天没有发布动态。</p>
-          )}
-        </motion.div>
-      )}
     </div>
   )
 }
