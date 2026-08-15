@@ -12,6 +12,9 @@ spec:
   destinations:
     - namespace: kube-system
       server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: cert-manager.io
+      kind: ClusterIssuer
   namespaceResourceWhitelist:
     - group: ""
       kind: ConfigMap
