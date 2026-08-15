@@ -1,12 +1,25 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { clients } from '../lib/connect'
 
-interface Schedule {
-  id: string
-  title: string
-  time: string
-  color: string
-  icon: string
+type TimelinePost = Awaited<ReturnType<typeof clients.post.listPosts>>['posts'][number]
+
+const toDateKey = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const getPostPreview = (content: string) => content
+  .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+  .replace(/[`*_>#]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const getPostTime = (post: TimelinePost) => {
+  const date = post.createdAt?.toDate?.()
+  return date ? date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : ''
 }
 
 export function CalendarWidget() {
@@ -14,7 +27,40 @@ export function CalendarWidget() {
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [selectedDate, setSelectedDate] = useState<Date>(today)
-  const [schedules] = useState<Record<string, Schedule[]>>({})
+  const [isDateDetailsOpen, setIsDateDetailsOpen] = useState(false)
+  const [posts, setPosts] = useState<TimelinePost[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadPosts = async () => {
+      const loadedPosts: TimelinePost[] = []
+      let pageToken = ''
+
+      for (let page = 0; page < 20; page += 1) {
+        const response = await clients.post.listPosts({ pageSize: 100, pageToken })
+        loadedPosts.push(...response.posts)
+        if (!response.hasMore || !response.nextPageToken) break
+        pageToken = response.nextPageToken
+      }
+
+      if (!cancelled) setPosts(loadedPosts)
+    }
+
+    loadPosts().catch((error) => console.error('Failed to load posts for calendar:', error))
+    return () => { cancelled = true }
+  }, [])
+
+  const postsByDate = useMemo(() => {
+    const grouped = new Map<string, TimelinePost[]>()
+    for (const post of posts) {
+      const date = post.createdAt?.toDate?.()
+      if (!date) continue
+      const key = toDateKey(date)
+      grouped.set(key, [...(grouped.get(key) || []), post])
+    }
+    return grouped
+  }, [posts])
 
   const daysInMonth = useMemo(() => {
     return new Date(currentYear, currentMonth + 1, 0).getDate()
@@ -52,14 +98,14 @@ export function CalendarWidget() {
     return `${y}-${m}-${d}`
   }, [selectedDate])
 
-  const selectedSchedules = schedules[selectedDateKey] || []
+  const selectedPosts = postsByDate.get(selectedDateKey) || []
 
-  const hasSchedule = (date: number) => {
+  const hasPost = (date: number) => {
     const y = currentYear
     const m = String(currentMonth + 1).padStart(2, '0')
     const d = String(date).padStart(2, '0')
     const key = `${y}-${m}-${d}`
-    return schedules[key] && schedules[key].length > 0
+    return postsByDate.has(key)
   }
 
   const isToday = (date: number) => {
@@ -129,7 +175,10 @@ export function CalendarWidget() {
                 key={date}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedDate(new Date(currentYear, currentMonth, date))}
+                onClick={() => {
+                  setSelectedDate(new Date(currentYear, currentMonth, date))
+                  setIsDateDetailsOpen(true)
+                }}
                 className={`
                   aspect-square rounded-2xl flex items-center justify-center text-sm font-medium transition-all relative
                   ${isSelected(date)
@@ -141,8 +190,8 @@ export function CalendarWidget() {
                 `}
               >
                 {date}
-                {hasSchedule(date) && !isSelected(date) && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-gradient-to-r from-pink-400 to-rose-400"></span>
+                {hasPost(date) && (
+                  <span className="absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-pink-500"></span>
                 )}
               </motion.button>
             )
@@ -150,48 +199,36 @@ export function CalendarWidget() {
         </div>
       </motion.div>
 
-      {/* 选中日期的日程 */}
-      {selectedSchedules.length > 0 && (
+      {/* 选中日期的动态 */}
+      {isDateDetailsOpen && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card rounded-4xl p-6"
         >
           <h3 className="text-white/90 font-semibold mb-4 flex items-center gap-2">
-            <span className="text-lg">📋</span>
-            {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日 日程
+            <span className="text-lg">📝</span>
+            {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日 动态
           </h3>
-          <div className="space-y-3">
-            {selectedSchedules.map((schedule) => (
-              <motion.div
-                key={schedule.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                whileHover={{ scale: 1.02, x: 4 }}
-                className={`p-4 rounded-2xl bg-gradient-to-r ${schedule.color} bg-opacity-20 border border-white/10`}
-              >
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{schedule.icon}</span>
-                  <div className="flex-1">
-                    <h4 className="text-white font-medium">{schedule.title}</h4>
-                    <p className="text-white/70 text-sm mt-1">{schedule.time}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          {selectedPosts.length > 0 ? (
+            <div className="space-y-3">
+              {selectedPosts.map((post) => (
+                <motion.article
+                  key={post.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="rounded-2xl border border-white/10 bg-white/10 p-4"
+                >
+                  <p className="whitespace-pre-wrap break-words text-sm leading-6 text-white/85">{getPostPreview(post.content) || '图片动态'}</p>
+                  {getPostTime(post) && <p className="mt-2 text-xs text-white/45">发布于 {getPostTime(post)}</p>}
+                </motion.article>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm leading-6 text-white/55">这一天没有发布动态。</p>
+          )}
         </motion.div>
       )}
-
-      {/* 添加日程按钮 */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-3xl bg-gradient-to-r from-blue-400/30 to-purple-400/30 text-white/90 hover:text-white hover:from-blue-400/40 hover:to-purple-400/40 transition-all border border-white/20"
-      >
-        <span className="text-xl">➕</span>
-        <span className="font-medium">添加日程</span>
-      </motion.button>
     </div>
   )
 }
