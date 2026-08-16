@@ -4,6 +4,11 @@ import type { GitHubActivity } from '../shared/domain/content'
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value)
 
+const getWeekLatestDate = (week: GitHubActivity['weeks'][number]) => week.reduce(
+  (latest, day) => day.date > latest ? day.date : latest,
+  '',
+)
+
 export function GitHubActivityCard() {
   const [activity, setActivity] = useState<GitHubActivity | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -27,7 +32,7 @@ export function GitHubActivityCard() {
 
   if (!activity) return null
 
-  const recentWeeks = activity.weeks.slice(-26)
+  const orderedWeeks = [...activity.weeks].sort((left, right) => getWeekLatestDate(left).localeCompare(getWeekLatestDate(right)))
 
   return (
     <section className="w-full overflow-hidden rounded-3xl bg-white p-4 text-slate-900 shadow-xl sm:p-5" aria-label="GitHub 活动">
@@ -52,14 +57,14 @@ export function GitHubActivityCard() {
 
       <div className="mt-4 flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold sm:text-base">贡献日历</h3>
-        <span className="text-xs text-slate-400"><span className="sm:hidden">最近六个月</span><span className="hidden sm:inline">最近一年</span></span>
+        <span className="text-xs text-slate-400"><span className="sm:hidden">最新贡献</span><span className="hidden sm:inline">最近一年</span></span>
       </div>
 
       {activity.contributionCalendarAvailable ? (
         <>
-          <div className="mt-3 overflow-hidden pb-1 sm:hidden" aria-label="GitHub 最近六个月贡献日历">
-            <div className="flex w-max gap-0.5 px-1">
-              {recentWeeks.map((week, weekIndex) => (
+          <div className="relative mt-3 h-[86px] overflow-hidden sm:hidden" aria-label="GitHub 最新贡献日历，按实际显示宽度右对齐">
+            <div className="absolute right-1 top-0 flex w-max gap-0.5">
+              {orderedWeeks.map((week, weekIndex) => (
                 <div key={weekIndex} className="flex flex-col gap-0.5">
                   {week.map((day) => (
                     <span key={day.date} title={`${day.date} · ${day.contributionCount} 次贡献`} className="h-2.5 w-2.5 rounded-[3px] ring-1 ring-black/5" style={{ backgroundColor: day.color || '#ebedf0' }} />
@@ -70,7 +75,7 @@ export function GitHubActivityCard() {
           </div>
           <div className="mt-3 -mx-1 hidden overflow-x-auto pb-1 sm:block" tabIndex={0} aria-label="GitHub 最近一年贡献日历，可横向滚动">
             <div className="flex min-w-[620px] gap-0.5 px-1">
-            {activity.weeks.map((week, weekIndex) => (
+            {orderedWeeks.map((week, weekIndex) => (
               <div key={weekIndex} className="flex flex-col gap-0.5">
                 {week.map((day) => (
                   <span key={day.date} title={`${day.date} · ${day.contributionCount} 次贡献`} className="h-2.5 w-2.5 rounded-[3px] ring-1 ring-black/5" style={{ backgroundColor: day.color || '#ebedf0' }} />
