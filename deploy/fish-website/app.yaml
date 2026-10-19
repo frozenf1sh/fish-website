@@ -294,7 +294,8 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.middlewares: fish-website-redirect-https@kubernetescrd,fish-website-security-headers@kubernetescrd,fish-website-api-strip@kubernetescrd
 spec:
-  ingressClassName: traefik
+  # Disable public routing while retaining the TLS resources for reactivation.
+  ingressClassName: frozen-disabled
   tls:
     - hosts: [frozenf1sh.top]
       secretName: frozenf1sh-top-tls
