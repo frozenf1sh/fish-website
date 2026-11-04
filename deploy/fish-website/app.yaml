@@ -135,6 +135,7 @@ metadata:
     app.kubernetes.io/part-of: fish-website
 spec:
   schedule: "0 0 * * *"
+  suspend: true
   timeZone: "Asia/Seoul"
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 3600
@@ -294,8 +295,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.middlewares: fish-website-redirect-https@kubernetescrd,fish-website-security-headers@kubernetescrd,fish-website-api-strip@kubernetescrd
 spec:
-  # Disable public routing while retaining the TLS resources for reactivation.
-  ingressClassName: frozen-disabled
+  ingressClassName: traefik
   tls:
     - hosts: [frozenf1sh.top]
       secretName: frozenf1sh-top-tls
